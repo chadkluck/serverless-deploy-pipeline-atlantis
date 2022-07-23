@@ -1,0 +1,25 @@
+{
+    "source_files": {
+        "toolchain_bucketname": "63klabs",
+        "toolchain_bucketkey": "projectstack-templates/atlantis",
+        "src_bucketname": "63klabs",
+        "src_bucketkey": "projectstack-templates/atlantis"
+    },
+    "project": {
+        "aws_account": "9912345678900",
+        "aws_region": "us-east-1",
+        "id": "my-project",
+        "stage": "",
+        "env": "",
+        "name": "",
+        "description": "",
+        "repository": "",
+        "branch": "",
+        "prefix": "",
+        "role_arn": ""
+    },
+    "stack_parameters": {
+        "ParameterStoreBasePath": ""
+    },
+    "tags": {}
+}

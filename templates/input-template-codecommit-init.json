@@ -1,0 +1,10 @@
+{
+    "repositoryName": "$REPOSITORY$",
+    "branchName": "main",
+    "fileContent": "SGVsbG8sIFdvcmxk",
+    "filePath": "hello.txt",
+    "fileMode": "NORMAL",
+    "commitMessage": "First commit",
+    "name": "Initialization",
+    "email": "init@example.com"
+}

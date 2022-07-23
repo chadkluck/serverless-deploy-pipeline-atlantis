@@ -1,0 +1,9 @@
+#ignore the git and zip files we use
+.*
+!.gitignore
+*.zip
+
+#ignore contents of temp and custom folders (but we need them in the repo)
+config-projects/*
+input/*
+temp/*

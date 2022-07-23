@@ -1,0 +1,8 @@
+{
+    "repositoryName": "$REPOSITORY$",
+    "repositoryDescription": "Code repository for project $PROJECT_ID$",
+    "tags": {
+        "ProjectStackType": "$PREFIX$",
+        "ProjectStackProjectID": "$AWS_REGION$/$AWS_ACCT$/$PREFIX$-$PROJECT_ID$"
+    }
+}

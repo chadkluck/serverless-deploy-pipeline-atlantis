@@ -1,0 +1,5 @@
+{
+    "repositoryName": "$REPOSITORY$",
+    "branchName": "$REPOSITORY_BRANCH$",
+    "commitId": "REPLACE_WITH_CommitId"
+}

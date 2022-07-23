@@ -1,0 +1,64 @@
+{
+    "StackName": "$PREFIX$-$PROJECT_STAGE_ID$-deploy",
+    "TemplateURL": "https://$TOOLCHAIN_BUCKETNAME$.s3.amazonaws.com/$TOOLCHAIN_BUCKETKEY$/toolchain.yml",
+    "Parameters": [
+        {
+            "ParameterKey": "ProjectId",
+            "ParameterValue": "$PROJECT_ID$",
+            "UsePreviousValue": true
+        },
+        {
+            "ParameterKey": "ProjectStageId",
+            "ParameterValue": "$PROJECT_STAGE_ID$",
+            "UsePreviousValue": true
+        },
+        {
+            "ParameterKey": "Prefix",
+            "ParameterValue": "$PREFIX$",
+            "UsePreviousValue": true
+        },
+        {
+            "ParameterKey": "CodeCommitRepository",
+            "ParameterValue": "$REPOSITORY$",
+            "UsePreviousValue": true
+        },
+        {
+            "ParameterKey": "CodeCommitBranch",
+            "ParameterValue": "$REPOSITORY_BRANCH$",
+            "UsePreviousValue": true
+        },
+        {
+            "ParameterKey": "ParameterStoreBasePath",
+            "ParameterValue": "",
+            "UsePreviousValue": false
+        }
+    ],
+    "Capabilities": [
+        "CAPABILITY_NAMED_IAM"
+    ],
+    "RoleARN": "arn:aws:iam::$AWS_ACCT$:role/$PREFIX$-service-role",
+    "OnFailure": "DO_NOTHING",
+    "Tags": [
+        {
+            "Key": "ProjectStackType",
+            "Value": "$PREFIX$"
+        },
+        {
+            "Key": "ProjectStackProjectID",
+            "Value": "$AWS_REGION$/$AWS_ACCT$/$PREFIX$-$PROJECT_ID$"
+        },
+        {
+            "Key": "ProjectStackProjectStageID",
+            "Value": "$AWS_REGION$/$AWS_ACCT$/$PREFIX$-$PROJECT_STAGE_ID$"
+        },
+        {
+            "Key": "CodeCommitRepo",
+            "Value": "$REPOSITORY$"
+        },
+        {
+            "Key": "CodeCommitBranch",
+            "Value": "$REPOSITORY$:$REPOSITORY_BRANCH$"
+        }
+    ],
+    "EnableTerminationProtection": true
+}

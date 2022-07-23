@@ -1,0 +1,19 @@
+{
+  "name": "8ball",
+  "version": "1.0.0",
+  "description": "8Ball Web Service",
+  "main": "index.js",
+  "repository": "",
+  "author": "Chad Leigh Kluck",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.18.0"
+  },
+  "scripts": {
+    "test": "mocha tests/"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^6.1.4"
+  }
+}
