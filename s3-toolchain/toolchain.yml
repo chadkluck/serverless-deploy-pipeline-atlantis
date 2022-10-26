@@ -3,31 +3,57 @@
 # specific language governing permissions and limitations under the License.
 
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "Toolchain for a deployment pipeline."
+Description: "Toolchain for an Atlantis deployment pipeline."
+
+# =============================================================================
+# META DATA
+# -----------------------------------------------------------------------------
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudformation-interface.html
+# 
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: "Deployment Environment and Stage"
+        Parameters:
+          - DeployEnvironment
+          - DeployStage
+      - 
+        Label:
+          default: "Application instance identification"
+        Parameters:
+          - Prefix
+          - ProjectId
+          - ProjectStageId
+      -
+        Label:
+          default: "SSM Parameter Store and Alarm Notifications"
+        Parameters:
+          - ParameterStoreBasePath
+          - AlarmNotificationEmail
+      -
+        Label:
+          default: "Code Repository"
+        Parameters:
+          - CodeCommitRepository
+          - CodeCommitBranch
+
+# =============================================================================
+# PARAMETERS
+# -----------------------------------------------------------------------------
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html
+#
 
 Parameters:
-  # Project Environment Variables and Parameters that will be passed on
-  ProjectId:
-    Description: "The Project ID for the application. For CodeStar this will be the same as ProjectStageId. (Minimum 2 characters, and, if it is a CodeStar project, max of 15 characters). The Stage parameter will be appended to the ProjectID and must be taken into account as the max length of ProjectID is 15 characters."
+  # Deployment Environment and Stage
+  DeployEnvironment:
+    Description: What deploy/testing environment will this run under? An environment can contain mulitple stages and in coordination with run different tests. Utilize this environment variable to determine your tests and app logging levels during deploy
     Type: String
-    AllowedPattern: "^[a-z][a-z0-9-]+$"
-    ###MaxLength: 15 # Uncomment for true CodeStar projects / Commment out if you wish to have longer names available for non-CodeStar projects
-    MinLength: 2
-  ProjectStageId:
-    Description: "The Project ID for the application with the stage appeneded (if there is a stage). If it is a CodeStar project, max of 15 characters and it will be the same as ProjectID."
-    Type: String
-    AllowedPattern: "^[a-z][a-z0-9-]+$"
-    ###MaxLength: 15 # Uncomment for true CodeStar projects / Commment out if you wish to have longer names available for non-CodeStar projects
-    MinLength: 2
-    ConstraintDescription: "Must contain only lowercase alphanumeric characters, dash, or underscore, and be between 2 and 15 characters in length."
-  Prefix:
-    Description: Prefix to assign to resources
-    Type: String
-    AllowedPattern: "[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9]"
-    MinLength: 3
-    MaxLength: 15
-    ConstraintDescription: 3 to 15 characters. Alphanumeric (upper and lower), hyphen, and underscore. Must start with a letter and must end with a letter or number.
-    Default: "awscodestar" 
+    AllowedValues: ["DEV", "TEST", "PROD"]
+    ConstraintDescription: Must specify DEV, TEST, or PROD.
+    Default: "DEV"
   DeployStage:
     Description: This project represents what stage in the CI/CD pipeline? (test, beta, stage, prod). This should be equal to the deployment stage appended to the Project ID. The project ID plus the stage value must not exceed 15 characters.
     Type: String
@@ -35,12 +61,29 @@ Parameters:
     MaxLength: 12
     ConstraintDescription: Must contain only lowercase alphanumeric characters and be no more than 12 characters in length.
     Default: "master" # should match default branch - as of 3/4/2021 CodeStar still places initial commit in master
-  DeployEnvironment:
-    Description: What deploy/testing environment will this run under? An environment can contain mulitple stages and in coordination with run different tests. Utilize this environment variable to determine your tests and app logging levels during deploy
+
+  # Application instance identification
+  Prefix:
+    Description: Prefix to assign to resources. This can be thought of as a Name Space and will be pre-pended to all resources. Use it to identify ownership/access for teams, departments, etc. Must have a corresponding service-role.
     Type: String
-    AllowedValues: ["DEV", "TEST", "PROD"]
-    ConstraintDescription: Must specify DEV, TEST, or PROD.
-    Default: "DEV"
+    AllowedPattern: "[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9]"
+    MinLength: 3
+    MaxLength: 15
+    ConstraintDescription: 3 to 15 characters. Alphanumeric (upper and lower), hyphen, and underscore. Must start with a letter and must end with a letter or number.
+    Default: "awscodestar" 
+  ProjectId:
+    Description: "Do NOT include <Prefix> or <DeployStage>. This is the Project ID for the application. For CodeStar this will be the same as ProjectStageId. (Minimum 2 characters, and, if it is a CodeStar project, max of 15 characters). The Stage parameter will be appended to the ProjectID and must be taken into account as the max length of ProjectID is 15 characters."
+    Type: String
+    AllowedPattern: "^[a-z][a-z0-9-]+$"
+    ###MaxLength: 15 # Uncomment for true CodeStar projects / Commment out if you wish to have longer names available for non-CodeStar projects
+    MinLength: 2
+  ProjectStageId:
+    Description: "Do NOT include <Prefix>, but DO include <ProjectId>. This is the Project ID for the application with the stage appeneded (if there is a stage). If it is a CodeStar project, max of 15 characters and it will be the same as ProjectID."
+    Type: String
+    AllowedPattern: "^[a-z][a-z0-9-]+$"
+    ###MaxLength: 15 # Uncomment for true CodeStar projects / Commment out if you wish to have longer names available for non-CodeStar projects
+    MinLength: 2
+    ConstraintDescription: "Must contain only lowercase alphanumeric characters, dash, or underscore, and be between 2 and 15 characters in length."
 
   ParameterStoreBasePath:
     Description: "Base path in Parameter store to organize parameters for this instance. This is needed so that proper permissions may be given for the app to access Parameter Store. Must either be a single '/' or begin and end with a '/'. This value, with the Project ID appended to it, will be passed to the app build process as ParameterStoreAppPath. Parameters will be stored like this: /<ParameterStoreBasePath>/<Prefix>-<ProjectStageId>/<AppParameter>"
@@ -48,7 +91,6 @@ Parameters:
     AllowedPattern: "^\\/([a-zA-Z0-9]+([\\-][a-zA-Z0-9]+)*[\\/])+$|^\\/$"
     ConstraintDescription: Must only contain alpha-numeric, dashes, or slashes. Must begin and end with a slash /.
     Default: "/"
-
   AlarmNotificationEmail:
     Type: String
     Description: "Email address to send a notification to when Lambda function goes into alarm"
@@ -65,6 +107,12 @@ Parameters:
     Type: String
     Default: "master" # should match default DeployStage - as of 3/4/2021 CodeStar still places initial commit in master
 
+# =============================================================================
+# CONDITIONS
+# -----------------------------------------------------------------------------
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-conditions.html
+#
+
 Conditions:
   IsCodeStar: !Equals 
     - !Ref Prefix
@@ -73,9 +121,18 @@ Conditions:
     - !Ref CodeCommitRepository
     - ''
 
+# =============================================================================
+# RESOURCES
+# -----------------------------------------------------------------------------
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html  
+#
+
 Resources:
 
-  # -- CodeStar CodeCommit repository - only if CodeStar --
+  # ---------------------------------------------------------------------------
+  # -- CodeStar CodeCommit repository --
+  # This is only created if it is a CodeStar project, otherwise skipped
+
   CodeCommitRepo:
     Condition: IsCodeStar
     Type: AWS::CodeCommit::Repository
@@ -84,8 +141,10 @@ Resources:
       RepositoryDescription: !Sub "Repository for CodeStar Project ${ProjectId}"
       RepositoryName: !Sub "awscodestar-${ProjectId}"
 
+  # ---------------------------------------------------------------------------
   # -- CodeBuild Role --
   # Each AWS CodeBuild project requires a role for AWS CodeBuild to operate on your code.
+
   CodeBuildRole:
     Description: Creating service role in IAM for AWS CodeBuild
     Properties:
@@ -103,11 +162,14 @@ Resources:
           - "CodeBuild"
     Type: AWS::IAM::Role
 
+  # ---------------------------------------------------------------------------
   # -- CodeBuild Policy --
+
   CodeBuildPolicy:
     Description: Setting IAM policy for AWS CodeBuild role
     Properties:
       PolicyDocument:
+        Version: "2012-10-17"
         Statement:
 
           # This minimal set of permissions lets AWS CodeBuild retrieve your encrypted code artifact from Amazon S3
@@ -138,7 +200,9 @@ Resources:
       - !Ref 'CodeBuildRole'
     Type: AWS::IAM::Policy
 
+  # ---------------------------------------------------------------------------
   # -- CodeBuild Project --
+
   CodeBuildProject:
     DependsOn:
     - CodeBuildPolicy
@@ -182,6 +246,7 @@ Resources:
         BuildSpec: buildspec.yml # Explicitly set just to note that there should only be one buildspec (not buildspec-dev.yml or buildspec-prod.yml) which if needed to process differently for an environment, that logic should be in the buildspec and SAM template. Otherwise management of 2 or more would be difficult. We have Deploy Stage and Deploy Environment variables so use them.
     Type: AWS::CodeBuild::Project
 
+  # ---------------------------------------------------------------------------
   # -- CloudFormation Trust Role --
   # If your pipeline will create resources through AWS CloudFormation as well as deploy your source code,
   # then specify a role for AWS CloudFormation to use. These permissions dictate which runtime resources
@@ -206,13 +271,16 @@ Resources:
       Policies:
       - PolicyName: CloudFormationRolePolicy
         PolicyDocument:
+          Version: "2012-10-17"
           Statement:
-          - Action:
+          - Sid: "CodeStarCRUDThisDeploymentOnly"
+            Action:
             - codestar:*
             Effect: Allow
             Resource: !Sub 'arn:aws:codestar:${AWS::Region}:${AWS::AccountId}:project/${ProjectStageId}*'
 
-          - Action:
+          - Sid: "IAMCRUDWorkerThisDeploymentOnly"
+            Action:
             - iam:*
             Effect: Allow
             Resource:
@@ -227,36 +295,40 @@ Resources:
                 - !If [IsCodeStar, "CodeStar", !Sub "${Prefix}"]
                 - !Sub "-${ProjectStageId}-*"
 
-          - Action:
+          - Sid: "CloudFormationCRUD"
+            Action:
             - cloudformation:*
             Effect: Allow
-            Resource: "*"
+            Resource: "*" # TODO Needs to be scoped down - tags?
           #  Condition:
           #    StringEquals: 
           #      aws:ResourceTag/ProjectStackProjectStageID: !Sub "${AWS::Region}/${AWS::AccountId}/${Prefix}-${ProjectStageId}"
 
-          - Action:
+          - Sid: "CodeDeployCRUDThisDeploymentOnly"
+            Action:
             - codedeploy:*
             Effect: Allow
             Resource: #"*"
               - !Sub 'arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:application:${Prefix}-${ProjectStageId}-infrastructure-*'
               - !Sub 'arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentgroup:${Prefix}-${ProjectStageId}-*'
-              - !Sub 'arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentconfig:*'
+              - !Sub 'arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentconfig:*' # TODO needs to be scoped down - tags?
             # Condition:
             #   StringEquals: 
             #     aws:ResourceTag/ProjectStackProjectStageID: !Sub "${AWS::Region}/${AWS::AccountId}/${Prefix}-${ProjectStageId}"
 
 
-          - Action:
+          - Sid: "APIGateWayCRUD"
+            Action:
             - apigateway:*
             Effect: Allow
-            Resource: "*"
+            Resource: "*" # needs to be scoped down - tags
             # we can't use arn because the name is a random id, so we need to use a condition against the tags, but to write in YAML?
             # Condition:
             #   StringEquals: 
             #     aws:ResourceTag/ProjectStackProjectStageID: !Sub "${AWS::Region}/${AWS::AccountId}/${Prefix}-${ProjectStageId}"
 
-          - Action:
+          - Sid: "S3CRUDThisDeploymentOnly"
+            Action:
             - s3:*
             Effect: Allow
             Resource:
@@ -276,20 +348,30 @@ Resources:
                 - !If [IsCodeStar, "aws-codestar", !Ref Prefix]
                 - !Sub "-${AWS::Region}-${AWS::AccountId}-${ProjectStageId}-*"
 
-          - Action:
+          - Sid: "LambdaCRUDThisDeploymentOnly"
+            Action:
             - lambda:*
             Effect: Allow
             Resource:
             - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Prefix}-${ProjectStageId}-*'
 
-          - Action:
+          - Sid: "LambdaLayersGetLayerForLambdaInsightsFromAWS"
+            Action:
+            - lambda:GetLayerVersion
+            Effect: Allow
+            Resource:
+            - 'arn:aws:lambda:us-east-1:580247275435:layer:LambdaInsightsExtension:*' # update account and region
+            # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Lambda-Insights-extension-versions.html
+
+          - Sid: "DynamoDbCRUDThisDeploymentOnly"
+            Action:
             - dynamodb:*
             Effect: Allow
             Resource:
               - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Prefix}-${ProjectStageId}-*'
 
-          # If your template will be Accessing Parameters
-          - Action:
+          - Sid: "SSMParameterStoreReadThisDeploymentOnly"
+            Action:
             - ssm:GetParameters
             - ssm:GetParameter
             - ssm:GetParametersByPath
@@ -298,8 +380,8 @@ Resources:
             Resource: 
               !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStoreBasePath}${Prefix}-${ProjectStageId}/*" # no / between :parameter and path
 
-          # If your template will be creating a CloudWatch Dashboard
-          - Action:
+          - Sid: "CloudWatchDashboardLimitedCRUDThisDeploymentOnly"
+            Action:
             - cloudwatch:GetDashboard
             - cloudwatch:DeleteDashboards
             - cloudwatch:PutDashboard
@@ -309,8 +391,8 @@ Resources:
             Resource:
             - !Sub 'arn:aws:cloudwatch::${AWS::AccountId}:dashboard/${Prefix}-${ProjectStageId}-*'
 
-          # If your template will be creating cloudwatch alarms
-          - Action:
+          - Sid: "CloudWatchAlarmsLimitedCRUDThisDeploymentOnly"
+            Action:
             - cloudwatch:PutMetricAlarm
             - cloudwatch:DeleteAlarm*
             - cloudwatch:TagResource
@@ -319,8 +401,8 @@ Resources:
             Resource:
               - !Sub 'arn:aws:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:${Prefix}-${ProjectStageId}-*'
 
-          # If your template will be creating a notification for an alarm
-          - Action:
+          - Sid: "SNSForAlarmNotificationsLimitedCRUDThisDeploymentOnly"
+            Action:
             - sns:CreateTopic
             - sns:DeleteTopic
             - sns:SetTopicAttributes
@@ -330,8 +412,8 @@ Resources:
             Resource:
               - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${Prefix}-${ProjectStageId}-infrastructure-*'
 
-          # If your template will be creating a LogGroup
-          - Action:
+          - Sid: "LogGroupsLimitedCRUDThisDeploymentOnly"
+            Action:
             - logs:DeleteLogGroup
             - logs:DeleteRetentionPolicy
             - logs:PutRetentionPolicy
@@ -340,21 +422,25 @@ Resources:
             Effect: Allow
             Resource:
             - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${Prefix}-${ProjectStageId}-*'
-          - Action:
+            
+          - Sid: "LogGroupsReadThisDeploymentOnly"
+            Action:
             - logs:DescribeLogGroups
             Effect: Allow
             Resource: 
             - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group::*' # cannot scope down to resource
 
-
+  # ---------------------------------------------------------------------------
+  # -- S3 Artifact Bucket Policy --
   # This policy is applied to the Amazon S3 bucket that AWS CodePipeline will use as your artifact store.
+
   S3ArtifactBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Description: Setting Amazon S3 bucket policy for AWS CodePipeline access
     Properties:
       Bucket: !Ref 'S3Bucket'
       PolicyDocument:
-        Version: 2012-10-17
+        Version: "2012-10-17"
         Id: SSEAndSSLPolicy
         Statement:
 # This is a recommended policy statement
@@ -410,11 +496,12 @@ Resources:
           - !Sub 'arn:aws:s3:::${S3Bucket}/*'
           Sid: WhitelistedPut
 
-
-  # -- CodePipeline artifact bucket --
+  # ---------------------------------------------------------------------------
+  # -- S3 Artifact Bucket --
   # If DeltionPolicy is set to Retain, then the s3 bucket won't be deleted when the stack is deleted
   # However, if commented out a stack deletion will fail and refer to the fact that the bucket is not
   # empty so there will be manual clean up
+
   S3Bucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: Delete # Retain | Delete (Set to Delete because if we delete the pipeline, we don't need the bucket)
@@ -447,6 +534,9 @@ Resources:
             NoncurrentVersionExpirationInDays: 30
             Status: "Enabled" # Enable so that you purge old build artifacts - they serve no use, not even for debug
 
+  # ---------------------------------------------------------------------------
+  # -- CodePipeline Trust Role --
+
   CodePipelineTrustRole:
     Description: Creating service role in IAM for AWS CodePipeline
     Properties:
@@ -461,6 +551,7 @@ Resources:
       Path: /
       Policies:
       - PolicyDocument:
+          Version: "2012-10-17"
           Statement:
           # Your pipeline will generally need permissions to store and retrieve artifacts in Amazon S3.
           # It will also need permissions to detect changes to your repository, start
@@ -490,6 +581,9 @@ Resources:
           - "CodePipeline"
     Type: AWS::IAM::Role
 
+  # ---------------------------------------------------------------------------
+  # -- CodeDeploy Trust Role --
+
   CodeDeployTrustRole:
     Description: The service role to be created in IAM for AWS CodeDeploy
     Properties:
@@ -510,12 +604,18 @@ Resources:
           - "CodeDeploy"
     Type: AWS::IAM::Role
 
-  # This sample pipeline contains three Stages: Source, Build, and Deploy.
-  # The Source stage contains a single action that picks up changes from your repository.
-  # The Build stage executes your AWS CodeBuild project.
-  # The Deploy stage contains two actions:
-  # The first action either creates a new stack / changeset containing your runtime resources.
-  # The second action executes the changeset made in the previous action.
+  # ---------------------------------------------------------------------------
+  # -- ProjectPipeline --
+  # Using the resources defined above, the pipeline and it's parts is what 
+  # moves things along
+
+  # This pipeline contains three Stages: Source, Build, and Deploy.
+  # - Source stage contains a single action that picks up changes from your repository.
+  # - Build stage executes your AWS CodeBuild project.
+  # - Deploy stage contains two actions:
+  #   - The first action either creates a new stack / changeset containing your runtime resources.
+  #   - The second action executes the changeset made in the previous action.
+
   ProjectPipeline:
     # The pipeline should only be created once all the resources it links to have been created.
     # This includes the AWS CodePipeline service role, the artifact bucket, the AWS CodeBuild build projectTemplateId,
@@ -646,6 +746,7 @@ Resources:
           Sid: 1
       Policies:
       - PolicyDocument:
+          Version: "2012-10-17"
           Statement:
           - Action:
             - codepipeline:StartPipelineExecution
@@ -662,6 +763,15 @@ Resources:
           - !Ref ProjectStageId
           - "event-rule"
     Type: AWS::IAM::Role
+
+# =============================================================================
+# OUTPUTS
+# -----------------------------------------------------------------------------
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html
+#
+# Place anything interesting that you would like to quickly refer to in 
+# your cloudformation OUTPUT section. Test URLs, direct links to resources, etc
+#
 
 Outputs:
   ProjectPipeline:
