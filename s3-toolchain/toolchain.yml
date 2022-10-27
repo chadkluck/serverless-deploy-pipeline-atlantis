@@ -403,6 +403,7 @@ Resources:
 
           - Sid: "SNSForAlarmNotificationsLimitedCRUDThisDeploymentOnly"
             Action:
+            - sns:ListSubscriptionsByTopic
             - sns:CreateTopic
             - sns:DeleteTopic
             - sns:SetTopicAttributes
