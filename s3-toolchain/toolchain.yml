@@ -53,14 +53,14 @@ Parameters:
     Type: String
     AllowedValues: ["DEV", "TEST", "PROD"]
     ConstraintDescription: Must specify DEV, TEST, or PROD.
-    Default: "DEV"
+    Default: "PROD"
   DeployStage:
     Description: This project represents what stage in the CI/CD pipeline? (test, beta, stage, prod). This should be equal to the deployment stage appended to the Project ID. The project ID plus the stage value must not exceed 15 characters.
     Type: String
     AllowedPattern: "[a-z0-9]*"
     MaxLength: 12
     ConstraintDescription: Must contain only lowercase alphanumeric characters and be no more than 12 characters in length.
-    Default: "master" # should match default branch - as of 3/4/2021 CodeStar still places initial commit in master
+    Default: "main" # should match default branch - as of 3/4/2021 CodeStar still places initial commit in master
 
   # Application instance identification
   Prefix:
@@ -105,7 +105,7 @@ Parameters:
   CodeCommitBranch:
     Description: What branch of CodeCommit will be used? Typically this is the same name as the stage, but may be different if there are multiple deploys operating off the same branch.
     Type: String
-    Default: "master" # should match default DeployStage - as of 3/4/2021 CodeStar still places initial commit in master
+    Default: "main" # should match default DeployStage - as of 3/4/2021 CodeStar still places initial commit in master
 
 # =============================================================================
 # CONDITIONS
