@@ -409,6 +409,8 @@ Resources:
             - sns:SetTopicAttributes
             - sns:GetTopicAttributes
             - sns:Subscribe
+            - sns:UntagResource
+            - sns:TagResource            
             Effect: Allow
             Resource:
               - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${Prefix}-${ProjectStageId}-infrastructure-*'
@@ -455,17 +457,19 @@ Resources:
 #            Condition:
 #              StringNotEquals: 
 #                s3:x-amz-server-side-encryption: aws:kms
-#          -
-#            Sid: DenyInsecureConnections
-#            Effect: Deny
-#            Principal: '*'
-#            Action: s3:*
-#            Resource: !Join [ '', [ !GetAtt CodePipelineArtifactStoreBucket.Arn, '/*' ] ]
-#            Condition:
-#              Bool:
-#                aws:SecureTransport: false
+        - Sid: "DenyNonSecureTransportAccess"
+          Effect: Deny
+          Principal: "*"
+          Action: "s3:*"
+          Resource:
+            - !GetAtt S3Bucket.Arn
+            - !Join [ '', [ !GetAtt S3Bucket.Arn, '/*' ] ]
+          Condition:
+            Bool:
+                "aws:SecureTransport": false
 
-        - Action:
+        - Sid: WhitelistedGet
+          Action:
           - s3:GetObject
           - s3:GetObjectVersion
           - s3:GetBucketVersioning
@@ -482,10 +486,11 @@ Resources:
             # the runtime resources.
             - !GetAtt 'CloudFormationTrustRole.Arn'
           Resource:
-          - !Sub 'arn:aws:s3:::${S3Bucket}'
-          - !Sub 'arn:aws:s3:::${S3Bucket}/*'
-          Sid: WhitelistedGet
-        - Action:
+            - !GetAtt S3Bucket.Arn
+            - !Join [ '', [ !GetAtt S3Bucket.Arn, '/*' ] ]
+          
+        - Sid: WhitelistedPut
+          Action:
           - s3:PutObject
           Effect: Allow
           Principal:
@@ -493,9 +498,9 @@ Resources:
             - !GetAtt 'CodePipelineTrustRole.Arn'
             - !GetAtt 'CodeBuildRole.Arn'
           Resource:
-          - !Sub 'arn:aws:s3:::${S3Bucket}'
-          - !Sub 'arn:aws:s3:::${S3Bucket}/*'
-          Sid: WhitelistedPut
+            - !GetAtt S3Bucket.Arn
+            - !Join [ '', [ !GetAtt S3Bucket.Arn, '/*' ] ]
+          
 
   # ---------------------------------------------------------------------------
   # -- S3 Artifact Bucket --
