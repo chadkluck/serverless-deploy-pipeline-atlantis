@@ -234,9 +234,9 @@ Resources:
           Value: !Ref 'DeployStage'
         - Name: DEPLOY_ENVIRONMENT
           Value: !Ref 'DeployEnvironment'
-        # Replace this Docker image if necessary: https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-available.html
-        #Image: aws/codebuild/eb-nodejs-6.10.0-amazonlinux-64:4.0.0
-        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        # Replace Image as necessary
+        #Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0
         Type: LINUX_CONTAINER
       #Name: !Ref 'ProjectStageId'
       Name: !Sub '${Prefix}-${ProjectStageId}-Build'
