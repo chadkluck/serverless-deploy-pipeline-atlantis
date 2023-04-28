@@ -49,22 +49,22 @@ Metadata:
 Parameters:
   # Deployment Environment and Stage
   DeployEnvironment:
-    Description: What deploy/testing environment will this run under? An environment can contain mulitple stages and in coordination with run different tests. Utilize this environment variable to determine your tests and app logging levels during deploy
+    Description: "What deploy/testing environment will this run under? This can be used for conditionals in the template. For example, PROD will use gradual deployment while DEV and TEST is AllAtOnce. Other resources, such as dashboards are created in PROD and not DEV or TEST. Suggested use: DEV for local SAM deployment, TEST for cloud deployment, PROD for stage, beta, and main/prod deployment."
     Type: String
     AllowedValues: ["DEV", "TEST", "PROD"]
     ConstraintDescription: Must specify DEV, TEST, or PROD.
-    Default: "DEV"
+    Default: "PROD"
   DeployStage:
-    Description: This project represents what stage in the CI/CD pipeline? (test, beta, stage, prod). This should be equal to the deployment stage appended to the Project ID. The project ID plus the stage value must not exceed 15 characters.
+    Description: "This project represents what stage in the CI/CD pipeline? (test, beta, stage, prod). This must match the deployment stage appended to the Project ID. The project ID plus the stage value must not exceed 15 characters. Use 'prod' for main or master branch. Ex: For ws-hello-world-prod this would be 'prod'"
     Type: String
     AllowedPattern: "[a-z0-9]*"
     MaxLength: 12
     ConstraintDescription: Must contain only lowercase alphanumeric characters and be no more than 12 characters in length.
-    Default: "master" # should match default branch - as of 3/4/2021 CodeStar still places initial commit in master
+    Default: "prod" # should match default branch (or prod for main branch) - as of 3/4/2021 CodeStar still places initial commit in master
 
   # Application instance identification
   Prefix:
-    Description: Prefix to assign to resources. This can be thought of as a Name Space and will be pre-pended to all resources. Use it to identify ownership/access for teams, departments, etc. Must have a corresponding service-role.
+    Description: "Prefix to assign to resources. This can be thought of as a Name Space and will be pre-pended to all resources. Use it to identify ownership/access for teams, departments, etc. Must have a corresponding service-role. Ex: For ws-hello-world-prod this would be 'ws'."
     Type: String
     AllowedPattern: "[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9]"
     MinLength: 3
@@ -72,13 +72,13 @@ Parameters:
     ConstraintDescription: 3 to 15 characters. Alphanumeric (upper and lower), hyphen, and underscore. Must start with a letter and must end with a letter or number.
     Default: "awscodestar" 
   ProjectId:
-    Description: "Do NOT include <Prefix> or <DeployStage>. This is the Project ID for the application. For CodeStar this will be the same as ProjectStageId. (Minimum 2 characters, and, if it is a CodeStar project, max of 15 characters). The Stage parameter will be appended to the ProjectID and must be taken into account as the max length of ProjectID is 15 characters."
+    Description: "Do NOT include <Prefix> or <DeployStage>. This is the Project ID for the application. For CodeStar this will be the same as ProjectStageId. (Minimum 2 characters, and, if it is a CodeStar project, max of 15 characters). The Stage parameter will be appended to the ProjectID and must be taken into account as the max length of ProjectID is 15 characters. Ex: For ws-hello-world-prod this would be 'hello-world'"
     Type: String
     AllowedPattern: "^[a-z][a-z0-9-]+$"
     ###MaxLength: 15 # Uncomment for true CodeStar projects / Commment out if you wish to have longer names available for non-CodeStar projects
     MinLength: 2
   ProjectStageId:
-    Description: "Do NOT include <Prefix>, but DO include <ProjectId>. This is the Project ID for the application with the stage appeneded (if there is a stage). If it is a CodeStar project, max of 15 characters and it will be the same as ProjectID."
+    Description: "Do NOT include <Prefix>, but DO include <ProjectId>. This is the Project ID for the application with the stage appeneded (if there is a stage). If it is a CodeStar project, max of 15 characters and it will be the same as ProjectID. Ex: For ws-hello-world-prod this would be 'hello-world-prod'"
     Type: String
     AllowedPattern: "^[a-z][a-z0-9-]+$"
     ###MaxLength: 15 # Uncomment for true CodeStar projects / Commment out if you wish to have longer names available for non-CodeStar projects
@@ -105,7 +105,7 @@ Parameters:
   CodeCommitBranch:
     Description: What branch of CodeCommit will be used? Typically this is the same name as the stage, but may be different if there are multiple deploys operating off the same branch.
     Type: String
-    Default: "master" # should match default DeployStage - as of 3/4/2021 CodeStar still places initial commit in master
+    Default: "main" # should match default DeployStage - as of 3/4/2021 CodeStar still places initial commit in master
 
 # =============================================================================
 # CONDITIONS
@@ -409,6 +409,8 @@ Resources:
             - sns:SetTopicAttributes
             - sns:GetTopicAttributes
             - sns:Subscribe
+            - sns:UntagResource
+            - sns:TagResource            
             Effect: Allow
             Resource:
               - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${Prefix}-${ProjectStageId}-infrastructure-*'
@@ -455,17 +457,19 @@ Resources:
 #            Condition:
 #              StringNotEquals: 
 #                s3:x-amz-server-side-encryption: aws:kms
-#          -
-#            Sid: DenyInsecureConnections
-#            Effect: Deny
-#            Principal: '*'
-#            Action: s3:*
-#            Resource: !Join [ '', [ !GetAtt CodePipelineArtifactStoreBucket.Arn, '/*' ] ]
-#            Condition:
-#              Bool:
-#                aws:SecureTransport: false
+        - Sid: "DenyNonSecureTransportAccess"
+          Effect: Deny
+          Principal: "*"
+          Action: "s3:*"
+          Resource:
+            - !GetAtt S3Bucket.Arn
+            - !Join [ '', [ !GetAtt S3Bucket.Arn, '/*' ] ]
+          Condition:
+            Bool:
+                "aws:SecureTransport": false
 
-        - Action:
+        - Sid: WhitelistedGet
+          Action:
           - s3:GetObject
           - s3:GetObjectVersion
           - s3:GetBucketVersioning
@@ -482,10 +486,11 @@ Resources:
             # the runtime resources.
             - !GetAtt 'CloudFormationTrustRole.Arn'
           Resource:
-          - !Sub 'arn:aws:s3:::${S3Bucket}'
-          - !Sub 'arn:aws:s3:::${S3Bucket}/*'
-          Sid: WhitelistedGet
-        - Action:
+            - !GetAtt S3Bucket.Arn
+            - !Join [ '', [ !GetAtt S3Bucket.Arn, '/*' ] ]
+          
+        - Sid: WhitelistedPut
+          Action:
           - s3:PutObject
           Effect: Allow
           Principal:
@@ -493,9 +498,9 @@ Resources:
             - !GetAtt 'CodePipelineTrustRole.Arn'
             - !GetAtt 'CodeBuildRole.Arn'
           Resource:
-          - !Sub 'arn:aws:s3:::${S3Bucket}'
-          - !Sub 'arn:aws:s3:::${S3Bucket}/*'
-          Sid: WhitelistedPut
+            - !GetAtt S3Bucket.Arn
+            - !Join [ '', [ !GetAtt S3Bucket.Arn, '/*' ] ]
+          
 
   # ---------------------------------------------------------------------------
   # -- S3 Artifact Bucket --
