@@ -1,9 +1,18 @@
 # This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
-
+#
+# Atlantis CI/CD Deploy CloudFormation Template
+# https://github.com/chadkluck/serverless-deploy-pipeline-atlantis
+# Chad Leigh Kluck
+# v.2023-04-28
+# This template works for a simple API Gateway/Lambda web service. Modify the template to meet your 
+# needs as you expand the number of resources you need to create by adding permissions.
+# Security and operational improvements will evolve and be implemented. Check the change log on
+# the github repo to keep up to date with the latest changes which you can add to this template
+# in your CloudFormation stack.
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "Toolchain for an Atlantis deployment pipeline."
+Description: "Atlantis CI/CD Deploy CloudFormation Template github.com/chadkluck/serverless-deploy-pipeline-atlantis"
 
 # =============================================================================
 # META DATA
@@ -204,15 +213,25 @@ Resources:
   # -- CodeBuild Project --
 
   CodeBuildProject:
+    Type: AWS::CodeBuild::Project
     DependsOn:
     - CodeBuildPolicy
     Properties:
+      Name: !Sub '${Prefix}-${ProjectStageId}-Build'
+      Description: !Sub "CodeBuild Project for ${ProjectStageId}"
+      ServiceRole: !Ref 'CodeBuildRole'
       Artifacts:
         Packaging: zip
         Type: codepipeline
-      Description: !Sub "AWS CodeStar created CodeBuild Project for ${ProjectStageId}"
       Environment:
+        # ComputeType, Type, Image and the Build Runtime versions all rely on each other
+        # ComputeType and Environment Type: https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-compute-types.html
+        # Build runtime versions: https://docs.aws.amazon.com/codebuild/latest/userguide/runtime-versions.html
+        #                         https://docs.aws.amazon.com/codebuild/latest/userguide/available-runtimes.html
         ComputeType: small
+        Type: LINUX_CONTAINER
+        #Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0 # Up to Node 12
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0 # Up to Node 16
         # S3_BUCKET environment variable informs AWS CodeBuild where it can retrieve your code artifact.
         # You can specify any other environment variables your buildspec.yml is looking for.
         EnvironmentVariables:
@@ -234,17 +253,19 @@ Resources:
           Value: !Ref 'DeployStage'
         - Name: DEPLOY_ENVIRONMENT
           Value: !Ref 'DeployEnvironment'
-        # Replace Image as necessary
-        #Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
-        Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0
-        Type: LINUX_CONTAINER
-      #Name: !Ref 'ProjectStageId'
-      Name: !Sub '${Prefix}-${ProjectStageId}-Build'
-      ServiceRole: !Ref 'CodeBuildRole'
       Source:
         Type: codepipeline
         BuildSpec: buildspec.yml # Explicitly set just to note that there should only be one buildspec (not buildspec-dev.yml or buildspec-prod.yml) which if needed to process differently for an environment, that logic should be in the buildspec and SAM template. Otherwise management of 2 or more would be difficult. We have Deploy Stage and Deploy Environment variables so use them.
-    Type: AWS::CodeBuild::Project
+
+  # ---------------------------------------------------------------------------
+  # -- Log Group for CodeBuild Project --
+  # -- (Just so we can add a retention policy)
+
+  CodeBuildLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/codebuild/${Prefix}-${ProjectStageId}-Build"
+      RetentionInDays: 90 # Set to your own retention policy - how long do you want to keep build logs?
 
   # ---------------------------------------------------------------------------
   # -- CloudFormation Trust Role --
