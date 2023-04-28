@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "8Ball Web Service",
   "main": "index.js",
-  "repository": "",
+  "repository": "https://github.com/chadkluck/serverless-deploy-pipeline-atlantis",
   "author": "Chad Leigh Kluck",
   "license": "MIT"
 }
