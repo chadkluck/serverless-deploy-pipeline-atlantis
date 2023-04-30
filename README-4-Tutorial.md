@@ -15,29 +15,7 @@ While just knowing CloudFormation and SAM is a great start, alone it does not al
 
 If you don't meet these first set of requirements, then I recommend you check out the GitHub repository for 8Ball. It will walk you through setting up your computer and deploying your first SAM application. This tutorial will build upon that experience so it is recommended that you have created and deployed SAM projects using the AWS CLI prior.
 
-And finally, prerequisite #5 is to create CodeStar Service roles.
-
-#### Create CodeStar Service role
-
-1. In the AWS Web Console go to IAM and create a new role
-2. From the Use Case list choose CloudFormation and then go to "Next: Permissions"
-
-Create the CodeStarTaggingPolicy:
-
-1. Choose "Create Policy" (it will open in a new browser tab/window)
-2. In the new tab/window, click on the JSON tab and paste in the json contents of `templates/policy-template-CodeStarTaggingPolicy.json`
-3. Go on to "tags".
-4. Add a tag `CodeStarProjectPolicy` with value `YES` and any additional tags you may want (like creator and purpose). Then Review.
-5. Give it the name `CodeStarTaggingPolicy` and a description such as `Created by [you] to allow for tagging of CodeStar project roles` and hit Create Policy
-6. Close that browser tab/window and go back to the Create Role tab in your browser. Hit the refresh icon.
-
-Add the policies to the role:
-
-1. In Filter policies search box, type in `CodeStar`
-2. Check the boxes next to "CodeStarTaggingPolicy" and "AWSCodeStarServiceRole"
-3. Go on to Next and enter a enter a tag `CodeStarProjectPolicy` with value `YES` and any additional tags. Then Review.
-4. Give it the name `aws-codestar-service-role` and a description such as `Created by [you] to allow for CodeStar creation of resources.`
-5. Create the Role
+And finally, prerequisite #5 is to create CodeStar Service roles which can be found in [README #1 IAM Policies](README-1-IAM-Policies.md).
 
 ### Create your first CodeStar Project
 
@@ -321,16 +299,6 @@ We'll leave `stack_parameters` and `tags` as is for now.
 
 Save your changes to the file.
 
-#### CodeStar Service Role permissions (add tagging for IAM resources created by CodeStar)
-
-You may have noticed that in the config-project.json file there was a field for `role_arn` but we left it blank so that we could utilize the service role we created in the previous CodeStar tutorial. `arn:aws:iam::${acct}:role/service-role/aws-codestar-service-role`
-
-However, let's modify that service role to add a policy to allow for tagging of created IAM resources (why this isn't included in the AWSCodeStarServiceRole I do not know)
-
-1. Go into IAM and under roles, search for `aws-codestar-service-role`
-2. Click on "Add inline policy" and go to the JSON editor. Paste in the json from `templates/policy-template-CodeStarTaggingPolicy.json` and go on to Review Policy.
-3. Give it the name `CodeStarIAMTagging-inline` and hit "Create policy"
-
 ### Generate the input files and get ready for some CLI action!
 
 From within your command line, run `py generate.py`
@@ -484,6 +452,8 @@ So, before you strip out all references to CodeStar in your SAM template, consid
 
 ## Tutorial 3: CloudFormation project stack from the CLI
 
+Before we begin, make sure you have set up the proper permissions using [README #1 IAM Policies](README-1-IAM-Policies.md).
+
 A CodeStar project is good for quick and dirty applications. Maybe proof of concepts, sandboxes, etc., but doesn't really have a development to production pipeline. Plus, it has limitations, such as:
 
 - 15 character limit on ID
@@ -508,61 +478,6 @@ Go into `config-project.json` and set `stage` to `test` and `env` to `TEST` (cas
 We'll leave the project id the same (I'll explain later).
 
 I'll also explain the difference between "stage" and "env" later as well.
-
-### IAM Set-Up
-
-Now that we've updated the config, let's get ready to add a few more IAM policies! You'll only need to do this once. This will be similar to the first few steps in **Tutorial 1** but with a few changes so that it is specific to project stacks.
-
-
-1. In the AWS Web Console go to IAM and create a new role
-2. From the Use Case list choose CloudFormation and then go to "Next: Permissions"
-
-Create the ProjectStackTaggingPolicy:
-
-1. Choose "Create Policy" (it will open in a new window)
-2. In the new tab/window, click on the JSON tab and paste in the json contents of `templates/policy-template-ProjectStackTaggingPolicy.json`
-3. Go on to "tags".
-4. Add a tag `CodeStarProjectPolicy` with value `YES` and any additional tags you may want (like creator and purpose). Then Review.
-5. Give it the name `ProjectStackTaggingPolicy` and a description such as `Created by [you] to allow for tagging of CodeStar-like project roles` and hit Create Policy
-6. Close that browser tab/window and go back to the Create Role tab in your browser.
-
-Create the ProjectStackServicePolicy:
-
-1. Instead of using a managed policy like "AWSCodeStarServiceRole" we will be creating our own specific to the prefix "projectstack-". Again, choose "Create Policy" (it will again open in a new window)
-2. In the new tab/window, click on the JSON tab and paste in the json contents of `templates/policy-template-ProjectStackServicePolicy.json`
-3. Go on to "tags".
-4. Add a tag `CodeStarProjectPolicy` with value `YES` and any additional tags you may want (like creator and purpose). Then Review.
-5. Give it the name `ProjectStackServicePolicy` and a description such as `Created by [you] to allow for CodeStar-like creation of resources` and hit Create Policy
-6. Close that browser tab/window and go back to the Create Role tab in your browser. 
-
-Add the policies to the role:
-
-1. Back on the Create Role page, hit the refresh icon.
-2. In Filter policies search box, type in `ProjectStack`
-3. Check the boxes next to "ProjectStackServicePolicy" and "ProjectStackTaggingPolicy"
-4. Go on to Next and enter a enter a tag `CodeStarProjectPolicy` with value `YES` and any additional tags. Then Review.
-5. Give it the name `projectstack-service-role` and a description such as `Created by [you] to allow for CodeStar-like creation of resources.`
-6. Create the Role
-
-Note: Again, this is very similar to creating the CodeStar role prior. The main difference in the policies is the prefix used (`projectstack-` instead of `CodeStar-`). Compare the JSON of the two polcies in each Role. If you want to create your own prefixes you can replace `projectstack` with what ever you like (e.g. `accounting`) and create roles to segment development teams. Cool, huh?! But hold off on that now.
-
-### Update user to assume role
-
-The account you use to submit the CLI commands will need the following IAM Policy added: 
-
-```JSON
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "VisualEditor0",
-            "Effect": "Allow",
-            "Action": "iam:PassRole",
-            "Resource": "arn:aws:iam::*:role/projectstack-service-role"
-        }
-    ]
-}
-```
 
 ### Create CodeCommit repository
 
