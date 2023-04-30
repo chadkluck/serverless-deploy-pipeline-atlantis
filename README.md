@@ -37,4 +37,16 @@ It is an extention of the SAM 8-Ball example. This version modifies the SAM 8-Ba
 
 Once projects have been created, you may access the CodeCommit repository and utilize local sam commands to develop and test locally. To deploy your code all you need to do is commit to a branch of the repository.
 
-Before blindly skipping over the tutorials you'll need to make sure you have completed Step 0 in each of the tutorials to set up required permissions and resources.
+Before skipping over the tutorials you'll need to make sure you have set up required IAM permissions and resources.
+
+## Documentation
+
+There are 5 README documents to walk you through setting up the required IAM Policies and Roles, CodeCommit Repository, and Deploy CloudFormation Stack. 
+
+IAM Policies and Roles only need to be set up once. CodeCommit Repositories only need to be set up once per application. A deploy stack needs to be set up for each deployment stage of an application (test, beta, prod).
+
+- [README 1 Create IAM Policies](README-1-IAM-Policies.md)
+- [README 2 Create CodeCommit Repository](README-2-CodeCommit-Repository.md)
+- [README 3 Create and Update CloudFormation Deploy Pipeline Stack](README-3-CloudFormation-Deploy-Stack.md)
+- [README 4 Tutorial](README-4-Tutorial.md)
+- [README 5 Advanced](README-5-Advanced.md)
