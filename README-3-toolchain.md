@@ -57,8 +57,8 @@ If you are updating pieces of the template manually "In Place" by following the 
 2. Choose "Edit template in designer" and then the button "View in Designer"
 3. You will see a code section at the bottom of the diagram.
 4. You can do one of two things:
-  1. Copy the entire contents of the new template file and paste it into the designer
-  2. Perform edits within the designer
+    1. Copy the entire contents of the new template file and paste it into the designer
+    2. Perform edits within the designer
 5. When finished, choose "Validate"
 6. Once validated, choose "Upload" (Cloud icon with up arrow)
 7. Update any Parameters and Tags on the next page
