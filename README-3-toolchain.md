@@ -1,5 +1,10 @@
 # Toolchain
 
+The Toolchain.yml file is a CloudFormation template that creates the deployment pipeline for your application. The generated CloudFormation stack will have `*-deploy` appended to the name and will be assigned to a specific branch (test, beta, prod, main, etc) which will also be in its name.
+
+The pipeline monitors a specific branch in the CodeCommit repository and automatically kicks off a deployment when changes are commited to it. The application has its own CloudFormation infrastructure stack with `*-infrastructure` appended to it. These are all the resources (S3, API Gateway, Lambda, DynamoDb, etc) needed to run your application.
+
+
 
 ## Install
 

@@ -6,7 +6,7 @@ Commiting changes to your application infrastructure repository will kick off an
 
 Except for CodeStar projects, you can set up multiple deployment branches such as test, beta, prod (main), or separate feature/developer branches. While a CodeStar repository can have multiple branches, only the main branch will deploy.
 
-CodeStar is great for experiments, learning, and proof of concepts. Larger production projects will want to move beyond CodeStar.
+CodeStar is great for experiments, learning, and proof of concepts. Larger production projects will want to move beyond CodeStar and use regular CloudFormation stacks.
 
 ## For CodeStar Projects
 
