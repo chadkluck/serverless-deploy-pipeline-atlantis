@@ -17,7 +17,7 @@ There are 3 ways to install the deployment pipeline.
 
 ## Edit or Replace Existing CloudFormation -deploy Stacks
 
-NOTE: This **Deploy** template is for **Deploy (-deploy)** stacks! **NOT** your **Infrastructure (-infrastructure)** stacks!
+NOTE: This **Deploy** template is for **Deploy (-deploy)** stacks! **NOT** your application **Infrastructure (-infrastructure)** stacks!
 
 If you are replacing the entire contents of the template file then you can do this one of two ways:
 
