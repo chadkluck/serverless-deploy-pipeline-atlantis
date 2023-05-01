@@ -31,3 +31,4 @@ IAM Policies and Roles only need to be set up once. CodeCommit Repositories only
 - [README 3 Create and Update CloudFormation Deploy Pipeline Stack](README-3-CloudFormation-Deploy-Stack.md)
 - [README 4 Tutorial](README-4-Tutorial.md)
 - [README 5 Advanced](README-5-Advanced.md)
+- [CHANGELOG - Updates to Existing Deploy Stacks](CHANGELOG.md)

@@ -4,8 +4,6 @@ The Toolchain.yml file is a CloudFormation template that creates the deployment 
 
 The pipeline monitors a specific branch in the CodeCommit repository and automatically kicks off a deployment when changes are commited to it. The application has its own CloudFormation infrastructure stack with `*-infrastructure` appended to it. These are all the resources (S3, API Gateway, Lambda, DynamoDb, etc) needed to run your application.
 
-
-
 ## Install
 
 There are 3 ways to install the deployment pipeline.
@@ -77,3 +75,4 @@ IAM Policies and Roles only need to be set up once. CodeCommit Repositories only
 - [README 3 Create and Update CloudFormation Deploy Pipeline Stack](README-3-CloudFormation-Deploy-Stack.md)
 - [README 4 Tutorial](README-4-Tutorial.md)
 - [README 5 Advanced](README-5-Advanced.md)
+- [CHANGELOG - Updates to Existing Deploy Stacks](CHANGELOG.md)

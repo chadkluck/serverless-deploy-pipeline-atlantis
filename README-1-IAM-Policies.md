@@ -62,7 +62,7 @@ You'll only need to do this once. This will be similar to the first few steps in
 5. Give it the name `projectstack-service-role` and a description such as `Created by [you] to allow for CodeStar-like creation of resources.`
 6. Create the Role
 
-Note: Again, this is very similar to creating the CodeStar role prior. The main difference in the policies is the prefix used (`projectstack-` instead of `CodeStar-`). Compare the JSON of the two polcies in each Role. If you want to create your own prefixes you can replace `projectstack` with what ever you like (e.g. `accounting`) and create roles to segment development teams. Cool, huh?! But hold off on that now.
+Note: Again, this is very similar to creating the CodeStar role prior. The main difference in the policies is the prefix used (`projectstack-` instead of `awscodestar-`). Compare the JSON of the two polcies in each Role. If you want to create your own prefixes you can replace `projectstack` with what ever you like (e.g. `websvc` or `accounting`) and create roles to segment development teams. Cool, huh?! But hold off on that now.
 
 ### Update user to assume role
 
@@ -82,6 +82,30 @@ The account you use to submit the CLI commands will need the following IAM Polic
 }
 ```
 
+## Separating Projects and Development Teams with Custom Prefixes
+
+If you create your own prefix you will need to create a new Service Role for that prefix. Make a copy of ProjectStackServicePolicy.json and ProjectStackTaggingPolicy.json and replace references in Resources to `projectstack` with `yourcustom` prefix.
+
+Then create a new service role for that prefix and attach the service and tagging policies.
+
+In the example below a new tagging policy replaces `projectstack` with `websvc`. This can help distinguish and separate permissions between different development teams.
+
+```json
+"Resource": [
+	"arn:aws:iam::*:role/projectstackWorker*",
+	"arn:aws:iam::*:policy/projectstackWorker*",
+	"arn:aws:iam::*:instance-profile/projectstack-*"
+]
+
+// Replace 'projectstack' with 'websvc':
+
+"Resource": [
+	"arn:aws:iam::*:role/websvcWorker*",
+	"arn:aws:iam::*:policy/websvcWorker*",
+	"arn:aws:iam::*:instance-profile/websvc-*"
+]			
+```
+
 ## Documentation
 
 There are 5 README documents to walk you through setting up the required IAM Policies and Roles, CodeCommit Repository, and Deploy CloudFormation Stack. 
@@ -93,3 +117,4 @@ IAM Policies and Roles only need to be set up once. CodeCommit Repositories only
 - [README 3 Create and Update CloudFormation Deploy Pipeline Stack](README-3-CloudFormation-Deploy-Stack.md)
 - [README 4 Tutorial](README-4-Tutorial.md)
 - [README 5 Advanced](README-5-Advanced.md)
+- [CHANGELOG - Updates to Existing Deploy Stacks](CHANGELOG.md)
