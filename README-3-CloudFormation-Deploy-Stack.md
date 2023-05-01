@@ -64,6 +64,10 @@ If you are updating pieces of the template manually "In Place" by following the 
 6. Check the box for acknowledging AWS may create resources.
 7. Watch the stack update progress. Hopefully it is successful!
 
+## Change Log
+
+Once you have your pipeline set up you may want to watch the [CloudFormation Template for a Deployment Pipeline (CI/CD)](https://github.com/chadkluck/serverless-deploy-pipeline-atlantis) repository for any updates. Using the instructions for editing your deployment pipeline stack above you can walk through the instructions in the Change Log and make updates to your deploy pipeline stack.
+
 ## Documentation
 
 There are 5 README documents to walk you through setting up the required IAM Policies and Roles, CodeCommit Repository, and Deploy CloudFormation Stack. 

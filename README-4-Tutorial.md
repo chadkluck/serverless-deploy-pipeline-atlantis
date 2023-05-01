@@ -744,3 +744,5 @@ IAM Policies and Roles only need to be set up once. CodeCommit Repositories only
 - [README 4 Tutorial](README-4-Tutorial.md)
 - [README 5 Advanced](README-5-Advanced.md)
 - [CHANGELOG - Updates to Existing Deploy Stacks](CHANGELOG.md)
+
+When you are ready for a more advanced application tutorial for your CI/CD pipeline, check out the repository: [Serverless Webservice Template for Pipeline Atlantis](https://github.com/chadkluck/serverless-webservice-template-for-pipeline-atlantis).

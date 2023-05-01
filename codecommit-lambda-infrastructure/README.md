@@ -14,3 +14,10 @@ If you want a more advanced application infrastructure stack with internal cachi
 
 ## Tutorial
 
+If everything went well during deployment, you should be able to access your application endpoint by going to the End Point Test link listed under Resources in your CloudFormation infrastructure stack.
+
+If it did not deploy correctly, please troubleshoot before continuing.
+
+Once everything is tested and working correctly, follow the tutorials for deploying code and adding additional pipelines in [README 4: Atlantis CI/CD Tutorial](../README-4-Tutorial.md).
+
+When you are ready for a more advanced application tutorial for your CI/CD pipeline, check out the repository: [Serverless Webservice Template for Pipeline Atlantis](https://github.com/chadkluck/serverless-webservice-template-for-pipeline-atlantis).

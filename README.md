@@ -1,4 +1,4 @@
-# Project Stack Template with CI/CD
+# CloudFormation Template for a Deployment Pipeline (CI/CD)
 
 This project template will create an automated deployment pipeline based on changes commited to a branch in CodeCommit. The project to be deployed is built using the Serverless Application Model (SAM).
 
