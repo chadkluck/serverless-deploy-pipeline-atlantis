@@ -111,19 +111,19 @@ def inputFile(template, filename):
 
 
 # Bring in the template files
-with open('./templates/input-template-cloudformation.json') as templateCF_file:
+with open('./input-templates/input-template-cloudformation.json') as templateCF_file:
     templateCF = json.load(templateCF_file)
 
-with open('./templates/input-template-codestar.json') as templateCStar_file:
+with open('./input-templates/input-template-codestar.json') as templateCStar_file:
     templateCStar = json.load(templateCStar_file)
 
-with open('./templates/input-template-codecommit.json') as templateRepo_file:
+with open('./input-templates/input-template-codecommit.json') as templateRepo_file:
     templateRepo = json.load(templateRepo_file)
 
 # TODO if no config file as param, then check to see if config-project exists. 
 # TODO if not, then copy the config-project template and instruct user to fill it out
 # Bring in the project config file
-with open('./config-projects/config-project.json') as config_file:
+with open('./config-project.json') as config_file:
     config = json.load(config_file)
 
 # settings
@@ -312,12 +312,12 @@ inputFile(templateCF, "cloudformation")
 inputFile(templateCStar, "codestar")
 inputFile(templateRepo, "codecommit")
 
-with open('./templates/input-template-codecommit-init.json', 'r') as init_file:
+with open('./input-templates/input-template-codecommit-init.json', 'r') as init_file:
     data = json.load(init_file)
 
 inputFile(data, "codecommit-init")
 
-with open('./templates/input-template-codecommit-branch.json', 'r') as branch_file:
+with open('./input-templates/input-template-codecommit-branch.json', 'r') as branch_file:
     data = json.load(branch_file)
 
 inputFile(data, "codecommit-branch")

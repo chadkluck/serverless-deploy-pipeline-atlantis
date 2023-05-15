@@ -4,6 +4,4 @@
 *.zip
 
 #ignore contents of temp and custom folders (but we need them in the repo)
-config-projects/*
-input/*
-temp/*
+cli/input/*
