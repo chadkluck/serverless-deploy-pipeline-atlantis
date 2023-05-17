@@ -1,0 +1,12 @@
+{
+  "name": "toolchain-distribution",
+  "version": "1.0.0",
+  "description": "Files to build and distribute toolchain via S3",
+  "main": "distribute.js",
+  "repository": "https://github.com/chadkluck/serverless-deploy-pipeline-atlantis",
+  "author": "Chad Leigh Kluck",
+  "license": "MIT",
+  "dependencies": {
+    "jszip": "^3.10.1"
+  }
+}
