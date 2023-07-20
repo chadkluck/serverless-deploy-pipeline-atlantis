@@ -1,0 +1,369 @@
+AWSTemplateFormatVersion: 2010-09-09
+# Comments with 3#'s () are reserved for true CodeStar projects. Remove the 3#'s for true CodeStar projects
+
+Transform:
+- AWS::Serverless-2016-10-31
+###- AWS::CodeStar # Uncomment for CodeStar projects - Leave commented for ProjectStack
+Description: "SAM + CodeStar/ProjectStack example of a Lambda function and API which grants magical predictions"
+# =============================================================================
+# META DATA
+# -----------------------------------------------------------------------------
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudformation-interface.html
+# 
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: "ProjectStack/CodeStar Deploy Environment Parameters"
+        Parameters:
+          - ProjectId
+          - ProjectStageId
+          - Prefix
+          - DeployStage
+          - DeployEnvironment
+          - DeployRole
+          - ParameterStoreAppPath
+          - AlarmNotificationEmail
+      -
+        Label:
+          default: "Web Service Application Parameters"
+        Parameters:
+          - ApiPathBase
+          - DbMaxCacheSizeInKB
+          - CryptIdHashAlgorithm
+          - CryptSecureDataAlg
+          - ErrorExpirationInSeconds
+          - PurgeExpiredCacheEntriesInHours
+          - PurgeAgeOfCachedBucketObjInDays
+          - UserAgent
+          - LogRetentionInDaysForPROD
+          - LogRetentionInDaysForDEVTEST
+      -
+        Label:
+          default: "Lambda Function Settings"
+        Parameters:
+          - FunctionTimeOutInSeconds
+          - FunctionMaxMemoryInMB
+          - FunctionGradualDeploymentType
+
+# =============================================================================
+# PARAMETERS
+# -----------------------------------------------------------------------------
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html
+#
+
+Parameters:
+
+  # ---------------------------------------------------------------------------
+  # ProjectStack/CodeStar Environment Parameters
+
+  ProjectId:
+    Description: "The Project ID for the application. For CodeStar this will be the same as ProjectStageId. (Minimum 2 characters, and, if it is a CodeStar project, max of 15 characters). The Stage parameter will be appended to the ProjectID and must be taken into account as the max length of ProjectID is 15 characters."
+    Type: String
+    AllowedPattern: "^[a-z][a-z0-9-]+$"
+    MinLength: 2
+  ProjectStageId:
+    Description: "The Project ID for the application with the stage appended (if there is a stage). If it is a CodeStar project, max of 15 characters and it will be the same as ProjectID."
+    Type: String
+    AllowedPattern: "^[a-z][a-z0-9-]+$"
+    MinLength: 2
+    ConstraintDescription: "Must contain only lowercase alphanumeric characters, dash, or underscore, and be between 2 and 15 characters in length."
+  Prefix:
+    Description: Prefix to assign to resources
+    Type: String
+    AllowedPattern: "[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9]"
+    MinLength: 3
+    MaxLength: 15
+    ConstraintDescription: 3 to 15 characters. Alphanumeric (upper and lower), hyphen, and underscore. Must start with a letter and must end with a letter or number.
+    Default: "awscodestar"
+  DeployStage:
+    Description: "This project represents what stage in the CI/CD pipeline? (test, beta, stage, prod). This should be equal to the deployment stage appended to the Project ID. The project ID plus the stage value must not exceed 15 characters."
+    Type: String
+    AllowedPattern: "[a-z0-9]*"
+    MaxLength: 12
+    ConstraintDescription: "Must contain only lowercase alphanumeric characters and be no more than 12 characters in length."
+    Default: "" 
+  DeployEnvironment:
+    Description: "What deploy/testing environment will this run under? An environment can contain mulitple stages and in coordination with run different tests. Utilize this environment variable to determine your tests and app logging levels during deploy"
+    Type: String
+    AllowedValues: [DEV, TEST, PROD]
+    ConstraintDescription: Must specify DEV, TEST, or PROD.
+    Default: "DEV" 
+  DeployRole:
+    Type: String
+    Description: "IAM role to allow AWS CodeDeploy to manage deployment of AWS Lambda functions"
+  ParameterStoreAppPath:
+    Description: "Parameter store path to organize parameters for this application. The value is in the format of: /<ParameterStoreBasePath>/<ProjectStageId>/"
+    Type: String
+    AllowedPattern: "^\\/([a-zA-Z0-9]+([\\-][a-zA-Z0-9]+)*[\\/])+$|^\\/$"
+    ConstraintDescription: Must only contain alpha-numeric, dashes, or slashes. Must begin and end with a slash /.
+    Default: "/"
+  AlarmNotificationEmail:
+    Type: String
+    Description: "Email address to send a notification to when Lambda function goes into alarm"
+    AllowedPattern: '^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$'
+    ConstraintDescription: 'A valid email must be used to receive alarm notifications'
+
+  # ---------------------------------------------------------------------------
+  # Web Service Application Parameters
+
+  ApiPathBase:
+    Type: String
+    Default: "api"
+    Description: "The name of the API base path, which API Gateway uses as the first path segment in the invoked Uniform Resource Identifier (URI). API Gateway refers to this as StageName and uses 'Prod' as default, but it is unrelated to the DeployStage parameter. For example: apigatewaydomain.com/Prod or apigatewaydomain.com/api or apigatewaydomain.com/myapp. A custom domain setting can mask the base path. However, if using the API Gateway generic URL, it could be used to provide an indicator of what app lies at the endpoint or even what depoly stage (e.g. 'cache-api' or 'cache-api-test')"
+    AllowedPattern: ^[a-z]([a-z0-9-_])+$
+    MaxLength: 128
+    MinLength: 1
+    ConstraintDescription: "1-128 lowercase alpha numeric, hyphens, and underscores"
+  DbMaxCacheSizeInKB:
+    Type: Number
+    Default: 10
+    Description: "DynamoDb does better when storing smaller pieces of data. Choose the cut-off in KB that large objects should be stored in S3 instead (10)"
+    MinValue: 10
+    MaxValue: 200
+    ConstraintDescription: "Numeric value between 10 and 200 (inclusive)"
+  CryptIdHashAlgorithm:
+    Type: String
+    Default: "RSA-SHA256"
+    Description: "Hash algorithm used for generating the URI ID to identify cached requests. This is for generating IDs, not crypto."
+    AllowedValues:
+      - "RSA-SHA256"
+      - "RSA-SHA3-224"
+      - "RSA-SHA3-256"
+      - "RSA-SHA3-384"
+      - "RSA-SHA3-512"
+    ConstraintDescription: "Use possible hashes available from Node.js in the RSA- category (RSA-SHA256 to RSA-SM3)"
+  CryptSecureDataAlg:
+    Type: String
+    Default: "aes-256-cbc"
+    Description: "Cryptographic algorithm to use for storing sensitive cached data"
+    AllowedValues:
+      - "aes-256-cbc"
+      - "aes-256-cfb"
+      - "aes-256-cfb1"
+      - "aes-256-cfb8"
+      - "aes-256-ofb"
+    ConstraintDescription: "Use possible cipher algorithms available (crypto.getCiphers()) from Node.js in the aes-256-xxx category"
+  ErrorExpirationInSeconds:
+    Type: Number
+    Default: 300
+    Description: "How long should errors be cached? This prevents retrying a service that is currenlty in error too often (300 is recommended)"
+    MinValue: 1
+    ConstraintDescription: "Choose a value of 1 or greater"
+  PurgeExpiredCacheEntriesInHours:
+    Type: Number
+    Default: 24
+    Description: "The number of hours expired cached data should be kept before purging. Expired cache data may be used if the source returns an error."
+    MinValue: 1
+    ConstraintDescription: "Choose a value of 1 or greater"
+  PurgeAgeOfCachedBucketObjInDays:
+    Type: Number
+    Default: 15
+    Description: "Similar to PurgeEpiredCachedEntriesInHours, but for the S3 Bucket. S3 calculates from time object is created/last modified (not accessed). This should be longer than your longest cache expiration set in custom/policies. Keeping objects in S3 for too long increases storage costs. (30 is recommended)"
+    MinValue: 3
+    ConstraintDescription: "Choose a value of 3 days or greater. This should be slightly longer than the longest cache expiration expected"
+  UserAgent:
+    Type: String
+    Default: "Analytics Web Service"
+    Description: "Analytics Web Service passes along the client's user agent string in the header. If no user agent string is present, what should it use?"
+  LogRetentionInDaysForPROD:
+    Type: Number
+    Default: 90
+    Description: "How long should CloudWatch logs be kept in a PRODUCTION environment?"
+    AllowedValues:
+      - 1
+      - 3
+      - 5
+      - 7
+      - 14
+      - 30
+      - 60
+      - 90
+      - 120
+      - 150
+      - 180
+      - 365
+      - 400
+      - 545
+      - 731
+      - 1827
+      - 3653
+  LogRetentionInDaysForDEVTEST:
+    Type: Number
+    Default: 7
+    Description: "How long should CloudWatch logs be kept in a DEV or TEST environment?"
+    AllowedValues:
+      - 1
+      - 3
+      - 5
+      - 7
+      - 14
+      - 30
+      - 60
+      - 90
+      - 120
+      - 150
+      - 180
+      - 365
+      - 400
+      - 545
+      - 731
+      - 1827
+      - 3653
+
+  # ---------------------------------------------------------------------------
+  # Lambda Function Settings
+
+  FunctionTimeOutInSeconds:
+    Type: Number
+    Default: 10
+    Description: "Time out in seconds for the Lambda function. API Gateway times out after 30 seconds. This web service is ideal for requests that can complete in less than 10 seconds"
+    MinValue: 3
+    MaxValue: 30
+  FunctionMaxMemoryInMB:
+    Type: Number
+    Default: 128
+    Description: "If you are handling large responses, you will need to increase the size. Monitor CloudWatch logs"
+    AllowedValues:
+      - 128
+      - 192
+      - 256
+      - 320
+      - 384
+      - 448
+      - 512
+    ConstraintDescription: "Min 128, Max 512 in increments of 64"
+  FunctionGradualDeploymentType:
+    Type: String
+    Default: "Linear10PercentEvery3Minutes"
+    Description: "For production environments, what method do you want to use to gradually deploy before rolling back in case of errors. Note that when 'DeployEnvironment' is TEST or DEV, gradual deploy will not be enabled and will be same as All At Once"
+    AllowedValues:
+      - "Canary10Percent5Minutes" # Canary = First 10%, then after x minutes, full 90% (full deploy after x minutes)
+      - "Canary10Percent10Minutes"
+      - "Canary10Percent15Minutes"
+      - "Canary10Percent30Minutes"
+      - "Linear10PercentEvery1Minute" # Linear = Total of 10 deploys every x minutes: 10%, wait x minutes, another 10%, wait, 10%.... (full deploy after 10 * x minutes)
+      - "Linear10PercentEvery2Minutes"
+      - "Linear10PercentEvery3Minutes"
+      - "Linear10PercentEvery10Minutes"
+      - "AllAtOnce" # All at once. Recommended only for TEST and DEV environments.
+
+# =============================================================================
+# CONDITIONS
+# -----------------------------------------------------------------------------
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-conditions.html
+#
+
+Conditions:
+  IsCodeStar: !Equals [!Ref Prefix, "awscodestar"]
+  IsProduction: !Equals [!Ref DeployEnvironment, "PROD"]
+  IsTest: !Equals [!Ref DeployEnvironment, "TEST"]
+  IsDevelopment: !Equals [!Ref DeployEnvironment, "DEV"]
+  CreateProdResources: !Equals [!Ref DeployEnvironment, "PROD"]
+  CreateTestResources: !Equals [!Ref DeployEnvironment, "TEST"]
+  CreateDevResources: !Equals [!Ref DeployEnvironment, "DEV"]
+
+# =============================================================================
+# GLOBALS
+# -----------------------------------------------------------------------------
+# https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-specification-template-anatomy-globals.html
+#
+
+Globals:
+  Function:
+    Timeout: !Ref FunctionTimeOutInSeconds
+    MemorySize: !Ref FunctionMaxMemoryInMB
+    Runtime: nodejs18.x
+    AutoPublishAlias: live
+    DeploymentPreference:
+      Enabled: !If [ IsProduction, True,  False] #Gradual deployment only if in production so DEV and TEST aren't hindered
+      Type: !If [ IsProduction, !Ref FunctionGradualDeploymentType, "AllAtOnce"]
+      Role: !Ref DeployRole
+
+# =============================================================================
+# RESOURCES
+# -----------------------------------------------------------------------------
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html  
+#
+
+Resources:
+
+  # API Gateway
+  WebApi:
+    Type: AWS::Serverless::Api
+    Properties: 
+      Name: !Sub '${Prefix}-${ProjectStageId}-WebApi'
+      StageName: !If [ IsCodeStar, "Prod", !Ref ApiPathBase] # First part of the path in the URI "https://${WebApi}.execute-api.${AWS::Region}.amazonaws.com/app/" CodeStar dashboard uses Prod. However, if you don't care, you can use your regular setting
+
+  # Lambda Function
+  AppFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Prefix}-${ProjectStageId}-AppFunction'
+      CodeUri: app/
+      Handler: index.get
+      Environment:
+          Variables:
+            MyVar: !Ref MyVar
+            paramStorePath: !Ref ParameterStoreAppPath
+            detailedLogs: !If [ IsProduction, "0",  "1"]
+            deployEnvironment: !Ref DeployEnvironment
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /
+            Method: get
+            RestApiId: !Ref WebApi
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+
+  # LambdaFunction Execution Role
+  LambdaExecutionRole:
+    Description: Creating service role in IAM for AWS Lambda
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join
+        - '-'
+        - - !If [ IsCodeStar, 'CodeStar', !Ref Prefix ]
+          - !Ref ProjectStageId
+          - "ExecutionRole"
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: [lambda.amazonaws.com]
+          Action: sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMReadOnlyAccess'
+
+  # Log Group with a retention policy
+  AppLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties: 
+        LogGroupName: !Sub "/aws/lambda/${AppFunction}"
+        RetentionInDays: !If [ IsProduction, 90,  30] # TODO: I often set this using a variable
+
+# =============================================================================
+# OUTPUTS
+# -----------------------------------------------------------------------------
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html
+#
+# Place anything interesting that you would like to quickly refer to in 
+# your cloudformation OUTPUT section. Test URLs, direct links to resources, etc
+#
+
+Outputs:
+  UserAPI:
+    Description: "Endpoint URL"
+    Value: !Join
+      - ""
+      - - !Sub "https://${WebApi}.execute-api.${AWS::Region}.amazonaws.com/"
+        - !If [ IsCodeStar, "Prod", !Ref ApiPathBase ] # CodeStar uses *.amazonaws.com/Prod but for ProjectStack you can use whatever you want by setting ApiPathBase
+        - "/"
