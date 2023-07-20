@@ -1,9 +1,9 @@
 {
     "source_files": {
         "toolchain_bucketname": "63klabs",
-        "toolchain_bucketkey": "projectstack-templates/atlantis",
+        "toolchain_bucketkey": "atlantis",
         "src_bucketname": "63klabs",
-        "src_bucketkey": "projectstack-templates/atlantis"
+        "src_bucketkey": "atlantis"
     },
     "project": {
         "aws_account": "9912345678900",
@@ -15,7 +15,7 @@
         "description": "",
         "repository": "",
         "branch": "",
-        "prefix": "",
+        "prefix": "hello",
         "role_arn": ""
     },
     "stack_parameters": {

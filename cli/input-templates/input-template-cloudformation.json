@@ -18,6 +18,11 @@
             "UsePreviousValue": true
         },
         {
+            "ParameterKey": "S3BucketNameOrgPrefix",
+            "ParameterValue": "$S3_ORG_PREFIX$",
+            "UsePreviousValue": true
+        },
+        {
             "ParameterKey": "CodeCommitRepository",
             "ParameterValue": "$REPOSITORY$",
             "UsePreviousValue": true
@@ -36,8 +41,8 @@
     "Capabilities": [
         "CAPABILITY_NAMED_IAM"
     ],
-    "RoleARN": "arn:aws:iam::$AWS_ACCT$:role/$PREFIX$-service-role",
-    "OnFailure": "DO_NOTHING",
+    "RoleARN": "arn:aws:iam::$AWS_ACCT$:role/$PREFIX$-CloudFormation-Service-Role",
+    "OnFailure": "ROLLBACK",
     "Tags": [
         {
             "Key": "ProjectStackType",
