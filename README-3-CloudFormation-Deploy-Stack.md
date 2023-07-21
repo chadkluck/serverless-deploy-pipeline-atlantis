@@ -1,25 +1,24 @@
-# Create or Update Deploy CloudFormation Stack Using toolchain.yml
+# Create or Update Deploy CloudFormation Stack Using pipeline-toolchain.yml
 
-The Toolchain.yml file is a CloudFormation template that creates the deployment pipeline for your application. The generated CloudFormation stack will have `*-deploy` appended to the name and will be assigned to a specific branch (test, beta, prod, main, etc) which will also be in its name.
+The pipeline-toolchain.yml file is a CloudFormation template that creates the deployment pipeline for your application. The generated CloudFormation stack will have `*-deploy` appended to the name and will be assigned to a specific branch (test, beta, prod, main, etc) which will also be in its name.
 
-The pipeline monitors a specific branch in the CodeCommit repository and automatically kicks off a deployment when changes are commited to it. The application has its own CloudFormation infrastructure stack with `*-infrastructure` appended to it. These are all the resources (S3, API Gateway, Lambda, DynamoDb, etc) needed to run your application.
+The pipeline monitors a specific branch in the CodeCommit repository and automatically kicks off a deployment when changes are committed to it. The application has its own CloudFormation infrastructure stack with `*-infrastructure` appended to it. The infrastructure stack manages all the resources (S3, API Gateway, Lambda, DynamoDb, etc) needed to run your application. The deploy stack only manages the pipeline and only needs to be updated if you are modifying the way the pipeline operates.
 
-## Install
+## Deploy Pipeline Stack Creation Options
 
 There are 3 ways to install the deployment pipeline.
 
-1. Upload `toolchain.yml` through the CloudFormation web console
+1. Upload `pipeline-toolchain.yml` through the CloudFormation web console
 2. Point to the 63K Labs S3 bucket through the CloudFormation web console
-3. Use `cli-generate.py` from the command line 
-
+3. Use the AWS CLI (Command Line Interface) 
 
 ## Edit or Replace Existing CloudFormation -deploy Stacks
 
-NOTE: This **Deploy** template is for **Deploy (-deploy)** stacks! **NOT** your application **Infrastructure (-infrastructure)** stacks!
+NOTE: This **pipeline-toolchain.yml** template is for **Deploy Pipeline (-deploy)** stacks! **NOT** your application **Infrastructure (-infrastructure)** stacks!
 
 If you are replacing the entire contents of the template file then you can do this one of two ways:
 
-1. Upload `toolchain.yml` from your local machine
+1. Upload `pipeline-toolchain.yml` from your local machine
 2. Point to the 63klabs S3 Bucket (or your own bucket)
 3. Edit Template "In Place" in the Template Designer
 

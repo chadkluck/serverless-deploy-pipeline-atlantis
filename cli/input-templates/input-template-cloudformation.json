@@ -44,16 +44,20 @@
     "RoleARN": "arn:aws:iam::$AWS_ACCT$:role/$PREFIX$-CloudFormation-Service-Role",
     "OnFailure": "ROLLBACK",
     "Tags": [
+        {   
+            "Key": "Atlantis",
+            "Value": "TRUE"
+        },
         {
-            "Key": "ProjectStackType",
+            "Key": "Atlantis:Prefix",
             "Value": "$PREFIX$"
         },
         {
-            "Key": "ProjectStackProjectID",
+            "Key": "Atlantis:ProjectID",
             "Value": "$AWS_REGION$/$AWS_ACCT$/$PREFIX$-$PROJECT_ID$"
         },
         {
-            "Key": "ProjectStackProjectStageID",
+            "Key": "Atlantis:ProjectStageID",
             "Value": "$AWS_REGION$/$AWS_ACCT$/$PREFIX$-$PROJECT_STAGE_ID$"
         },
         {

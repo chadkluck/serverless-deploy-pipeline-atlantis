@@ -1,12 +1,28 @@
 # Create CodeCommit Repository for Application Infrastructure
 
-Once the service roles are created it is time to set up the CodeCommit repository to store your application infrastructure.
+Once the service roles are created it is time to set up your first CodeCommit repository to store your application infrastructure.
 
-Committing changes to your application infrastructure repository will kick off an automated deploy.
+When the deploy pipeline stack is set up, you will choose a branch of the repository to monitor and deploy from.
 
-You can set up multiple deployment branches such as test, beta, prod (main), or separate feature/developer branches.
+You can set up multiple deployment branches such as test, beta, prod (main), or separate feature/developer branches along with a deploy pipeline stack for each.
 
-You will need to create the CodeCommit repository and seed it with your application infrastructure before you can create the deploy pipeline. To get you started, you can use the code found in the `/codecommit-repository-sample-code` directory.
+It is recommended you have a base or work-in-progress branch (such as `dev`) that you can commit code to without initiating a deploy.
+
+You will need to create the CodeCommit repository and seed it with your application infrastructure before you can create the deploy pipeline. To get started, you can use the code found in the `/codecommit-sample-code` directory and replace it later with more functional code.
+
+1. Create a code commit repository.
+2. Add the sample code from `/codecommit-sample-code`.
+3. Create `dev` and `test` branches (you can create additional branches later)
+
+You should now have a repository with 3 branches:
+
+- main (sometimes master)
+- test
+- dev
+
+When we create the first Deploy Pipeline CloudFormation stack we will have it monitor the "test" branch. Upon successful completion of the test deployment, we will create a production deployment from the "main" branch.
+
+We will leave "dev" as a branch that doesn't have an automatic deploy. You can also create individual developer and feature branches in the future.
 
 ## Documentation
 
