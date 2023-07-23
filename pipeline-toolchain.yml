@@ -48,7 +48,7 @@
 # 6. If you need to modify the way the CodePipeline performs, update this pipeline-toolchain.yml and then perform a manual stack update in CloudFormation. (Instructions in README)
 #
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "Atlantis CI/CD CloudFormation Template to create a CodePipeline for API Gateway + Lambda or Event Bridge + Lambda services. github.com/chadkluck/serverless-deploy-pipeline-atlantis"
+Description: "Deploy Pipeline CloudFormation Template v2. Creates a CodePipeline for API Gateway or Event Bridge to Lambda services that watches a CodeCommit repository for changes. github.com/chadkluck/serverless-deploy-pipeline-atlantis"
 
 # =============================================================================
 # META DATA
@@ -59,23 +59,22 @@ Description: "Atlantis CI/CD CloudFormation Template to create a CodePipeline fo
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
-      -
-        Label:
-          default: "Deployment Environment and Stage"
-        Parameters:
-          - DeployEnvironment
-          - DeployStage
       - 
         Label:
-          default: "Application instance identification"
+          default: "Application Resource Naming"
         Parameters:
           - Prefix
           - ProjectId
-          - ProjectStageId
+          - StageId
           - S3BucketNameOrgPrefix
       -
         Label:
-          default: "SSM Parameter Store and Alarm Notifications"
+          default: "Deployment Environment Identification"
+        Parameters:
+          - DeployEnvironment
+      -
+        Label:
+          default: "External Resources and Alarm Notifications"
         Parameters:
           - ParameterStoreBasePath
           - AlarmNotificationEmail
@@ -93,62 +92,69 @@ Metadata:
 #
 
 Parameters:
-  # Deployment Environment and Stage
+
+  # ---------------------------------------------------------------------------
+  # Application Resource Naming
+
+  Prefix:
+    Description: "Prefix to assign to resources. This can be thought of as a Name Space and will be pre-pended to all resources. Use it to identify ownership/access for teams, departments, etc. Must have a corresponding CloudFormation Service Role. Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'."
+    Type: String
+    AllowedPattern: "^[a-z][a-z0-9-]*[a-z0-9]$"
+    MinLength: 2
+    MaxLength: 8
+    ConstraintDescription: "2 to 8 characters. Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number.""
+    Default: "atlantis" 
+  ProjectId:
+    Description: "Do NOT include <Prefix> or <StageId>. This is the Project ID for the application. (Minimum 2 characters, suggested maximum of 20) Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'. If you get 'S3 bucket name too long' errors then you must shorten the Project ID or use an S3 Org Prefix. Long Project IDs may also be truncated when naming resources."
+    Type: String
+    AllowedPattern: "^[a-z][a-z0-9-]*[a-z0-9]$"
+    MinLength: 2
+    ConstraintDescription: "Minimum of 2 characters (suggested maxium of 20). Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number."
+  StageId:
+    Description: "Do NOT include <Prefix> or <ProjectId>. <StageId> does not need to match <DeployEnvironment>. You can have multiple stages in the TEST environment (e.g. test, john-test), and multipe stages in PROD (e.g. stage, beta, prod). Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'."
+    Type: String
+    AllowedPattern: "^[a-z][a-z0-9-]*[a-z0-9]$"
+    MinLength: 2
+    MaxLength: 10
+    ConstraintDescription: "2 to 10 characters. Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number."
+  S3BucketNameOrgPrefix:
+    Description: "By default, to enforce uniqueness, buckets created for deploy and infrastructure include account and region in the bucket name. However, due to S3 bucket name character limits, you can turn this off by specifying your own prefix (like an org code) that will be included before the project <Prefix> above."
+    Type: String
+    AllowedPattern: "^[a-z][a-z0-9-]*[a-z0-9]$|^$"
+    ConstraintDescription: "May be empty or at least 2 characters long. Must start with a letter, may contain lowercase letters, numbers, and hyphens."
+    Default: ""
+
+  # ---------------------------------------------------------------------------
+  # Deployment Environment Identification
+
   DeployEnvironment:
-    Description: "What deploy/testing environment will this run under? This can be used for conditionals in the template. For example, PROD will use gradual deployment while DEV and TEST is AllAtOnce. Other resources, such as dashboards are created in PROD and not DEV or TEST. Suggested use: DEV for local SAM deployment, TEST for cloud deployment, PROD for stage, beta, and main/prod deployment."
+    Description: "What deploy/testing environment will this run under? An environment can contain mulitple stages and in coordination with run different tests. Utilize this environment variable to determine your tests and app logging levels during deploy. This can be used for conditionals in the template. For example, PROD will use gradual deployment while DEV and TEST is AllAtOnce. Other resources, such as dashboards are created in PROD and not DEV or TEST. Suggested use: DEV for local SAM deployment, TEST for cloud deployment, PROD for stage, beta, and main/prod deployment."
     Type: String
     AllowedValues: ["DEV", "TEST", "PROD"]
     ConstraintDescription: Must specify DEV, TEST, or PROD.
     Default: "PROD"
-  DeployStage:
-    Description: "This project represents what stage in the CI/CD pipeline? (test, beta, stage, prod). This must match the deployment stage appended to the Project ID. The project ID plus the stage value must not exceed 15 characters. Use 'prod' for main or master branch. Ex: For ws-hello-world-prod this would be 'prod'"
-    Type: String
-    AllowedPattern: "[a-z0-9]*"
-    MaxLength: 12
-    ConstraintDescription: Must contain only lowercase alphanumeric characters and be no more than 12 characters in length.
-    Default: "prod" # should match default branch (or prod for main/master branch)
 
-  # Application instance identification
-  Prefix:
-    Description: "Prefix to assign to resources. This can be thought of as a Name Space and will be pre-pended to all resources. Use it to identify ownership/access for teams, departments, etc. Must have a corresponding service-role. Ex: For ws-hello-world-prod this would be 'ws'."
-    Type: String
-    AllowedPattern: "[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9]"
-    MinLength: 3
-    MaxLength: 15
-    ConstraintDescription: 3 to 15 characters. Alphanumeric (upper and lower), hyphen, and underscore. Must start with a letter and must end with a letter or number.
-    Default: "atlantis" 
-  ProjectId:
-    Description: "Do NOT include <Prefix> or <DeployStage>. This is the Project ID for the application. (Minimum 2 characters.) Ex: For ws-hello-world-dev this would be 'hello-world'"
-    Type: String
-    AllowedPattern: "^[a-z][a-z0-9-]+$"
-    MinLength: 2
-  ProjectStageId:
-    Description: "Do NOT include <Prefix>, but DO include <ProjectId>. This is the Project ID for the application with the stage appended. Ex: For ws-hello-world-test this would be 'hello-world-test'"
-    Type: String
-    AllowedPattern: "^[a-z][a-z0-9-]+$"
-    MinLength: 2
-    ConstraintDescription: "Must contain only lowercase alphanumeric characters, dash, or underscore, and be between 2 and 15 characters in length. (15 characters is the max recommended but not enforced.)"
-  S3BucketNameOrgPrefix:
-    Description: "By default, to enforce uniqueness, buckets created for deploy and infrastructure include account and region in the bucket name. However, due to S3 bucket name character limits, you can turn this off by specifying your own prefix (like an org code) that will be included before the project <Prefix> above."
-    Type: String
-    AllowedPattern: "^[a-z][a-z0-9-]+$|^$"
-    ConstraintDescription: "Must start with a letter, may contain lowercase letters, numbers, and hyphens."
-    Default: ""
+  # ---------------------------------------------------------------------------
+  # External Resources and Alarm Notifications
+
   ParameterStoreBasePath:
-    Description: "Base path in Parameter store to organize parameters for this instance. This is needed so that proper permissions may be given for the app to access Parameter Store. Must either be a single '/' or begin and end with a '/'. This value, with the Project ID appended to it, will be passed to the app build process as ParameterStoreAppPath. Parameters will be stored like this: /<ParameterStoreBasePath>/<Prefix>-<ProjectStageId>/<AppParameter>"
+    Description: "Base path in Parameter store to organize parameters for this instance. This is needed so that proper permissions may be given for the app to access Parameter Store. Must either be a single '/' or begin and end with a '/'. This value, with the Project ID appended to it, will be passed to the app build process as ParameterStoreAppPath. Parameters will be stored like this: /<ParameterStoreBasePath>/<Prefix>-<ProjectId>-<StageId>/<AppParameter>"
     Type: String
     AllowedPattern: "^\\/([a-zA-Z0-9]+([\\-][a-zA-Z0-9]+)*[\\/])+$|^\\/$"
-    ConstraintDescription: Must only contain alpha-numeric, dashes, or slashes. Must begin and end with a slash /.
+    ConstraintDescription: Must only contain alpha-numeric, dashes, or slashes. Must be a single slash or begin and end with a slash /.
     Default: "/"
   AlarmNotificationEmail:
     Type: String
-    Description: "Email address to send a notification to when Lambda function goes into alarm"
+    Description: "Email address to send a notification to when Lambda function goes into alarm. Be sure to check the inbox for this email address as you will need to confirm the subscription."
     AllowedPattern: '^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$'
     ConstraintDescription: 'A valid email must be used to receive alarm notifications'
 
-  # Used by this toolchain only and not passed on to infrastructure stack
+  # ---------------------------------------------------------------------------
+  # Code Repository
+  # Used only by this pipeline-toolchain and not passed on to infrastructure stack except as tags
+
   CodeCommitRepository:
-    Description: "What repository will be used"
+    Description: "What repository will be used?"
     Type: String
     MinLength: 2
     Default: ""
@@ -186,7 +192,7 @@ Conditions:
           Principal:
             Service: codebuild.amazonaws.com
       Path: /
-      RoleName: !Sub "${Prefix}-Worker-${ProjectStageId}-CodeBuild"
+      RoleName: !Sub "${Prefix}-Worker-${ProjectId}-${StageId}-CodeBuild"
     Type: AWS::IAM::Role
 
   # ---------------------------------------------------------------------------
@@ -223,7 +229,7 @@ Conditions:
           - ssm:ListTagsForResource
           Effect: Allow
           Resource: 
-            !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStoreBasePath}${Prefix}-${ProjectStageId}/*" # no / between :parameter and path
+            !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStoreBasePath}${Prefix}-${ProjectId}-${StageId}/*" # no / between :parameter and path
 
 
   # ---------------------------------------------------------------------------
@@ -234,8 +240,8 @@ Conditions:
     DependsOn:
     - CodeBuildPolicy
     Properties:
-      Name: !Sub '${Prefix}-${ProjectStageId}-Build'
-      Description: !Sub "CodeBuild Project for ${ProjectStageId}"
+      Name: !Sub '${Prefix}-${ProjectId}-${StageId}-Build'
+      Description: !Sub "CodeBuild Project for ${ProjectId}-${StageId}"
       ServiceRole: !Ref 'CodeBuildRole'
       Artifacts:
         Packaging: zip
@@ -253,26 +259,32 @@ Conditions:
         Image: aws/codebuild/amazonlinux2-x86_64-standard:5.0 # Node 18 / Python 3.11
         # Image: aws/codebuild/java:openjdk-11 # java
 
-        # You can specify any other environment variables your buildspec.yml is looking for.
+        # BUILD ENVIRONMENT VARIABLES : You can specify any other environment variables your buildspec.yml is looking for.
         EnvironmentVariables:
-        - Name: S3_BUCKET # informs AWS CodeBuild where it can retrieve your code artifact.
-          Value: !Ref 'S3Bucket'
+        - Name: AWS_PARTITION
+          Value: !Ref 'AWS::Partition'
+        - Name: AWS_REGION
+          Value: !Ref 'AWS:REGION'
+        - Name: AWS_ACCOUNT
+          Value: !Ref 'AWS::AccountId'
+        - Name: S3_DEPLOY_BUCKET # informs AWS CodeBuild where it can retrieve your code artifact.
+          Value: !Ref 'S3DeployBucket'
         - Name: PREFIX
           Value: !Ref 'Prefix'
-        - Name: PROJECT_STAGE_ID
-          Value: !Ref 'ProjectStageId'
         - Name: PROJECT_ID
           Value: !Ref 'ProjectId'
-        - Name: ACCOUNT_ID
-          Value: !Ref 'AWS::AccountId'
-        - Name: PARTITION
-          Value: !Ref 'AWS::Partition'
+        - Name: STAGE_ID
+          Value: !Ref 'StageId'
+        - Name: REPOSITORY
+          Value: !Ref 'CodeCommitRepository'
+        - Name: REPOSITORY_BRANCH
+          Value: !Ref 'CodeCommitBranch'
         - Name: PARAM_STORE_PATH
-          Value: !Sub '${ParameterStoreBasePath}${Prefix}-${ProjectStageId}/'
-        - Name: DEPLOY_STAGE
-          Value: !Ref 'DeployStage'
+          Value: !Sub '${ParameterStoreBasePath}${Prefix}-${ProjectId}-${StageId}/'
         - Name: DEPLOY_ENVIRONMENT
           Value: !Ref 'DeployEnvironment'
+        - Name: ALARM_NOTIFICATION_EMAIL
+          Value: !Ref 'AlarmNotificationEmail'
       Source:
         Type: codepipeline
         BuildSpec: buildspec.yml # Explicitly set just to note that there should only be one buildspec (not buildspec-dev.yml or buildspec-prod.yml) which if needed to process differently for an environment, that logic should be in the buildspec and SAM template. Otherwise management of 2 or more would be difficult. We have Deploy Stage and Deploy Environment variables so use them.
@@ -284,7 +296,7 @@ Conditions:
   CodeBuildLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/codebuild/${Prefix}-${ProjectStageId}-Build"
+      LogGroupName: !Sub "/aws/codebuild/${Prefix}-${ProjectId}-${StageId}-Build"
       RetentionInDays: 90 # Set to your own retention policy - how long do you want to keep build logs?
 
   # ---------------------------------------------------------------------------
@@ -295,7 +307,7 @@ Conditions:
     Type: AWS::IAM::Role
     Description: Creating service role in IAM for AWS CloudFormation
     Properties:
-      RoleName: !Sub "${Prefix}-Worker-${ProjectStageId}-CFRole"
+      RoleName: !Sub "${Prefix}-Worker-${ProjectId}-${StageId}-CFRole"
       AssumeRolePolicyDocument:
         Statement:
         - Action: sts:AssumeRole
@@ -315,8 +327,8 @@ Conditions:
             - iam:*
             Effect: Allow
             Resource: 
-            - !Sub "arn:aws:iam::${AWS::AccountId}:role/${Prefix}-Worker-${ProjectStageId}-*"
-            - !Sub "arn:aws:iam::${AWS::AccountId}:role/${Prefix}-${ProjectStageId}-*"
+            - !Sub "arn:aws:iam::${AWS::AccountId}:role/${Prefix}-Worker-${ProjectId}-${StageId}-*"
+            - !Sub "arn:aws:iam::${AWS::AccountId}:role/${Prefix}-${ProjectId}-${StageId}-*"
 
           - Sid: "CloudFormationCRUD"
             Action:
@@ -325,19 +337,19 @@ Conditions:
             Resource: "*" # TODO Needs to be scoped down - tags?
           #  Condition:
           #    StringEquals: 
-          #      aws:ResourceTag/ProjectStackProjectStageID: !Sub "${AWS::Region}/${AWS::AccountId}/${Prefix}-${ProjectStageId}"
+          #      aws:ResourceTag/ProjectStackProjectStageID: !Sub "${AWS::Region}/${AWS::AccountId}/${Prefix}-${ProjectId}-${StageId}"
 
           - Sid: "CodeDeployCRUDThisDeploymentOnly"
             Action:
             - codedeploy:*
             Effect: Allow
             Resource:
-              - !Sub 'arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:application:${Prefix}-${ProjectStageId}-infrastructure-*'
-              - !Sub 'arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentgroup:${Prefix}-${ProjectStageId}-*'
+              - !Sub 'arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:application:${Prefix}-${ProjectId}-${StageId}-infrastructure-*'
+              - !Sub 'arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentgroup:${Prefix}-${ProjectId}-${StageId}-*'
               - !Sub 'arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentconfig:*' # TODO needs to be scoped down - tags?
             # Condition:
             #   StringEquals: 
-            #     aws:ResourceTag/ProjectStackProjectStageID: !Sub "${AWS::Region}/${AWS::AccountId}/${Prefix}-${ProjectStageId}"
+            #     aws:ResourceTag/ProjectStackProjectStageID: !Sub "${AWS::Region}/${AWS::AccountId}/${Prefix}-${ProjectId}-${StageId}"
 
 
           # == API GateWay == If application infrastructure is using API GateWay to trigger Lambda Function
@@ -349,7 +361,7 @@ Conditions:
             # we can't use arn because the name is a random id, so we need to use a condition against the tags, but to write in YAML?
             # Condition:
             #   StringEquals: 
-            #     aws:ResourceTag/ProjectStackProjectStageID: !Sub "${AWS::Region}/${AWS::AccountId}/${Prefix}-${ProjectStageId}"
+            #     aws:ResourceTag/ProjectStackProjectStageID: !Sub "${AWS::Region}/${AWS::AccountId}/${Prefix}-${ProjectId}-${StageId}"
 
 
           # # == Event Bridge == If application infrastructure is using Event Bridge to trigger Lambda function
@@ -362,7 +374,7 @@ Conditions:
           #   - events:RemoveTargets
           #   Effect: Allow
           #   Resource:
-          #   - !Sub 'arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/${Prefix}-${ProjectStageId}-*'
+          #   - !Sub 'arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/${Prefix}-${ProjectId}-${StageId}-*'
 
 
           # == S3 Buckets == If application infrastructure manages S3 buckets
@@ -375,17 +387,17 @@ Conditions:
               - ""
               - - "arn:aws:s3:::"
                 - !If [UseS3BucketNameOrgPrefix, !Sub "${S3BucketNameOrgPrefix}-${Prefix}", !Sub "${Prefix}-${AWS::Region}-${AWS::AccountId}" ]
-                - !Sub "-${ProjectStageId}/*"
+                - !Sub "-${ProjectId}-${StageId}/*"
             - !Join
               - ""
               - - "arn:aws:s3:::"
                 - !If [UseS3BucketNameOrgPrefix, !Sub "${S3BucketNameOrgPrefix}-${Prefix}", !Sub "${Prefix}-${AWS::Region}-${AWS::AccountId}" ]
-                - !Sub "-${ProjectStageId}-*/*"
+                - !Sub "-${ProjectId}-${StageId}-*/*"
             - !Join
               - ""
               - - "arn:aws:s3:::"
                 - !If [UseS3BucketNameOrgPrefix, !Sub "${S3BucketNameOrgPrefix}-${Prefix}", !Sub "${Prefix}-${AWS::Region}-${AWS::AccountId}" ]
-                - !Sub "-${ProjectStageId}-*"
+                - !Sub "-${ProjectId}-${StageId}-*"
 
           # == S3 Buckets == If application infrastructure manages a Lambda function
           - Sid: "LambdaCRUDThisDeploymentOnly"
@@ -393,7 +405,7 @@ Conditions:
             - lambda:*
             Effect: Allow
             Resource:
-            - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Prefix}-${ProjectStageId}-*'
+            - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Prefix}-${ProjectId}-${StageId}-*'
 
           # == Lambda Insights == If application infrastructure utilizes Lambda Insights for tracing and troubleshooting
           - Sid: "LambdaLayersGetLayerForLambdaInsightsFromAWS"
@@ -410,7 +422,7 @@ Conditions:
             - dynamodb:*
             Effect: Allow
             Resource:
-              - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Prefix}-${ProjectStageId}-*'
+              - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Prefix}-${ProjectId}-${StageId}-*'
 
           # == SSM Parameter Store == If application infrastructure accesses SSM parameter store
           - Sid: "SSMParameterStoreReadThisDeploymentOnly"
@@ -421,7 +433,7 @@ Conditions:
             - ssm:ListTagsForResource
             Effect: Allow
             Resource: 
-              !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStoreBasePath}${Prefix}-${ProjectStageId}/*" # no / between :parameter and path
+              !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStoreBasePath}${Prefix}-${ProjectId}-${StageId}/*" # no / between :parameter and path
 
           - Sid: "CloudWatchDashboardLimitedCRUDThisDeploymentOnly"
             Action:
@@ -432,7 +444,7 @@ Conditions:
             - cloudwatch:UntagResource
             Effect: Allow
             Resource:
-            - !Sub 'arn:aws:cloudwatch::${AWS::AccountId}:dashboard/${Prefix}-${ProjectStageId}-*'
+            - !Sub 'arn:aws:cloudwatch::${AWS::AccountId}:dashboard/${Prefix}-${ProjectId}-${StageId}-*'
 
           - Sid: "CloudWatchAlarmsLimitedCRUDThisDeploymentOnly"
             Action:
@@ -442,7 +454,7 @@ Conditions:
             - cloudwatch:UntagResource
             Effect: Allow
             Resource:
-              - !Sub 'arn:aws:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:${Prefix}-${ProjectStageId}-*'
+              - !Sub 'arn:aws:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:${Prefix}-${ProjectId}-${StageId}-*'
 
           - Sid: "SNSForAlarmNotificationsLimitedCRUDThisDeploymentOnly"
             Action:
@@ -456,7 +468,7 @@ Conditions:
             - sns:TagResource            
             Effect: Allow
             Resource:
-              - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${Prefix}-${ProjectStageId}-infrastructure-*'
+              - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${Prefix}-${ProjectId}-${StageId}-infrastructure-*'
 
           - Sid: "LogGroupsLimitedCRUDThisDeploymentOnly"
             Action:
@@ -467,7 +479,7 @@ Conditions:
             - logs:TagLogGroup
             Effect: Allow
             Resource:
-            - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${Prefix}-${ProjectStageId}-*'
+            - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${Prefix}-${ProjectId}-${StageId}-*'
             
           - Sid: "LogGroupsReadThisDeploymentOnly"
             Action:
@@ -485,7 +497,7 @@ Conditions:
     Type: AWS::S3::BucketPolicy
     Description: Setting Amazon S3 bucket policy for AWS CodePipeline access
     Properties:
-      Bucket: !Ref 'S3Bucket'
+      Bucket: !Ref 'S3DeployBucket'
       PolicyDocument:
         Version: "2012-10-17"
         Id: SSEAndSSLPolicy
@@ -508,8 +520,8 @@ Conditions:
           Principal: "*"
           Action: "s3:*"
           Resource:
-            - !GetAtt S3Bucket.Arn
-            - !Join [ '', [ !GetAtt S3Bucket.Arn, '/*' ] ]
+            - !GetAtt S3DeployBucket.Arn
+            - !Join [ '', [ !GetAtt S3DeployBucket.Arn, '/*' ] ]
           Condition:
             Bool:
                 "aws:SecureTransport": false
@@ -532,8 +544,8 @@ Conditions:
             # the runtime resources.
             - !GetAtt 'CloudFormationTrustRole.Arn'
           Resource:
-            - !GetAtt S3Bucket.Arn
-            - !Join [ '', [ !GetAtt S3Bucket.Arn, '/*' ] ]
+            - !GetAtt S3DeployBucket.Arn
+            - !Join [ '', [ !GetAtt S3DeployBucket.Arn, '/*' ] ]
           
         - Sid: WhitelistedPut
           Action:
@@ -544,8 +556,8 @@ Conditions:
             - !GetAtt 'CodePipelineTrustRole.Arn'
             - !GetAtt 'CodeBuildRole.Arn'
           Resource:
-            - !GetAtt S3Bucket.Arn
-            - !Join [ '', [ !GetAtt S3Bucket.Arn, '/*' ] ]
+            - !GetAtt S3DeployBucket.Arn
+            - !Join [ '', [ !GetAtt S3DeployBucket.Arn, '/*' ] ]
           
 
   # ---------------------------------------------------------------------------
@@ -554,7 +566,7 @@ Conditions:
   # However, if commented out a stack deletion will fail and refer to the fact that the bucket is not
   # empty so there will be manual clean up
 
-  S3Bucket:
+  S3DeployBucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: Delete # Retain or Delete (Set to Delete because if we delete the pipeline, we don't need the bucket)
     Description: Creating Amazon S3 bucket for AWS CodePipeline artifacts
@@ -562,10 +574,10 @@ Conditions:
       BucketName: !Join
         - "-"
         - - !If [UseS3BucketNameOrgPrefix, !Sub "${S3BucketNameOrgPrefix}-${Prefix}", !Sub "${Prefix}-${AWS::Region}-${AWS::AccountId}" ]
-          - !Sub "${ProjectStageId}-deploy"
+          - !Sub "${ProjectId}-${StageId}-deploy"
       Tags:
       - Key: Name
-        Value: !Sub "${Prefix}-${ProjectStageId}-Artifacts"
+        Value: !Sub "${Prefix}-${ProjectId}-${StageId}-Artifacts"
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:
@@ -591,12 +603,12 @@ Conditions:
 
   CodePipelineTrustRole:
     DependsOn:
-    - S3Bucket
+    - S3DeployBucket
     - CloudFormationTrustRole
     Type: AWS::IAM::Role
     Description: Creating service role in IAM for AWS CodePipeline
     Properties:
-      RoleName: !Sub "${Prefix}-Worker-${ProjectStageId}-CodePipeline"
+      RoleName: !Sub "${Prefix}-Worker-${ProjectId}-${StageId}-CodePipeline"
       AssumeRolePolicyDocument:
         Statement:
         - Action: sts:AssumeRole
@@ -607,7 +619,7 @@ Conditions:
           Sid: 1
       Path: /
       Policies:
-      - PolicyName: !Sub "${Prefix}-Worker-${ProjectStageId}-CodePipelineRolePolicy"
+      - PolicyName: !Sub "${Prefix}-Worker-${ProjectId}-${StageId}-CodePipelineRolePolicy"
         PolicyDocument:
           Version: "2012-10-17"
           Statement:
@@ -621,8 +633,8 @@ Conditions:
             - cloudformation:*
             Effect: Allow
             Resource: 
-            - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${Prefix}-${ProjectStageId}-infrastructure/*"
-            - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stackset/${Prefix}-${ProjectStageId}-infrastructure:*"
+            - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${Prefix}-${ProjectId}-${StageId}-infrastructure/*"
+            - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stackset/${Prefix}-${ProjectId}-${StageId}-infrastructure:*"
 
           - Sid: CodeBuildManagementViaCloudFormation
             Action:
@@ -630,15 +642,15 @@ Conditions:
             Effect: Allow
             Resource: 
             - !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/*" # TODO: Scope Down
-            - !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${Prefix}-${ProjectStageId}-Build"
+            - !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${Prefix}-${ProjectId}-${StageId}-Build"
 
           - Sid: S3ManagementViaCloudFormation
             Action:
             - s3:*
             Effect: Allow
             Resource:
-            - !GetAtt S3Bucket.Arn
-            - !Join [ '', [ !GetAtt S3Bucket.Arn, '/*' ] ]
+            - !GetAtt S3DeployBucket.Arn
+            - !Join [ '', [ !GetAtt S3DeployBucket.Arn, '/*' ] ]
 
           - Sid: CodeCommitReadOnly
             Action: # TODO: Scope down
@@ -666,7 +678,7 @@ Conditions:
     Type: AWS::IAM::Role
     Description: The service role to be created in IAM for AWS CodeDeploy
     Properties:
-      RoleName: !Sub "${Prefix}-Worker-${ProjectStageId}-CodeDeploy"
+      RoleName: !Sub "${Prefix}-Worker-${ProjectId}-${StageId}-CodeDeploy"
       Path: /
       AssumeRolePolicyDocument:
         Statement:
@@ -696,15 +708,15 @@ Conditions:
     # and the role it will pass to AWS CloudFormation to create stacks.
     DependsOn:
     - CodePipelineTrustRole
-    - S3Bucket
+    - S3DeployBucket
     - CodeBuildProject
     - CloudFormationTrustRole
     Type: AWS::CodePipeline::Pipeline
     Description: Creating a deployment pipeline for your project in AWS CodePipeline
     Properties:
-      Name: !Sub '${Prefix}-${ProjectStageId}-Pipeline'
+      Name: !Sub '${Prefix}-${ProjectId}-${StageId}-Pipeline'
       ArtifactStore:
-        Location: !Ref 'S3Bucket'
+        Location: !Ref 'S3DeployBucket'
         Type: S3
       RoleArn: !GetAtt 'CodePipelineTrustRole.Arn'
       Stages:
@@ -722,7 +734,7 @@ Conditions:
           InputArtifacts: []
           Name: ApplicationSource
           OutputArtifacts:
-          - Name: !Sub "${ProjectStageId}-SourceArtifact"
+          - Name: !Sub "${ProjectId}-${StageId}-SourceArtifact"
           RunOrder: 1
       - Name: Build
         Actions:
@@ -732,12 +744,12 @@ Conditions:
             Provider: CodeBuild
             Version: 1
           Configuration:
-            ProjectName: !Sub '${Prefix}-${ProjectStageId}-Build'
+            ProjectName: !Sub '${Prefix}-${ProjectId}-${StageId}-Build'
           InputArtifacts:
-          - Name: !Sub "${ProjectStageId}-SourceArtifact"
+          - Name: !Sub "${ProjectId}-${StageId}-SourceArtifact"
           Name: PackageExport
           OutputArtifacts:
-          - Name: !Sub "${ProjectStageId}-BuildArtifact"
+          - Name: !Sub "${ProjectId}-${StageId}-BuildArtifact"
           RunOrder: 1
       - Actions:
         - Name: GenerateChangeSet
@@ -747,28 +759,27 @@ Conditions:
             Provider: CloudFormation
             Version: 1
           Configuration:
-            StackName: !Sub "${Prefix}-${ProjectStageId}-infrastructure"
+            StackName: !Sub "${Prefix}-${ProjectId}-${StageId}-infrastructure"
             ActionMode: CHANGE_SET_REPLACE
             Capabilities: CAPABILITY_NAMED_IAM
             ChangeSetName: pipeline-changeset
             RoleArn: !GetAtt 'CloudFormationTrustRole.Arn'
             # These are the parameters that will be set in your AWS CloudFormation stack.
             ParameterOverrides: !Sub '{
-              "ProjectStageId": "${ProjectStageId}",
-              "ProjectId": "${ProjectId}",
               "Prefix": "${Prefix}",
+              "ProjectId": "${ProjectId}",
+              "StageId": "${StageId}",
               "S3BucketNameOrgPrefix": "${S3BucketNameOrgPrefix}",
-              "DeployStage": "${DeployStage}",
               "DeployEnvironment": "${DeployEnvironment}",
-              "ParameterStoreAppPath": "${ParameterStoreBasePath}${Prefix}-${ProjectStageId}/",
+              "ParameterStoreAppPath": "${ParameterStoreBasePath}${Prefix}-${ProjectId}-${StageId}/",
               "DeployRole": "${CodeDeployTrustRole.Arn}",
               "AlarmNotificationEmail": "${AlarmNotificationEmail}"
             }'
-            TemplateConfiguration: !Sub '${ProjectStageId}-BuildArtifact::template-configuration.json'
-            TemplatePath: !Sub "${ProjectStageId}-BuildArtifact::template-export.yml"
+            TemplateConfiguration: !Sub '${ProjectId}-${StageId}-BuildArtifact::template-configuration.json'
+            TemplatePath: !Sub "${ProjectId}-${StageId}-BuildArtifact::template-export.yml"
             EnableTerminationProtection: true
           InputArtifacts:
-          - Name: !Sub "${ProjectStageId}-BuildArtifact"
+          - Name: !Sub "${ProjectId}-${StageId}-BuildArtifact"
           OutputArtifacts: []
           RunOrder: 1
         - Name: Deploy
@@ -780,7 +791,7 @@ Conditions:
           Configuration:
             ActionMode: CHANGE_SET_EXECUTE
             ChangeSetName: pipeline-changeset
-            StackName: !Sub "${Prefix}-${ProjectStageId}-infrastructure"
+            StackName: !Sub "${Prefix}-${ProjectId}-${StageId}-infrastructure"
           InputArtifacts: []
           Name: ExecuteChangeSet
           OutputArtifacts: []
@@ -793,7 +804,7 @@ Conditions:
   SourceEvent:
     Type: AWS::Events::Rule
     Properties:
-      Name: !Sub "${Prefix}-${ProjectStageId}-SourceEvent"
+      Name: !Sub "${Prefix}-${ProjectId}-${StageId}-SourceEvent"
       Description: Rule for Amazon CloudWatch Events to detect changes to the source repository and trigger pipeline execution
       EventPattern:
         detail:
@@ -812,7 +823,7 @@ Conditions:
         - aws.codecommit
       State: ENABLED
       Targets:
-      - Arn: !Sub 'arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${Prefix}-${ProjectStageId}-Pipeline'
+      - Arn: !Sub 'arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${Prefix}-${ProjectId}-${StageId}-Pipeline'
         Id: ProjectPipelineTarget
         RoleArn: !GetAtt 'SourceEventRole.Arn'
 
@@ -820,7 +831,7 @@ Conditions:
     Type: AWS::IAM::Role
     Description: IAM role to allow Amazon CloudWatch Events to trigger AWS CodePipeline execution
     Properties:
-      RoleName: !Sub "${Prefix}-Worker-${ProjectStageId}-event-rule"
+      RoleName: !Sub "${Prefix}-Worker-${ProjectId}-${StageId}-event-rule"
       AssumeRolePolicyDocument:
         Statement:
         - Action: sts:AssumeRole
@@ -838,7 +849,7 @@ Conditions:
             - codepipeline:StartPipelineExecution
             Effect: Allow
             Resource:
-            - !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${Prefix}-${ProjectStageId}-Pipeline"
+            - !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${Prefix}-${ProjectId}-${StageId}-Pipeline"
 
 # =============================================================================
 # OUTPUTS
@@ -852,7 +863,7 @@ Conditions:
 Outputs:
   ProjectPipeline:
     Description: "CodePipeline"
-    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/codesuite/codepipeline/pipelines/${Prefix}-${ProjectStageId}-Pipeline/view?region=${AWS::Region}"
+    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/codesuite/codepipeline/pipelines/${Prefix}-${ProjectId}-${StageId}-Pipeline/view?region=${AWS::Region}"
   CodeCommitRepo:
     Description: "CodeCommitRepo"
     Value: !Join
