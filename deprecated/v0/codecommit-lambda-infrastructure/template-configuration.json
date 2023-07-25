@@ -1,0 +1,16 @@
+{
+  "Parameters": {
+    "MyVar": "22"
+  },
+  "Tags":
+  {
+    "ProjectStackType": "CodeStar",
+		"awscodestar:projectArn":"arn:$PARTITION$:codestar:$AWS_REGION$:$ACCOUNT_ID$:project/$PROJECT_ID$",
+    "CodeCommitRepo": "awscodestar-$PROJECT_ID$",
+    "ProjectStackProjectID": "aws/$AWS_REGION$/$ACCOUNT_ID$/$PROJECT_ID$",
+    "ProjectStackProjectStageID": "aws/$AWS_REGION$/$ACCOUNT_ID$/$PROJECT_STAGE_ID$",
+    "stage": "$DEPLOY_STAGE$",
+    "env": "$DEPLOY_ENVIRONMENT$",
+    "Environment": "$DEPLOY_ENVIRONMENT$"
+  }
+}
