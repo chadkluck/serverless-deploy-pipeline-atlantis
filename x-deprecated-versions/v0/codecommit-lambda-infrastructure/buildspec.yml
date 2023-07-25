@@ -1,0 +1,50 @@
+version: 0.2
+
+# Environment Variables are specified in the CodeStar toolchain originally
+# used to create the build process and may include:
+#
+# S3_BUCKET
+# PROJECT_ID*
+# PROJECT_STAGE_ID*
+# ACCOUNT_ID
+# PARTITION
+# PARAM_STORE_PATH*
+# DEPLOY_STAGE*
+# DEPLOY_ENVIRONMENT*
+#
+# Variables marked with an * denote parameters already passed to the template 
+# via CloudFormation and do not need to be included in the
+# template-configuration.json file parameter section. Check your CodeStar 
+# project's infrastructure stack in CloudFormation to see a current list
+# of build environment variables and parameters passed to this application 
+# stack. You may add any additional parameters for the template in 
+# template-configuration.json
+# 
+# ssm parameter store may also be accessed via the buildspec command areas.
+# Note that secure parameters should not be used during the build where
+# they might be stored in build logs (such as CF template outputs).
+# Secure parameters should only be used within an application's code and never
+# stored in an environment variable or passed as a parameter to a template.
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: latest
+    commands:
+
+      # Upgrade AWS CLI to the latest version
+      - pip install --upgrade awscli
+
+  build:
+    commands:
+
+      # Use AWS SAM to package the application using AWS CloudFormation
+      - aws cloudformation package --template template.yml --s3-bucket $S3_BUCKET --output-template template-export.yml
+
+      # Update the AWS Partition, AWS Region, account ID and project ID in the project ARN in template-configuration.json file so AWS CloudFormation can tag project resources.
+      - sed -i.bak 's|\$PARTITION\$|'${PARTITION}'|g;s|\$AWS_REGION\$|'${AWS_REGION}'|g;s|\$ACCOUNT_ID\$|'${ACCOUNT_ID}'|g;s|\$PROJECT_ID\$|'${PROJECT_ID}'|g;s|\$PROJECT_STAGE_ID\$|'${PROJECT_STAGE_ID}'|g;s|\$DEPLOY_ENVIRONMENT\$|'${DEPLOY_ENVIRONMENT}'|g;s|\$DEPLOY_STAGE\$|'${DEPLOY_STAGE}'|g' template-configuration.json
+
+artifacts:
+  files:
+    - template-export.yml
+    - template-configuration.json
