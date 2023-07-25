@@ -1,6 +1,12 @@
 #ignore the git and zip files we use
 .*
+
+*.zip
+
+*.DS_Store
+*desktop.ini
+
 !.gitignore
 
-#ignore contents of temp and custom folders (but we need them in the repo)
-cli/input/*
+# If you need to remove .DS_Store
+# find . -name .DS_Store -print0 | xargs -0 git rm -f --ignore-unmatch
