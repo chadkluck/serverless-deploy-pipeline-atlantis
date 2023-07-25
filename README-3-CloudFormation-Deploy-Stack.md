@@ -45,6 +45,20 @@ Once the deploy stack is finished creating the pipeline, it will check the CodeC
 
 You can always check the progress of the pipeline by going to the deploy stack in CloudFormation > Outputs > Pipeline.
 
+## Customizing your Pipeline Toolchain
+
+Right now the `pipeline-toolchain.yml` template creates a Code Pipeline with the proper permissions to create an infrastructure stack with a Lambda function, API Gateway, DynamoDb, S3 buckets, alarms, CloudWatch logs, and CloudWatch Events.
+
+You may want to add additional resources such as databases, EC2 instances, VPC connections, and more. Following the principle of least privilege, the current toolchain does not have permission to add these to the infrastructure stack.
+
+You can add additional permissions to the ${Prefix}-Worker-${ProjectId}-${StageId}-CodePipelineRolePolicy IAM policy in pipeline-toolchain.yml and update the CloudFormation stack.
+
+You may also make other modifications as necessary. However, outside of adding additional IAM policies, reducing policy scope, or adding suggested tweaks, the pipeline stack will rarely be updated.
+
+If you make customizations to the pipeline-toolchain template, you may wish to store a copy in the repository with your infrastructure template. Though updating the deploy stack is not automatic, it will help you keep tabs on your deploy template.
+
+Once you have made modifications to your deploy pipeline template follow the instructions below to update.
+
 ## Create, Edit, or Replace Existing CloudFormation -deploy Stacks
 
 NOTE: This **pipeline-toolchain.yml** template is for a **Deploy Pipeline (-deploy)** stack! **NOT** your application **Infrastructure (-infrastructure)** stack!
@@ -54,6 +68,7 @@ If you are replacing the entire contents of the template file then you can do th
 1. Upload `pipeline-toolchain.yml` from your local machine
 2. Point to the 63klabs S3 Bucket (or your own bucket)
 3. Edit Template "In Place" in the Template Designer
+4. Create or Update the stack using AWC CLI (Command Line Interface)
 
 Note! If you have made your own modifications by adding additional permissions or resources, replacing the entire template will remove your changes. In that case, it is recommended you either manually update the pieces of code that need updating following the instructions in each update, or make note of your changes and re-implement them.
 
