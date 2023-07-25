@@ -73,9 +73,9 @@ Parameters:
     Type: String
     AllowedPattern: "^[a-z][a-z0-9-]*[a-z0-9]$"
     MinLength: 2
-    ConstraintDescription: "Minimum of 2 characters (suggested maxium of 20). Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number."
+    ConstraintDescription: "Minimum of 2 characters (suggested maximum of 20). Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number."
   StageId:
-    Description: "Do NOT include <Prefix> or <ProjectId>. <StageId> does not need to match <DeployEnvironment>. You can have multiple stages in the TEST environment (e.g. test, john-test), and multipe stages in PROD (e.g. stage, beta, prod). Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'."
+    Description: "Do NOT include <Prefix> or <ProjectId>. <StageId> does not need to match <DeployEnvironment>. You can have multiple stages in the TEST environment (e.g. test, john-test), and multiple stages in PROD (e.g. stage, beta, prod). Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'."
     Type: String
     AllowedPattern: "^[a-z][a-z0-9-]*[a-z0-9]$"
     MinLength: 2
@@ -92,7 +92,7 @@ Parameters:
   # Deployment Environment Identification
 
   DeployEnvironment:
-    Description: "What deploy/testing environment will this run under? An environment can contain mulitple stages and in coordination with run different tests. Utilize this environment variable to determine your tests and app logging levels during deploy. This can be used for conditionals in the template. For example, PROD will use gradual deployment while DEV and TEST is AllAtOnce. Other resources, such as dashboards are created in PROD and not DEV or TEST. Suggested use: DEV for local SAM deployment, TEST for cloud deployment, PROD for stage, beta, and main/prod deployment."
+    Description: "What deploy/testing environment will this run under? An environment can contain multiple stages and in coordination with run different tests. Utilize this environment variable to determine your tests and app logging levels during deploy. This can be used for conditionals in the template. For example, PROD will use gradual deployment while DEV and TEST is AllAtOnce. Other resources, such as dashboards are created in PROD and not DEV or TEST. Suggested use: DEV for local SAM deployment, TEST for cloud deployment, PROD for stage, beta, and main/prod deployment."
     Type: String
     AllowedValues: ["DEV", "TEST", "PROD"]
     ConstraintDescription: Must specify DEV, TEST, or PROD.
