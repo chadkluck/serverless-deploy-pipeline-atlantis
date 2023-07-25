@@ -102,7 +102,7 @@ Parameters:
     AllowedPattern: "^[a-z][a-z0-9-]*[a-z0-9]$"
     MinLength: 2
     MaxLength: 8
-    ConstraintDescription: "2 to 8 characters. Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number.""
+    ConstraintDescription: "2 to 8 characters. Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number."
     Default: "atlantis" 
   ProjectId:
     Description: "Do NOT include <Prefix> or <StageId>. This is the Project ID for the application. (Minimum 2 characters, suggested maximum of 20) Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'. If you get 'S3 bucket name too long' errors then you must shorten the Project ID or use an S3 Org Prefix. Long Project IDs may also be truncated when naming resources."
@@ -157,7 +157,6 @@ Parameters:
     Description: "What repository will be used?"
     Type: String
     MinLength: 2
-    Default: ""
   CodeCommitBranch:
     Description: What branch of CodeCommit will be used? Typically this is the same name as the stage, but may be different if there are multiple deploys operating off the same branch.
     Type: String
@@ -177,6 +176,8 @@ Conditions:
 # -----------------------------------------------------------------------------
 # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html  
 #
+
+Resources:
 
   # ---------------------------------------------------------------------------
   # -- CodeBuild Role --
@@ -203,7 +204,8 @@ Conditions:
     Description: Setting IAM policy for AWS CodeBuild role
     Properties:
       PolicyName: !Sub "${Prefix}-Worker-CodeBuildPolicy"
-      Roles: !Ref 'CodeBuildRole'
+      Roles: 
+      - !Ref 'CodeBuildRole'
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -264,7 +266,7 @@ Conditions:
         - Name: AWS_PARTITION
           Value: !Ref 'AWS::Partition'
         - Name: AWS_REGION
-          Value: !Ref 'AWS:REGION'
+          Value: !Ref 'AWS::Region'
         - Name: AWS_ACCOUNT
           Value: !Ref 'AWS::AccountId'
         - Name: S3_DEPLOY_BUCKET # informs AWS CodeBuild where it can retrieve your code artifact.
@@ -653,14 +655,17 @@ Conditions:
             - !Join [ '', [ !GetAtt S3DeployBucket.Arn, '/*' ] ]
 
           - Sid: CodeCommitReadOnly
-            Action: # TODO: Scope down
-				    - codecommit:GetRepositoryTriggers
-				    - codecommit:GitPull
-				    - codecommit:GetObjectIdentifier
-				    - codecommit:GetFolder
-				    - codecommit:GetFile
-				    - codecommit:GetRepository
-				    - codecommit:GetBranch
+            Action:
+            - codecommit:GetRepositoryTriggers
+            - codecommit:GitPull
+            - codecommit:GetObjectIdentifier
+            - codecommit:GetFolder
+            - codecommit:GetFile
+            - codecommit:GetRepository
+            - codecommit:GetBranch
+            - codecommit:GetCommit
+            - codecommit:UploadArchive
+            - codecommit:GetUploadArchiveStatus
             Effect: Allow
             Resource: !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:${CodeCommitRepository}'
 
@@ -720,9 +725,12 @@ Conditions:
         Type: S3
       RoleArn: !GetAtt 'CodePipelineTrustRole.Arn'
       Stages:
-      - Name: Source
+      -
+        Name: Source
         Actions:
-        - ActionTypeId:
+        -
+          Name: ApplicationSource
+          ActionTypeId:
             Category: Source
             Owner: AWS
             Provider: CodeCommit
@@ -732,13 +740,15 @@ Conditions:
             PollForSourceChanges: false
             RepositoryName: !Ref CodeCommitRepository
           InputArtifacts: []
-          Name: ApplicationSource
           OutputArtifacts:
           - Name: !Sub "${ProjectId}-${StageId}-SourceArtifact"
           RunOrder: 1
-      - Name: Build
+      -
+        Name: Build
         Actions:
-        - ActionTypeId:
+        -
+          Name: PackageExport
+          ActionTypeId:
             Category: Build
             Owner: AWS
             Provider: CodeBuild
@@ -747,12 +757,14 @@ Conditions:
             ProjectName: !Sub '${Prefix}-${ProjectId}-${StageId}-Build'
           InputArtifacts:
           - Name: !Sub "${ProjectId}-${StageId}-SourceArtifact"
-          Name: PackageExport
           OutputArtifacts:
           - Name: !Sub "${ProjectId}-${StageId}-BuildArtifact"
           RunOrder: 1
-      - Actions:
-        - Name: GenerateChangeSet
+      -
+        Name: Deploy
+        Actions:
+        -
+          Name: GenerateChangeSet
           ActionTypeId:
             Category: Deploy
             Owner: AWS
@@ -771,18 +783,18 @@ Conditions:
               "StageId": "${StageId}",
               "S3BucketNameOrgPrefix": "${S3BucketNameOrgPrefix}",
               "DeployEnvironment": "${DeployEnvironment}",
-              "ParameterStoreAppPath": "${ParameterStoreBasePath}${Prefix}-${ProjectId}-${StageId}/",
+              "AppParameterStorePath": "${ParameterStoreBasePath}${Prefix}-${ProjectId}-${StageId}/",
               "DeployRole": "${CodeDeployTrustRole.Arn}",
               "AlarmNotificationEmail": "${AlarmNotificationEmail}"
             }'
             TemplateConfiguration: !Sub '${ProjectId}-${StageId}-BuildArtifact::template-configuration.json'
             TemplatePath: !Sub "${ProjectId}-${StageId}-BuildArtifact::template-export.yml"
-            EnableTerminationProtection: true
           InputArtifacts:
           - Name: !Sub "${ProjectId}-${StageId}-BuildArtifact"
           OutputArtifacts: []
           RunOrder: 1
-        - Name: Deploy
+        -
+          Name: ExecuteChangeSet
           ActionTypeId:
             Category: Deploy
             Owner: AWS
@@ -793,7 +805,6 @@ Conditions:
             ChangeSetName: pipeline-changeset
             StackName: !Sub "${Prefix}-${ProjectId}-${StageId}-infrastructure"
           InputArtifacts: []
-          Name: ExecuteChangeSet
           OutputArtifacts: []
           RunOrder: 2
 

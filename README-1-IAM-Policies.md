@@ -1,4 +1,4 @@
-# Create IAM Policies
+# READ ME 1: Create IAM Policies
 
 In order for the Deploy Pipeline stack to execute, it will need to assume an IAM role with proper permissions. A CloudFormation service role will need to be created before you can create any Deploy Pipeline stacks.
 
@@ -16,25 +16,25 @@ If you have chosen a prefix other than `ATLANTIS` use that instead when naming y
 2. Open the document copy and do a Find and Replace for each of the following:
    - `$AWS_ACCOUNT$` = Your AWS account number. (ex: 990123456789)
    - `$AWS_REGION$` = Your AWS region (ex: us-east-1) This must be the region you will be deploying in.
-   - `$PREFIX$` = The prefix (lowercase) you chose. You can use `atlantis` if you wish but do not have to.
-   - `$PREFIX_UPPER$` = The prefix (uppercase) you chose. (ex: `ATLANTIS`)
+   - `$PREFIX$` = The prefix (lower case) you chose. You can use `atlantis` if you wish but do not have to.
+   - `$PREFIX_UPPER$` = The prefix (upper case) you chose. (ex: `ATLANTIS`). If you choose to do everything in lower case you can use lower case.
    - `$S3_ORG_PREFIX$` = Either replace with an empty string, or if you prefer, your organization's prefix for S3 buckets followed by a dash. (Example: [empty] or `acme-`) This is the only time you will append a dash to the end of the S3 organization prefix.
 
-Note: There are few times we use an Uppercase Prefix (or uppercase property values in general) just because S3 buckets must be in all Lower Case and it would complicate automated provisioning if both UPPERCASE and lowercase had to be accounted for. Also, mixing cases can be confusing. However, when I manually create resources I will sometimes call out the Prefix or Environment (PROD, DEV, TEST). It just helps me in identifying automated verses manually created resources. You can choose whatever makes sense for you and your organization.
+Note: There are few times we use an Uppercase Prefix. Instead we typically use lower case because S3 buckets must be in all lower case and it would complicate automated provisioning if UPPERCASE, CamelCase, _and_ lowercase had to be accounted for. Also, mixing cases can be confusing. However, when I manually create resources I will sometimes call out the Prefix or Environment (PROD, DEV, TEST). It just helps me in identifying automated verses manually created resources. You can choose whatever makes sense for you and your organization.
 
 ### Step 2: Go to IAM in the Web Console
 
-1. In the AWS Web Console go to IAM and create a new role
-2. From the Use Case list choose CloudFormation and then go to "Next: Permissions"
+1. In the AWS Web Console go to IAM > Roles and "Create a Role"
+2. Leave "Trusted entity type" as AWS service, and from the "Use case list" choose CloudFormation. Go to "Next: Permissions"
 
 ### Step 3: Create the CloudFormation Service Policy
 
 1. Choose "Create Policy" (it will open in a new window)
 2. In the new tab/window, click on the JSON tab and paste in the json contents of the file you modified from [`iam-policy-template/ATLANTIS-CloudFormationServicePolicy.json`](iam-policy-template/ATLANTIS-CloudFormationServicePolicy.json)
-3. Go on to "tags".
-4. Add a tag `Atlantis` with value `iam`, `atlantis:Prefix` with the value of your prefix (lowercase), and any additional tags you may want (like creator and purpose). Note the casing and `:` in the tag keys. More on tags later.
-5. Click on Review.
-6. Give it the name `PREFIX_UPPER-CloudFormation-Service-Role` (replacing `PREFIX_UPPER` with your chosen prefix) and a description such as `Created by [you] to create CloudFormation stacks for deployment pipelines` and hit Create Policy
+3. Go on to "Next".
+4. Give it the name `PREFIX_UPPER-CloudFormation-Service-Role` (replacing `PREFIX_UPPER` with your chosen prefix) and a description such as `Created by [you] to create CloudFormation stacks for deployment pipelines`.
+5. Add a tag `Atlantis` with value `iam`, `atlantis:Prefix` with the value of your prefix (lower case), and any additional tags you may want (like creator and purpose). Note the casing and `:` in the tag keys. More on tags later.
+6. Click on Create Policy.
 7. Close that browser tab/window and go back to the Create Role tab in your browser.
 
 ### Step 4: Add the Policy to the CloudFormation Service Role
@@ -42,10 +42,9 @@ Note: There are few times we use an Uppercase Prefix (or uppercase property valu
 1. Back on the Create Role page, hit the refresh icon.
 2. In Filter policies search box, type in `ATLANTIS` (or your chosen prefix)
 3. Check the boxes next to "_PREFIX_-CloudFormationServicePolicy"
-4. Go on to Next and enter a enter a tag `Atlantis` with value `iam`, `atlantis:Prefix` with the value of your prefix (lowercase), and any additional tags you may want.
-5. Review.
-6. Give it the name `PREFIX_UPPER-CloudFormation-Service-Role` and a description such as `Created by [you] to create CloudFormation stacks for deployment pipelines`
-7. Create the Role
+4. Give it the name `PREFIX_UPPER-CloudFormation-Service-Role` and a description such as `Allows CloudFormation to create and manage AWS stacks and resources on your behalf.`
+5. Enter a tag `Atlantis` with value `iam`, `atlantis:Prefix` with the value of your prefix (lower case), and any additional tags you may want.
+6. Create the Role
 
 Note: Again, you can create roles and stacks so that you can segment permissions among your functional teams (e.g. `websvc` or `accounting`). Cool, huh?! Just make another copy of `ATLANTIS-CloudFormationServicePolicy.json` and do a new search/replace.
 
@@ -83,6 +82,8 @@ For example, if you were updating a role used by your Web Service developers in 
     "Resource": "arn:aws:iam::990123456780:role/WEBSVC-CloudFormation-Service-Role"
 }
 ```
+
+## Related
 
 - [AWS Documentation: Granting a user permissions to pass a role to an AWS service](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_passrole.html)
 - [AWS Documentation: Tagging your AWS resources](https://docs.aws.amazon.com/tag-editor/latest/userguide/tagging.html)

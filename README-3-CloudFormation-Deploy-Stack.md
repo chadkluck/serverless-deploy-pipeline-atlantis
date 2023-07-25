@@ -1,20 +1,53 @@
-# Create or Update Deploy CloudFormation Stack Using pipeline-toolchain.yml
+# READ ME 3: Create or Update Deploy CloudFormation Stack Using pipeline-toolchain.yml
 
-The pipeline-toolchain.yml file is a CloudFormation template that creates the deployment pipeline for your application. The generated CloudFormation stack will have `*-deploy` appended to the name and will be assigned to a specific branch (test, beta, prod, main, etc) which will also be in its name.
+The pipeline-toolchain.yml file is a CloudFormation template that creates the deployment pipeline for your application. The generated CloudFormation stack will have `*-deploy` appended to the name as well as the "stage" assigned to a specific branch in your CodeCommit repository (test, beta, prod, main, etc). There will be a deploy stack for each of the stages/branches you wish to deploy from.
 
-The pipeline monitors a specific branch in the CodeCommit repository and automatically kicks off a deployment when changes are committed to it. The application has its own CloudFormation infrastructure stack with `*-infrastructure` appended to it. The infrastructure stack manages all the resources (S3, API Gateway, Lambda, DynamoDb, etc) needed to run your application. The deploy stack only manages the pipeline and only needs to be updated if you are modifying the way the pipeline operates.
+Though you will most likely always have a prod stage tied to your main/master branch, you can always create and destroy stacks related to your test and dev branches as needed. Creating new deploy stacks is as easy as 1. having a branch to deploy from, and 2. following the steps below to create a deploy pipeline stack.
 
-## Deploy Pipeline Stack Creation Options
+Each deploy pipeline monitors a specific branch in the CodeCommit repository and automatically kicks off a deployment when changes are committed to it. The application has its own CloudFormation infrastructure stack with `*-infrastructure` appended to it. The infrastructure stack manages all the resources (S3, API Gateway, Lambda, DynamoDb, etc) needed to run your application. The deploy stack only manages the pipeline and only needs to be updated if you are modifying the way the pipeline operates.
 
-There are 3 ways to install the deployment pipeline.
+**REMEMBER:** For each "-deploy" stack, there will be a corresponding "-infrastructure". The deploy stack created the Code Pipeline that monitors the CodeCommit repository. Commiting code to a branch monitored by the pipleine will cause it to execute updates to the infrastructure stack. The deploy stack ONLY creates the pipeline for monitoring and executing changes. If you need to modify the pipeline, you can update the deploy stack template. Your application resides in the application infrastructure stack.
 
-1. Upload `pipeline-toolchain.yml` through the CloudFormation web console
-2. Point to the 63K Labs S3 bucket through the CloudFormation web console
-3. Use the AWS CLI (Command Line Interface) 
+## Crate a Deploy Pipeline Stack
 
-## Edit or Replace Existing CloudFormation -deploy Stacks
+There are 3 ways to create the deployment pipeline.
 
-NOTE: This **pipeline-toolchain.yml** template is for **Deploy Pipeline (-deploy)** stacks! **NOT** your application **Infrastructure (-infrastructure)** stacks!
+1. Upload `pipeline-toolchain.yml` through the CloudFormation web console (Recommended for starters)
+2. Point to the 63K Labs S3 bucket (or your own) through the CloudFormation web console
+3. Use the AWS CLI (Command Line Interface) (Advanced)
+
+I will cover "Option 1" for the tutorial, however, as you become familiar with CloudFormation you may explore Options 2 and 3 by using the steps outlined under "Edit or Replace" below.
+
+### Upload pipeline-toolchain.yml from Local Machine
+
+1. Go to the CloudFormation AWS Web Console and choose "Create stack" with new resources.
+2. Leave "Template is ready" checked. 
+3. Under "Specify template" choose "Upload a template file".
+4. Choose the pipeline.toolchain.yml file and upload.
+5. "Stack name": `PREFIX-hello-world-test-deploy` (where `PREFIX` is the prefix you chose in your IAM policy)
+6. Update the parameters according to the prompts and requirements.
+   - For Prefix use the prefix you chose.
+   - For ProjectId use `hello-world`
+   - You will be using `test` for StageId and `TEST` for DeployEnvironment.
+   - Leave S3BucketNameOrgPrefix empty (unless you entered one in the CloudFormation-Service-Role IAM).
+   - Enter your email address for the AlarmNotificationEmail.
+   - Enter the exact name of the CodeRepository you created and use the `test` branch.
+7. Go to next and enter the following tags (we'll only create 2 for now):
+   - For key enter `Atlantis` with value `application-deploy`
+   - For key enter `atlantis:Prefix` with value `PREFIX` (Your prefix value lower case)
+8. Under Permissions choose the IAM role `PREFIX-CloudFormation-Service-Role`.
+9. For Stack failure options choose Roll back all stack resources.
+10. Click Next.
+11. Check the box for acknowledging AWS may create resources. (So you don't incur charges after this tutorial is created you may delete the infrastructure stack and then the deploy stack.)
+12. Watch the stack update progress. Hopefully it is successful!
+
+Once the deploy stack is finished creating the pipeline, it will check the CodeCommit repository and begin creation of the infrastructure stack.
+
+You can always check the progress of the pipeline by going to the deploy stack in CloudFormation > Outputs > Pipeline.
+
+## Create, Edit, or Replace Existing CloudFormation -deploy Stacks
+
+NOTE: This **pipeline-toolchain.yml** template is for a **Deploy Pipeline (-deploy)** stack! **NOT** your application **Infrastructure (-infrastructure)** stack!
 
 If you are replacing the entire contents of the template file then you can do this one of two ways:
 
@@ -28,15 +61,14 @@ If you are updating pieces of the template manually "In Place" by following the 
 
 ### Option 1: Upload from Local Machine
 
-1. Download the new template.yml file and edit as needed (if adding customizations).
-2. Go to your `-deploy` stack and choose Update
-3. Choose "Replace current template"
-4. Choose "Upload a template file"
-5. Upload your file
-6. Update any Parameters and Tags on the next page
-7. Choose the deployment role (Typically something like `projectstack-service-role`) If unsure look at the Stack Info/Overview/IAM Role assigned to similar Deploy stacks.
-8. Check the box for acknowledging AWS may create resources.
-9. Watch the stack update progress. Hopefully it is successful!
+1. Go to your `-deploy` stack in the CloudFormation AWS Web Console and choose Update
+2. Choose "Replace current template"
+3. Choose "Upload a template file"
+4. Upload your file
+5. Update any Parameters and Tags on the next page
+6. Choose the deployment role (Typically something like `projectstack-service-role`) If unsure look at the Stack Info/Overview/IAM Role assigned to similar Deploy stacks.
+7. Check the box for acknowledging AWS may create resources.
+8. Watch the stack update progress. Hopefully it is successful!
 
 ### Option 2: Point to the S3 Bucket
 

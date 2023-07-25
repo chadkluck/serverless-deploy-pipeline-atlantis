@@ -1,6 +1,5 @@
 {
   "Parameters": {
-    "MyVar": "42",
     "ApiPathBase": "$PROJECT_ID$-$STAGE_ID$"
   },
   "Tags":

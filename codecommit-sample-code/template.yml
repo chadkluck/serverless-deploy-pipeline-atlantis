@@ -31,7 +31,7 @@ Metadata:
         Label:
           default: "External Resources and Alarm Notifications"
         Parameters:
-          - ParameterStoreBasePath
+          - AppParameterStorePath
           - AlarmNotificationEmail
       -
         Label:
@@ -66,7 +66,7 @@ Parameters:
     AllowedPattern: "^[a-z][a-z0-9-]*[a-z0-9]$"
     MinLength: 2
     MaxLength: 8
-    ConstraintDescription: "2 to 8 characters. Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number.""
+    ConstraintDescription: "2 to 8 characters. Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number."
     Default: "atlantis" 
   ProjectId:
     Description: "Do NOT include <Prefix> or <StageId>. This is the Project ID for the application. (Minimum 2 characters, suggested maximum of 20) Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'. If you get 'S3 bucket name too long' errors then you must shorten the Project ID or use an S3 Org Prefix. Long Project IDs may also be truncated when naming resources."
@@ -101,8 +101,8 @@ Parameters:
   # ---------------------------------------------------------------------------
   # External Resources and Alarm Notifications
 
-  ParameterStoreBasePath:
-    Description: "Base path in Parameter store to organize parameters for this instance. This is needed so that proper permissions may be given for the app to access Parameter Store. Must either be a single '/' or begin and end with a '/'. This value, with the Project ID appended to it, will be passed to the app build process as ParameterStoreAppPath. Parameters will be stored like this: /<ParameterStoreBasePath>/<Prefix>-<ProjectId>-<StageId>/<AppParameter>"
+  AppParameterStorePath:
+    Description: "Path in Parameter Store reserved for this specific application's infrastructure such as /<ParameterStoreBasePathFromDeployPipeline>/<Prefix>-<ProjectId>-<StageId>/<AppParameterUsedByApplication>"
     Type: String
     AllowedPattern: "^\\/([a-zA-Z0-9]+([\\-][a-zA-Z0-9]+)*[\\/])+$|^\\/$"
     ConstraintDescription: Must only contain alpha-numeric, dashes, or slashes. Must be a single slash or begin and end with a slash /.
@@ -202,8 +202,6 @@ Globals:
       Enabled: !If [ IsProduction, True,  False] #Gradual deployment only if in production so DEV and TEST aren't hindered
       Type: !If [ IsProduction, !Ref FunctionGradualDeploymentType, "AllAtOnce"]
       Role: !Ref DeployRole
-      Alarms:
-      - !Ref QueueCheckFuncErrorsAlarm
 
 # =============================================================================
 # RESOURCES
@@ -229,8 +227,7 @@ Resources:
       Handler: index.get
       Environment:
           Variables:
-            MyVar: !Ref MyVar
-            paramStorePath: !Ref ParameterStoreAppPath
+            paramStorePath: !Ref AppParameterStorePath
             detailedLogs: !If [ IsProduction, "0",  "1"]
             deployEnvironment: !Ref DeployEnvironment
       Events:
@@ -281,46 +278,14 @@ Resources:
             - ssm:GetParametersByPath
             Effect: Allow
             Resource: 
-            - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStoreAppPath}*" # no '/' between :parameter and path or before * because ParameterStoreAppPath comes with its own
-
-  # -- Lambda Function Error Alarm --
-  QueueCheckFuncErrorsAlarm:
-    Type: "AWS::CloudWatch::Alarm"
-    # Condition: IsProduction # TODO: Alarms cost money. Somehow decouple from deployment preference
-    Properties:
-      AlarmDescription: Lambda Function Error > 0
-      MetricName: Errors
-      Statistic: Sum
-      ComparisonOperator: GreaterThanThreshold
-      Threshold: 0
-      Period: 1200
-      EvaluationPeriods: 1
-      TreatMissingData: notBreaching
-      Namespace: AWS/Lambda
-      Dimensions:
-        - Name: FunctionName
-          Value: !Ref QueueCheckFunc
-      AlarmActions:
-        - Ref: QueueCheckFuncErrorAlarmNotification
-
-  # -- Lambda Function Notification for Error Alarm --
-  QueueCheckFuncErrorAlarmNotification:
-      Type: AWS::SNS::Topic
-      Properties: 
-        DisplayName: !Sub 'AWS-Alarm-${Prefix}-${ProjectId}-${StageId}'
-        FifoTopic: false
-        Subscription:
-          - Endpoint: !Ref AlarmNotificationEmail
-            Protocol: 'email'
-
-
+            - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${AppParameterStorePath}*" # no '/' between :parameter and path or before * because AppParameterStorePath comes with its own
 
   # Log Group with a retention policy
   AppLogGroup:
     Type: AWS::Logs::LogGroup
     Properties: 
-        LogGroupName: !Sub "/aws/lambda/${AppFunction}"
-        RetentionInDays: !If [ IsProduction, 90,  30] # TODO: I often set this using a variable
+        LogGroupName: !Sub "/aws/lambda/${Prefix}-${ProjectId}-${StageId}-AppFunction" # Avoid circular reference !Sub "/aws/lambda/${AppFunction}"
+        RetentionInDays: !If [ IsProduction, !Ref LogRetentionInDaysForPROD,  !Ref LogRetentionInDaysForDEVTEST ]
 
 # =============================================================================
 # OUTPUTS
@@ -333,11 +298,11 @@ Resources:
 
 Outputs:
   UserAPI:
-    Description: "Endpoint URL"
+    Description: "Endpoint Test URL"
     Value: !Sub "https://${WebApi}.execute-api.${AWS::Region}.amazonaws.com/${ApiPathBase}/"
   CloudWatchLogGroup:
     Description: "Cloud Watch Log Group for application"
-    Value: !Sub "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logStream:group=%2Faws%2Flambda%2F${QueueCheckFunc}"
+    Value: !Sub "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logStream:group=%2Faws%2Flambda%2F${AppFunction}"
   LambdaWebConsole:
     Description: "Lambda Web Console"
     Value: !Sub "https://console.aws.amazon.com/lambda/home?region=${AWS::Region}#/functions/${AppFunction}?tab=code"

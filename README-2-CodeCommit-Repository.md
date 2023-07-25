@@ -1,4 +1,4 @@
-# Create CodeCommit Repository for Application Infrastructure
+# READ ME 2: Create CodeCommit Repository for Application Infrastructure
 
 Once the service roles are created it is time to set up your first CodeCommit repository to store your application infrastructure.
 
@@ -8,11 +8,14 @@ You can set up multiple deployment branches such as test, beta, prod (main), or 
 
 It is recommended you have a base or work-in-progress branch (such as `dev`) that you can commit code to without initiating a deploy.
 
-You will need to create the CodeCommit repository and seed it with your application infrastructure before you can create the deploy pipeline. To get started, you can use the code found in the `/codecommit-sample-code` directory and replace it later with more functional code.
+You will need to create the CodeCommit repository and seed it with your application infrastructure before you can create the deploy pipeline. To get started, you can use the code found in the `/codecommit-sample-code` directory and replace it later with more functional code such as [Serverless Webservice Template for Pipeline Atlantis](https://github.com/chadkluck/serverless-webservice-template-for-pipeline-atlantis).
 
-1. Create a code commit repository.
-2. Add the sample code from `/codecommit-sample-code`.
-3. Create `dev` and `test` branches (you can create additional branches later)
+## Create the Repository
+
+1. Create a code commit repository. (You can name it `hello-world`)
+2. Clone the repository to your local machine.
+3. Add the sample code from `/codecommit-sample-code` and commit.
+4. Create `dev` and `test` branches (you can create additional branches later)
 
 You should now have a repository with 3 branches:
 
@@ -20,9 +23,16 @@ You should now have a repository with 3 branches:
 - test
 - dev
 
+Each branch should contain the same code.
+
 When we create the first Deploy Pipeline CloudFormation stack we will have it monitor the "test" branch. Upon successful completion of the test deployment, we will create a production deployment from the "main" branch.
 
 We will leave "dev" as a branch that doesn't have an automatic deploy. You can also create individual developer and feature branches in the future.
+
+## Related
+
+- [AWS Documentation: CodeCommit ](https://docs.aws.amazon.com/codecommit/latest/userguide/welcome.html)
+- [AWS Documentation: AWS Serverless Application Model (SAM)](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html)
 
 ## Documentation
 
