@@ -61,77 +61,77 @@ Parameters:
   # Application Resource Naming
 
   Prefix:
-    Description: "Prefix to assign to resources. This can be thought of as a Name Space and will be pre-pended to all resources. Use it to identify ownership/access for teams, departments, etc. Must have a corresponding CloudFormation Service Role. Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'."
     Type: String
+    Description: "Prefix to assign to resources. This can be thought of as a Name Space and will be pre-pended to all resources. Use it to identify ownership/access for teams, departments, etc. Must have a corresponding CloudFormation Service Role. Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'."
+    Default: "atlantis"
     AllowedPattern: "^[a-z][a-z0-9-]*[a-z0-9]$"
     MinLength: 2
     MaxLength: 8
     ConstraintDescription: "2 to 8 characters. Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number."
-    Default: "atlantis" 
   ProjectId:
-    Description: "Do NOT include <Prefix> or <StageId>. This is the Project ID for the application. (Minimum 2 characters, suggested maximum of 20) Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'. If you get 'S3 bucket name too long' errors then you must shorten the Project ID or use an S3 Org Prefix. Long Project IDs may also be truncated when naming resources."
     Type: String
+    Description: "Do NOT include <Prefix> or <StageId>. This is the Project ID for the application. (Minimum 2 characters, suggested maximum of 20) Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'. If you get 'S3 bucket name too long' errors then you must shorten the Project ID or use an S3 Org Prefix. Long Project IDs may also be truncated when naming resources."
     AllowedPattern: "^[a-z][a-z0-9-]*[a-z0-9]$"
     MinLength: 2
-    ConstraintDescription: "Minimum of 2 characters (suggested maxium of 20). Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number."
+    ConstraintDescription: "Minimum of 2 characters (suggested maximum of 20). Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number."
   StageId:
-    Description: "Do NOT include <Prefix> or <ProjectId>. <StageId> does not need to match <DeployEnvironment>. You can have multiple stages in the TEST environment (e.g. test, john-test), and multipe stages in PROD (e.g. stage, beta, prod). Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'."
     Type: String
+    Description: "Do NOT include <Prefix> or <ProjectId>. <StageId> does not need to match <DeployEnvironment>. You can have multiple stages in the TEST environment (e.g. test, john-test), and multiple stages in PROD (e.g. stage, beta, prod). Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'."
     AllowedPattern: "^[a-z][a-z0-9-]*[a-z0-9]$"
     MinLength: 2
     MaxLength: 10
     ConstraintDescription: "2 to 10 characters. Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number."
   S3BucketNameOrgPrefix:
-    Description: "By default, to enforce uniqueness, buckets created for deploy and infrastructure include account and region in the bucket name. However, due to S3 bucket name character limits, you can turn this off by specifying your own prefix (like an org code) that will be included before the project <Prefix> above."
     Type: String
+    Description: "By default, to enforce uniqueness, buckets created for deploy and infrastructure include account and region in the bucket name. However, due to S3 bucket name character limits, you can turn this off by specifying your own prefix (like an org code) that will be included before the project <Prefix> above."
+    Default: ""
     AllowedPattern: "^[a-z][a-z0-9-]*[a-z0-9]$|^$"
     ConstraintDescription: "May be empty or at least 2 characters long. Must start with a letter, may contain lowercase letters, numbers, and hyphens."
-    Default: ""
 
   # ---------------------------------------------------------------------------
   # Deployment Environment Identification
 
   DeployEnvironment:
-    Description: "What deploy/testing environment will this run under? An environment can contain mulitple stages and in coordination with run different tests. Utilize this environment variable to determine your tests and app logging levels during deploy. This can be used for conditionals in the template. For example, PROD will use gradual deployment while DEV and TEST is AllAtOnce. Other resources, such as dashboards are created in PROD and not DEV or TEST. Suggested use: DEV for local SAM deployment, TEST for cloud deployment, PROD for stage, beta, and main/prod deployment."
     Type: String
-    AllowedValues: ["DEV", "TEST", "PROD"]
-    ConstraintDescription: Must specify DEV, TEST, or PROD.
+    Description: "What deploy/testing environment will this run under? An environment can contain multiple stages and in coordination with run different tests. Utilize this environment variable to determine your tests and app logging levels during deploy. This can be used for conditionals in the template. For example, PROD will use gradual deployment while DEV and TEST is AllAtOnce. Other resources, such as dashboards are created in PROD and not DEV or TEST. Suggested use: DEV for local SAM deployment, TEST for cloud deployment, PROD for stage, beta, and main/prod deployment."
     Default: "PROD"
+    AllowedValues: ["DEV", "TEST", "PROD"]
+    ConstraintDescription: "Must specify DEV, TEST, or PROD."
 
   # ---------------------------------------------------------------------------
   # External Resources and Alarm Notifications
 
   AppParameterStorePath:
-    Description: "Path in Parameter Store reserved for this specific application's infrastructure such as /<ParameterStoreBasePathFromDeployPipeline>/<Prefix>-<ProjectId>-<StageId>/<AppParameterUsedByApplication>"
     Type: String
-    AllowedPattern: "^\\/([a-zA-Z0-9]+([\\-][a-zA-Z0-9]+)*[\\/])+$|^\\/$"
-    ConstraintDescription: Must only contain alpha-numeric, dashes, or slashes. Must be a single slash or begin and end with a slash /.
+    Description: "Path in Parameter Store reserved for this specific application's infrastructure such as /<ParameterStoreBasePathFromDeployPipeline>/<Prefix>-<ProjectId>-<StageId>/<AppParameterUsedByApplication>"
     Default: "/"
+    AllowedPattern: "^\\/([a-zA-Z0-9]+([\\-][a-zA-Z0-9]+)*[\\/])+$|^\\/$"
+    ConstraintDescription: "Must only contain alpha-numeric, dashes, or slashes. Must be a single slash or begin and end with a slash /."
   AlarmNotificationEmail:
     Type: String
     Description: "Email address to send a notification to when Lambda function goes into alarm. Be sure to check the inbox for this email address as you will need to confirm the subscription."
     AllowedPattern: '^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$'
-    ConstraintDescription: 'A valid email must be used to receive alarm notifications'
+    ConstraintDescription: "A valid email must be used to receive alarm notifications"
 
   # ---------------------------------------------------------------------------
   # Lambda Function Settings
 
   FunctionTimeOutInSeconds:
     Type: Number
-    Default: 10
     Description: "Time out in seconds for the Lambda function. API Gateway times out after 30 seconds. This web service is ideal for requests that can complete in less than 10 seconds"
+    Default: 10
     MinValue: 3
     MaxValue: 30
   FunctionMaxMemoryInMB:
     Type: Number
-    Default: 128
     Description: "If you are handling large responses, you will need to increase the size. Monitor CloudWatch logs"
+    Default: 128
     AllowedValues: [128, 192, 256, 320, 384, 448, 512]
     ConstraintDescription: "Min 128, Max 512 in increments of 64"
   FunctionGradualDeploymentType:
     Type: String
-    Default: "Linear10PercentEvery3Minutes"
     Description: "For production environments, what method do you want to use to gradually deploy before rolling back in case of errors. Note that when 'DeployEnvironment' is TEST or DEV, gradual deploy will not be enabled and will be same as All At Once"
+    Default: "Linear10PercentEvery3Minutes"
     AllowedValues:
       - "Canary10Percent5Minutes" # Canary = First 10%, then after x minutes, full 90% (full deploy after x minutes)
       - "Canary10Percent10Minutes"
@@ -152,21 +152,21 @@ Parameters:
 
   ApiPathBase:
     Type: String
-    Default: "api"
     Description: "The path API Gateway uses as the first segment in the invoked Uniform Resource Identifier (URI). Since API Gateway generates random characters for the domain, it can be helpful to use this in identifying applications and stages. If a custom domain is used it can be masked and hidden from visitors. For example: xyz08ryz.apigateway.aws.com/pets or xyz08ryz.apigateway.aws.com/myapp or xyz08ryz.apigateway.aws.com/myapp-test. It is recommended you set this in the template-config.json file and allow the stage to be dynamically appended."
+    Default: "api"
     AllowedPattern: ^[a-z0-9]([a-z0-9-_]*[a-z0-9])?$
     MaxLength: 128
     MinLength: 1
     ConstraintDescription: "1-128 lowercase alpha numeric, hyphens, and underscores. Must begin and end with an alphanumeric character."
   LogRetentionInDaysForPROD:
     Type: Number
-    Default: 90
     Description: "How long should CloudWatch logs be kept in a PRODUCTION environment?"
+    Default: 90
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
   LogRetentionInDaysForDEVTEST:
     Type: Number
-    Default: 7
     Description: "How long should CloudWatch logs be kept in a DEV or TEST environment?"
+    Default: 7
     AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
 
 
@@ -242,7 +242,7 @@ Resources:
   # LambdaFunction Execution Role
   LambdaExecutionRole:
     Type: AWS::IAM::Role
-    Description: Creating service role in IAM for AWS Lambda
+    Description: "IAM Role that allows the Lambda permission to execute and access resources"
     Properties:
       RoleName: !Sub "${Prefix}-${ProjectId}-${StageId}-ExecutionRole"
       Path: /

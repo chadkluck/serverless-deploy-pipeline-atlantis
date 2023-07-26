@@ -45,9 +45,9 @@ There are 5 README documents to walk you through setting up the required IAM Pol
 
 IAM Policies and Roles only need to be set up once. CodeCommit Repositories only need to be set up once per application. A deploy stack needs to be set up for each deployment stage of an application (test, beta, prod).
 
-- [README 1 Create IAM Policies](README-1-IAM-Policies.md)
-- [README 2 Create CodeCommit Repository](README-2-CodeCommit-Repository.md)
-- [README 3 Create and Update CloudFormation Deploy Pipeline Stack](README-3-CloudFormation-Deploy-Stack.md)
-- [README 4 Tutorial](README-4-Tutorial.md)
-- [README 5 Advanced](README-5-Advanced.md)
+- [README 1 Create IAM Policies](deploy-pipeline-template-v2/README-1-IAM-Policies.md)
+- [README 2 Create CodeCommit Repository](deploy-pipeline-template-v2/README-2-CodeCommit-Repository.md)
+- [README 3 Create and Update CloudFormation Deploy Pipeline Stack](deploy-pipeline-template-v2/README-3-CloudFormation-Deploy-Stack.md)
+- [README 4 Tutorial](deploy-pipeline-template-v2/README-4-Tutorial.md)
+- [README 5 Advanced](deploy-pipeline-template-v2/README-5-Advanced.md)
 - [CHANGELOG - Updates to Existing Deploy Stacks](CHANGELOG.md)
