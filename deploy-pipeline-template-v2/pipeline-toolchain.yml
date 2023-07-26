@@ -120,9 +120,9 @@ Parameters:
   S3BucketNameOrgPrefix:
     Type: String
     Description: "By default, to enforce uniqueness, buckets created for deploy and infrastructure include account and region in the bucket name. However, due to S3 bucket name character limits, you can turn this off by specifying your own prefix (like an org code) that will be included before the project <Prefix> above."
+    Default: ""
     AllowedPattern: "^[a-z][a-z0-9-]*[a-z0-9]$|^$"
     ConstraintDescription: "May be empty or at least 2 characters long. Must start with a letter, may contain lowercase letters, numbers, and hyphens."
-    Default: ""
 
   # ---------------------------------------------------------------------------
   # Deployment Environment Identification
