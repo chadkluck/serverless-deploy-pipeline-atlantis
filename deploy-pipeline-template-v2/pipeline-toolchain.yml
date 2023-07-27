@@ -593,7 +593,7 @@ Resources:
           - Id: "ExpireObjects"
             AbortIncompleteMultipartUpload:
               DaysAfterInitiation: 1
-            ExpirationInDays: 30
+            ExpirationInDays: 366
             NoncurrentVersionExpirationInDays: 30
             Status: "Enabled" # Enable so that you purge old build artifacts - they serve no use, not even for debug and it saves space and $$$
 
