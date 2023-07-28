@@ -31,7 +31,7 @@ Metadata:
         Label:
           default: "External Resources and Alarm Notifications"
         Parameters:
-          - AppParameterStorePath
+          - ParameterStoreHierarchy
           - AlarmNotificationEmail
       -
         Label:
@@ -85,8 +85,8 @@ Parameters:
     Type: String
     Description: "By default, to enforce uniqueness, buckets created for deploy and infrastructure include account and region in the bucket name. However, due to S3 bucket name character limits, you can turn this off by specifying your own prefix (like an org code) that will be included before the project <Prefix> above."
     Default: ""
-    AllowedPattern: "^[a-z][a-z0-9-]*[a-z0-9]$|^$"
-    ConstraintDescription: "May be empty or at least 2 characters long. Must start with a letter, may contain lowercase letters, numbers, and hyphens."
+    AllowedPattern: "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^$"
+    ConstraintDescription: "May be empty or at least 2 characters long. Must start with a alphanumeric character, may contain lowercase letters, numbers, and hyphens."
 
   # ---------------------------------------------------------------------------
   # Deployment Environment Identification
@@ -101,12 +101,12 @@ Parameters:
   # ---------------------------------------------------------------------------
   # External Resources and Alarm Notifications
 
-  AppParameterStorePath:
+  ParameterStoreHierarchy:
     Type: String
-    Description: "Path in Parameter Store reserved for this specific application's infrastructure such as /<ParameterStoreBasePathFromDeployPipeline>/<Prefix>-<ProjectId>-<StageId>/<AppParameterUsedByApplication>"
+    Description: "Parameters may be organized within a hierarcy based on your organizational or operations structure. The application will create its parameters within this hierarchy. For example, /Finance/ops/<env>/<prefix>-<project_id>-<stage>/. Must either be a single '/' or begin and end with a '/'."
     Default: "/"
-    AllowedPattern: "^\\/([a-zA-Z0-9]+([\\-][a-zA-Z0-9]+)*[\\/])+$|^\\/$"
-    ConstraintDescription: "Must only contain alpha-numeric, dashes, or slashes. Must be a single slash or begin and end with a slash /."
+    AllowedPattern: "^\\/([a-zA-Z0-9_.-]*[\\/])+$|^\\/$"
+    ConstraintDescription: "Must only contain alpha-numeric, dashes, underscores, or slashes. Must be a single slash or begin and end with a slash."
   AlarmNotificationEmail:
     Type: String
     Description: "Email address to send a notification to when Lambda function goes into alarm. Be sure to check the inbox for this email address as you will need to confirm the subscription."
@@ -226,10 +226,10 @@ Resources:
       CodeUri: app/
       Handler: index.get
       Environment:
-          Variables:
-            paramStorePath: !Ref AppParameterStorePath
-            detailedLogs: !If [ IsProduction, "0",  "1"]
-            deployEnvironment: !Ref DeployEnvironment
+        Variables:
+          paramStore: !Ref ParameterStoreHierarchy
+          detailedLogs: !If [ IsProduction, "0",  "1"]
+          deployEnvironment: !Ref DeployEnvironment
       Events:
         GetEvent:
           Type: Api
@@ -278,7 +278,7 @@ Resources:
             - ssm:GetParametersByPath
             Effect: Allow
             Resource: 
-            - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${AppParameterStorePath}*" # no '/' between :parameter and path or before * because AppParameterStorePath comes with its own
+            - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStoreHierarchy}*"
 
   # Log Group with a retention policy
   AppLogGroup:
@@ -306,3 +306,6 @@ Outputs:
   LambdaWebConsole:
     Description: "Lambda Web Console"
     Value: !Sub "https://console.aws.amazon.com/lambda/home?region=${AWS::Region}#/functions/${AppFunction}?tab=code"
+  ParameterStore:
+    Description: "SSM Parameter Store"
+    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/systems-manager/parameters/?region=${AWS::Region}&tab=Table#list_parameter_filters=Name:Contains:${ParameterStoreHierarchy}"

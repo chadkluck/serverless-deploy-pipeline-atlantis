@@ -76,7 +76,7 @@ Metadata:
         Label:
           default: "External Resources and Alarm Notifications"
         Parameters:
-          - ParameterStoreBasePath
+          - ParameterStoreHierarchy
           - AlarmNotificationEmail
       -
         Label:
@@ -121,8 +121,8 @@ Parameters:
     Type: String
     Description: "By default, to enforce uniqueness, buckets created for deploy and infrastructure include account and region in the bucket name. However, due to S3 bucket name character limits, you can turn this off by specifying your own prefix (like an org code) that will be included before the project <Prefix> above."
     Default: ""
-    AllowedPattern: "^[a-z][a-z0-9-]*[a-z0-9]$|^$"
-    ConstraintDescription: "May be empty or at least 2 characters long. Must start with a letter, may contain lowercase letters, numbers, and hyphens."
+    AllowedPattern: "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^$"
+    ConstraintDescription: "May be empty or at least 2 characters long. Must start with a alphanumeric character, may contain lowercase letters, numbers, and hyphens."
 
   # ---------------------------------------------------------------------------
   # Deployment Environment Identification
@@ -137,12 +137,12 @@ Parameters:
   # ---------------------------------------------------------------------------
   # External Resources and Alarm Notifications
 
-  ParameterStoreBasePath:
+  ParameterStoreHierarchy:
     Type: String
-    Description: "Base path in Parameter store to organize parameters for this instance. This is needed so that proper permissions may be given for the app to access Parameter Store. Must either be a single '/' or begin and end with a '/'. This value, with the Project ID appended to it, will be passed to the app build process as ParameterStoreAppPath. Parameters will be stored like this: /<ParameterStoreBasePath>/<Prefix>-<ProjectId>-<StageId>/<AppParameter>"
+    Description: "Parameters may be organized within a hierarcy based on your organizational or operations structure. The application will create its parameters within this hierarchy. For example, /Finance/ops/ for this value would then generate /Finance/ops/<env>/<prefix>-<project_id>-<stage>/<parameterName>. Must either be a single '/' or begin and end with a '/'."
     Default: "/"
-    AllowedPattern: "^\\/([a-zA-Z0-9]+([\\-][a-zA-Z0-9]+)*[\\/])+$|^\\/$"
-    ConstraintDescription: "Must only contain alpha-numeric, dashes, or slashes. Must be a single slash or begin and end with a slash /."
+    AllowedPattern: "^\\/([a-zA-Z0-9_.-]*[\\/])+$|^\\/$"
+    ConstraintDescription: "Must only contain alpha-numeric, dashes, underscores, or slashes. Must be a single slash or begin and end with a slash. (/Finance/, /Finance/ops/, or /)"
   AlarmNotificationEmail:
     Type: String
     Description: "Email address to send a notification to when Lambda function goes into alarm. Be sure to check the inbox for this email address as you will need to confirm the subscription."
@@ -231,7 +231,7 @@ Resources:
           - ssm:ListTagsForResource
           Effect: Allow
           Resource: 
-            !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStoreBasePath}${Prefix}-${ProjectId}-${StageId}/*" # no / between :parameter and path
+            !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStoreHierarchy}${DeployEnvironment}/${Prefix}-${ProjectId}-${StageId}/*"
 
 
   # ---------------------------------------------------------------------------
@@ -281,8 +281,8 @@ Resources:
           Value: !Ref 'CodeCommitRepository'
         - Name: REPOSITORY_BRANCH
           Value: !Ref 'CodeCommitBranch'
-        - Name: PARAM_STORE_PATH
-          Value: !Sub '${ParameterStoreBasePath}${Prefix}-${ProjectId}-${StageId}/'
+        - Name: PARAM_STORE_HIERARCHY
+          Value: !Sub '${ParameterStoreHierarchy}${DeployEnvironment}/${Prefix}-${ProjectId}-${StageId}/'
         - Name: DEPLOY_ENVIRONMENT
           Value: !Ref 'DeployEnvironment'
         - Name: ALARM_NOTIFICATION_EMAIL
@@ -435,7 +435,7 @@ Resources:
             - ssm:ListTagsForResource
             Effect: Allow
             Resource: 
-              !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStoreBasePath}${Prefix}-${ProjectId}-${StageId}/*" # no / between :parameter and path
+              !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStoreHierarchy}${DeployEnvironment}/${Prefix}-${ProjectId}-${StageId}/*"
 
           - Sid: "CloudWatchDashboardLimitedCRUDThisDeploymentOnly"
             Action:
@@ -780,7 +780,7 @@ Resources:
               "StageId": "${StageId}",
               "S3BucketNameOrgPrefix": "${S3BucketNameOrgPrefix}",
               "DeployEnvironment": "${DeployEnvironment}",
-              "AppParameterStorePath": "${ParameterStoreBasePath}${Prefix}-${ProjectId}-${StageId}/",
+              "ParameterStoreHierarchy": "${ParameterStoreHierarchy}${DeployEnvironment}/${Prefix}-${ProjectId}-${StageId}/",
               "DeployRole": "${CodeDeployTrustRole.Arn}",
               "AlarmNotificationEmail": "${AlarmNotificationEmail}"
             }'
