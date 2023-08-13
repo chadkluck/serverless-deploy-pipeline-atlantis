@@ -10,4 +10,4 @@ Updates are listed in chronological order to aid in applying any manual updates.
 
 ## 2023-07-22
 
-Reworked the template and removed the ability to deploy using CodeStar. This simplified maintaining and using the template for both the deploy and infrastructure stack. The old templates have been moved to the `/deprecated` directory.
+Reworked the template and removed the ability to deploy using CodeStar. This simplified maintaining and using the template for both the deploy and infrastructure stack. The old templates have been moved to the `/x-deprecated-versions` directory.
