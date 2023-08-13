@@ -1,8 +1,20 @@
-AWSTemplateFormatVersion: 2010-09-09
+# This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, 
+# either express or implied. See the License for the specific language governing permissions 
+# and limitations under the License.
+#
+# Web Service CloudFormation Application Infrastructure Template
+# https://github.com/chadkluck/serverless-webservice-template-for-pipeline-atlantis
+# Chad Leigh Kluck
+# v2.2023-07-22 HPAD (Happy Pi Approximation Day!)
+# 
+# NOTE: As of v2 this template no longer supports CodeStar. I just wasn't using it and including
+# it complicated the set-up and learning process. Parameters have also been refactored and the
+# resources and parameters used by the npm package Cache-Data have been called out.
+#
+# USAGE/MORE INFO: https://github.com/chadkluck/serverless-webservice-template-for-pipeline-atlantis/blob/main/README.md
 
-Transform:
-- AWS::Serverless-2016-10-31
-
+AWSTemplateFormatVersion: "2010-09-09"
+Transform:  AWS::Serverless-2016-10-31
 Description: "CloudFormation Application Infrastructure Template"
 
 # =============================================================================
@@ -63,7 +75,7 @@ Parameters:
   Prefix:
     Type: String
     Description: "Prefix to assign to resources. This can be thought of as a Name Space and will be pre-pended to all resources. Use it to identify ownership/access for teams, departments, etc. Must have a corresponding CloudFormation Service Role. Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'."
-    Default: "atlantis"
+    Default: "atlantis" 
     AllowedPattern: "^[a-z][a-z0-9-]*[a-z0-9]$"
     MinLength: 2
     MaxLength: 8
@@ -185,6 +197,7 @@ Conditions:
   CreateTestResources: !Equals [!Ref DeployEnvironment, "TEST"]
   CreateDevResources: !Equals [!Ref DeployEnvironment, "DEV"]
   UseS3BucketNameOrgPrefix: !Not [!Equals [!Ref S3BucketNameOrgPrefix, ""]]
+  CreateAlarms: !Equals [!Ref DeployEnvironment, "PROD"] # Not yet implemented. Still in development / !Equals ["ALWAYS", "ALWAYS"] # Option if you want to ALWAYS create an alarm or only in PROD. Alarms cost money so you may only want them in Prod (or temporarily in test)
 
 # =============================================================================
 # GLOBALS
@@ -194,14 +207,14 @@ Conditions:
 
 Globals:
   Function:
-    Timeout: !Ref FunctionTimeOutInSeconds
-    MemorySize: !Ref FunctionMaxMemoryInMB
-    Runtime: nodejs18.x
     AutoPublishAlias: live
     DeploymentPreference:
       Enabled: !If [ IsProduction, True,  False] #Gradual deployment only if in production so DEV and TEST aren't hindered
       Type: !If [ IsProduction, !Ref FunctionGradualDeploymentType, "AllAtOnce"]
       Role: !Ref DeployRole
+
+  Api:
+    OpenApiVersion: 3.0.0 # Prevents extra stage called Stage in API Gateway https://www.internetkatta.com/how-to-prevent-aws-sam-from-creating-the-default-stage-in-api-gateway-stage
 
 # =============================================================================
 # RESOURCES
@@ -211,25 +224,41 @@ Globals:
 
 Resources:
 
-  # API Gateway
+  # ---------------------------------------------------------------------------
+  # API Gateway, Lambda, and Monitoring
+
+  # -- API Gateway --
   WebApi:
     Type: AWS::Serverless::Api
     Properties: 
       Name: !Sub '${Prefix}-${ProjectId}-${StageId}-WebApi'
       StageName: !Ref ApiPathBase
+      # DefinitionBody:
+      #   "Fn::Transform":
+      #     Name: "AWS::Include"
+      #     Parameters:
+      #       Location: ./template-swagger.yml
 
-  # Lambda Function
+  # -- Lambda Function --
   AppFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub '${Prefix}-${ProjectId}-${StageId}-AppFunction'
+      Description: "Magic Ball"
       CodeUri: app/
-      Handler: index.get
+      Handler: index.handler
+      Runtime: nodejs16.x
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: !Ref FunctionTimeOutInSeconds
+      MemorySize: !Ref FunctionMaxMemoryInMB
       Environment:
         Variables:
-          paramStore: !Ref ParameterStoreHierarchy
-          detailedLogs: !If [ IsProduction, "0",  "1"]
+          detailedLogs: !If [ IsProduction, "0",  "2"]
           deployEnvironment: !Ref DeployEnvironment
+          paramStore: !Ref ParameterStoreHierarchy
+          user_agent_identifier: !Ref UserAgent
+          lambdaTimeoutInSeconds: !Ref FunctionTimeOutInSeconds # so we can calculate any external connection timeout in our code
+
       Events:
         GetEvent:
           Type: Api
@@ -237,16 +266,14 @@ Resources:
             Path: /
             Method: get
             RestApiId: !Ref WebApi
-      Role: !GetAtt LambdaExecutionRole.Arn
 
-  # LambdaFunction Execution Role
+  # -- LambdaFunction Execution Role --
   LambdaExecutionRole:
     Type: AWS::IAM::Role
-    Description: "IAM Role that allows the Lambda permission to execute and access resources"
     Properties:
       RoleName: !Sub "${Prefix}-${ProjectId}-${StageId}-ExecutionRole"
+      Description: "IAM Role that allows the Lambda permission to execute and access resources"
       Path: /
-
       AssumeRolePolicyDocument:
         Statement:
         - Effect: Allow
@@ -254,9 +281,8 @@ Resources:
             Service: [lambda.amazonaws.com]
           Action: sts:AssumeRole
 
-      # These are the resources your Lambda function needs access to
-      # Logs, SSM Parameters, DynamoDb, etc.
-      # Define specific actions such as get/put (read/write)
+      # These are the resources your Lambda function needs access to Logs, SSM Parameters, DynamoDb, S3, etc.
+      # Define specific actions such as get/put (read/write). Work towards practicing the Principle of Least Privilege
       Policies:
       - PolicyName: LambdaResourceAccessPolicies
         PolicyDocument:
@@ -270,22 +296,25 @@ Resources:
             Effect: Allow
             Resource: !GetAtt AppLogGroup.Arn
 
-          - Sid: LambdaAccessToSSMParameters
-            Action:
-            - ssm:DescribeParameters
-            - ssm:GetParameters
-            - ssm:GetParameter
-            - ssm:GetParametersByPath
-            Effect: Allow
-            Resource: 
-            - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStoreHierarchy}*"
+  # -- Permissions allowing API Gateway to Execute Lambda via Web Console Test button --
+  # See https://github.com/awslabs/serverless-application-model/issues/59#issuecomment-348709355
+  ConfigLambdaPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AppFunction #!Sub "${AppFunction}:live"
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebApi}/*"
 
-  # Log Group with a retention policy
+  # ---------------------------------------------------------------------------
+  # Resources for Lambda Function
+
+  # -- Log Group with a retention policy --
   AppLogGroup:
     Type: AWS::Logs::LogGroup
     Properties: 
-        LogGroupName: !Sub "/aws/lambda/${Prefix}-${ProjectId}-${StageId}-AppFunction" # Avoid circular reference !Sub "/aws/lambda/${AppFunction}"
-        RetentionInDays: !If [ IsProduction, !Ref LogRetentionInDaysForPROD,  !Ref LogRetentionInDaysForDEVTEST ]
+        LogGroupName: !Sub '/aws/lambda/${Prefix}-${ProjectId}-${StageId}-AppFunction' # Avoid circular reference !Sub "/aws/lambda/${AppFunction}"
+        RetentionInDays: !If [ IsProduction, !Ref LogRetentionInDaysForPROD,  !Ref LogRetentionInDaysForDEVTEST]
 
 # =============================================================================
 # OUTPUTS
@@ -306,6 +335,3 @@ Outputs:
   LambdaWebConsole:
     Description: "Lambda Web Console"
     Value: !Sub "https://console.aws.amazon.com/lambda/home?region=${AWS::Region}#/functions/${AppFunction}?tab=code"
-  ParameterStore:
-    Description: "SSM Parameter Store"
-    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/systems-manager/parameters/?region=${AWS::Region}&tab=Table#list_parameter_filters=Name:Contains:${ParameterStoreHierarchy}"

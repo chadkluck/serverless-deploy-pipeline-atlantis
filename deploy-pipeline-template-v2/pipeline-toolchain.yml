@@ -7,9 +7,9 @@
 # Chad Leigh Kluck
 # v2.2023-07-22 HPAD (Happy Pi Approximation Day!)
 # 
-# NOTE: As of v2 this toolchain no longer supports CodeStar. I just wasn't using it and including
-# it complicated the set-up and learning process. The old toolchain can be found in the /deprecated
-# directory for reference.
+# NOTE: As of v2 this toolchain no longer supports CodeStar. Including it complicated the set-up 
+# and learning process and it wasn't too useful. The old toolchain can be found in the 
+# /x-deprecated-versions directory for reference.
 # 
 # This template creates a CodePipeline triggered by commits to a CodeCommit repository to deploy 
 # a simple API Gateway + Lambda web service or Event Bridge + Lambda service. It also generates
@@ -38,14 +38,7 @@
 # to find areas of improvement but must prioritize.
 #
 # README documentation goes through installation steps. 
-#
-# Basically there are 6 main ideas:
-# 1. Create an IAM role and policy based on the policies in iam-policy-templates (You only need to do this once for any number of pipelines)
-# 2. Create a CodeCommit repository that contains this code and set up the branch you wish to deploy from. (You only need to do this once for each application or project)
-# 3. Manually create a CloudFormation Deploy stack using this pipeline-toolchain.yml (README goes over filling in the parameters. There are cli-input-templates if you wish to use CLI).
-# 4. Once the Deploy stack is created it will automatically grab your code from the repository branch and create the Infrastructure stack.
-# 5. To deploy changes, all you need to do is commit to the monitored branch and CodePipeline will take care of the rest!
-# 6. If you need to modify the way the CodePipeline performs, update this pipeline-toolchain.yml and then perform a manual stack update in CloudFormation. (Instructions in README)
+# https://github.com/chadkluck/serverless-deploy-pipeline-atlantis/README-0-Start-Here.md
 #
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "Deploy Pipeline CloudFormation Template v2. Creates a CodePipeline for API Gateway or Event Bridge to Lambda services that watches a CodeCommit repository for changes. github.com/chadkluck/serverless-deploy-pipeline-atlantis"
@@ -107,6 +100,7 @@ Parameters:
   ProjectId:
     Type: String
     Description: "Do NOT include <Prefix> or <StageId>. This is the Project ID for the application. (Minimum 2 characters, suggested maximum of 20) Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'. If you get 'S3 bucket name too long' errors then you must shorten the Project ID or use an S3 Org Prefix. Long Project IDs may also be truncated when naming resources."
+    Default: ""
     AllowedPattern: "^[a-z][a-z0-9-]*[a-z0-9]$"
     MinLength: 2
     ConstraintDescription: "Minimum of 2 characters (suggested maximmum of 20). Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number."
@@ -156,6 +150,7 @@ Parameters:
   CodeCommitRepository:
     Type: String
     Description: "What repository will be used?"
+    Default: ""
     MinLength: 2
   CodeCommitBranch:
     Type: String
@@ -169,6 +164,8 @@ Parameters:
 #
 
 Conditions:
+  IsNotDevelopment: !Not [!Equals [!Ref DeployEnvironment, "DEV"]]
+  IsDevelopment: !Equals [!Ref DeployEnvironment, "DEV"]
   UseS3BucketNameOrgPrefix: !Not [!Equals [!Ref S3BucketNameOrgPrefix, ""]]
 
 # =============================================================================
@@ -185,6 +182,7 @@ Resources:
 
   CodeBuildRole:
     Description: Creating service role in IAM for AWS CodeBuild
+    Condition: IsNotDevelopment
     Properties:
       AssumeRolePolicyDocument:
         Statement:
@@ -202,6 +200,7 @@ Resources:
   CodeBuildPolicy:
     Type: AWS::IAM::Policy
     Description: Setting IAM policy for AWS CodeBuild role
+    Condition: IsNotDevelopment
     Properties:
       PolicyName: !Sub "${Prefix}-Worker-CodeBuildPolicy"
       Roles: 
@@ -241,6 +240,7 @@ Resources:
     Type: AWS::CodeBuild::Project
     DependsOn:
     - CodeBuildPolicy
+    Condition: IsNotDevelopment
     Properties:
       Name: !Sub '${Prefix}-${ProjectId}-${StageId}-Build'
       Description: !Sub "CodeBuild Project for ${ProjectId}-${StageId}"
@@ -297,6 +297,7 @@ Resources:
 
   CodeBuildLogGroup:
     Type: AWS::Logs::LogGroup
+    Condition: IsNotDevelopment
     Properties:
       LogGroupName: !Sub "/aws/codebuild/${Prefix}-${ProjectId}-${StageId}-Build"
       RetentionInDays: 90 # Set to your own retention policy - how long do you want to keep build logs?
@@ -539,12 +540,13 @@ Resources:
           Effect: Allow
           Principal:
             AWS:
-            - !GetAtt 'CodePipelineTrustRole.Arn'
-            # AWS CodeBuild retrieves the source code from the artifact bucket.
-            - !GetAtt 'CodeBuildRole.Arn'
-            # AWS CloudFormation retrieves a template file from this bucket to create
-            # the runtime resources.
-            - !GetAtt 'CloudFormationTrustRole.Arn'
+              Fn::If:
+              - IsNotDevelopment
+              - - !GetAtt 'CodePipelineTrustRole.Arn' # AWS CodeBuild retrieves the source code from the artifact bucket.
+                - !GetAtt 'CodeBuildRole.Arn' # AWS CloudFormation retrieves a template file from this bucket to create the runtime resources.
+                - !GetAtt 'CloudFormationTrustRole.Arn'
+              - - !GetAtt 'CloudFormationTrustRole.Arn'
+                - !GetAtt 'CodeBuildRole.Arn'
           Resource:
             - !GetAtt S3DeployBucket.Arn
             - !Join [ '', [ !GetAtt S3DeployBucket.Arn, '/*' ] ]
@@ -555,8 +557,12 @@ Resources:
           Effect: Allow
           Principal:
             AWS:
-            - !GetAtt 'CodePipelineTrustRole.Arn'
-            - !GetAtt 'CodeBuildRole.Arn'
+              Fn::If:
+              - IsNotDevelopment
+              - - !GetAtt 'CodePipelineTrustRole.Arn'
+                - !GetAtt 'CodeBuildRole.Arn'
+              - - !GetAtt 'CloudFormationTrustRole.Arn'
+                - !GetAtt 'CodeBuildRole.Arn'
           Resource:
             - !GetAtt S3DeployBucket.Arn
             - !Join [ '', [ !GetAtt S3DeployBucket.Arn, '/*' ] ]
@@ -601,10 +607,11 @@ Resources:
   # -- CodePipeline Trust Role --
 
   CodePipelineTrustRole:
+    Type: AWS::IAM::Role
     DependsOn:
     - S3DeployBucket
     - CloudFormationTrustRole
-    Type: AWS::IAM::Role
+    Condition: IsNotDevelopment
     Description: Creating service role in IAM for AWS CodePipeline
     Properties:
       RoleName: !Sub "${Prefix}-Worker-${ProjectId}-${StageId}-CodePipeline"
@@ -708,13 +715,14 @@ Resources:
     # The pipeline should only be created once all the resources it links to have been created.
     # This includes the AWS CodePipeline service role, the artifact bucket, the AWS CodeBuild build projectTemplateId,
     # and the role it will pass to AWS CloudFormation to create stacks.
+    Type: AWS::CodePipeline::Pipeline
+    Description: Creating a deployment pipeline for your project in AWS CodePipeline
     DependsOn:
     - CodePipelineTrustRole
     - S3DeployBucket
     - CodeBuildProject
     - CloudFormationTrustRole
-    Type: AWS::CodePipeline::Pipeline
-    Description: Creating a deployment pipeline for your project in AWS CodePipeline
+    Condition: IsNotDevelopment
     Properties:
       Name: !Sub '${Prefix}-${ProjectId}-${StageId}-Pipeline'
       ArtifactStore:
@@ -811,6 +819,7 @@ Resources:
   #  https://docs.aws.amazon.com/codepipeline/latest/userguide/triggering.html
   SourceEvent:
     Type: AWS::Events::Rule
+    Condition: IsNotDevelopment
     Properties:
       Name: !Sub "${Prefix}-${ProjectId}-${StageId}-SourceEvent"
       Description: Rule for Amazon CloudWatch Events to detect changes to the source repository and trigger pipeline execution
@@ -838,6 +847,7 @@ Resources:
   SourceEventRole:
     Type: AWS::IAM::Role
     Description: IAM role to allow Amazon CloudWatch Events to trigger AWS CodePipeline execution
+    Condition: IsNotDevelopment
     Properties:
       RoleName: !Sub "${Prefix}-Worker-${ProjectId}-${StageId}-event-rule"
       AssumeRolePolicyDocument:
@@ -871,6 +881,7 @@ Resources:
 Outputs:
   ProjectPipeline:
     Description: "CodePipeline"
+    Condition: IsNotDevelopment
     Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/codesuite/codepipeline/pipelines/${Prefix}-${ProjectId}-${StageId}-Pipeline/view?region=${AWS::Region}"
   CodeCommitRepo:
     Description: "CodeCommitRepo"
