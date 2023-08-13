@@ -32,7 +32,7 @@ const answers = [
  * @param {*} callback 
  * @returns 
  */
-exports.get = async (event, context, callback) => {
+exports.handler = async (event, context, callback) => {
 
     try {
         const response = processRequest(event, context); // process the request and wait for the result
