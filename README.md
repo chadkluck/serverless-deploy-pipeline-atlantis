@@ -38,13 +38,14 @@ To delete the stacks and resources refer to [README 6: Deleting](deploy-pipeline
 
 ## Documentation
 
-There are 7 README documents to walk you through setting up the required IAM Policy and Role, CodeCommit Repository for your application's code, and CloudFormation Deploy Stack. 
+README 0 through 3 will get you started quickly as they walk you through setting up the required IAM Policy and Role, CodeCommit Repository for your application's code, and CloudFormation Deploy Stack. README 4 through 7 will guide you through advanced concepts with a tutorial and additional information about deleting stacks and using the AWS CLI to create stacks.
 
 - [README 0 Start Here](deploy-pipeline-template-v2/README-0-Start-Here.md)
-- [README 1 Create IAM Policies](deploy-pipeline-template-v2/README-1-IAM-Policies.md)
+- [README 1 Create IAM CloudFormation Service Role](deploy-pipeline-template-v2/README-1-IAM-CloudFormation-Service_Role.md)
 - [README 2 Create CodeCommit Repository](deploy-pipeline-template-v2/README-2-CodeCommit-Repository.md)
 - [README 3 Create and Update CloudFormation Deploy Pipeline Stack](deploy-pipeline-template-v2/README-3-CloudFormation-Deploy-Stack.md)
 - [README 4 Tutorial](deploy-pipeline-template-v2/README-4-Tutorial.md)
 - [README 5 Advanced](deploy-pipeline-template-v2/README-5-Advanced.md)
 - [README 6 Deleting](deploy-pipeline-template-v2/README-6-Deleting.md)
+- [README 7 CLI (Create Stack from AWS Command Line Interface)](deploy-pipeline-template-v2/README-7-CLI.md)
 - [CHANGELOG - Updates to Existing Deploy Stacks](CHANGELOG.md)

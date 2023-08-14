@@ -8,4 +8,15 @@ You may want to delete stacks you created, however this is an order to deletion.
 
 Failure to delete in this order will cause errors.
 
-> **NOTE:** Deleting the deploy stack is somewhat optional. To save costs you may wish to delete infrastructure stacks when not in use. However, leaving the deploy stack will not incur any costs unless you run code through it. This means you can keep your deploy stack ready and waiting for any code changes you commit to the monitored branch. It will automatically recreate the infrastructure stack for use.
+## Leaving the Deploy Stack
+
+For non-production environments you may wish to delete the infrastructure stack yet leave the deploy stack available for any future code changes you may push through the pipeline. Deleting unused infrastructure stacks can save money when they incorporate resources that are billed by number and not by usage. (For example CloudWatch Dashboards and Alarms.)
+
+Once an infrastructure stack is deleted it may be rebuilt by either:
+
+1. Going into the associated CodePipeline and choosing "Release change".
+2. Committing a code change to the associated branch in your repository.
+
+Releasing a change will rerun the last code commited to the repository branch.
+
+> **NOTE:** Some resources may not have the same name and arn as before which is usually not an issue in Development or Test environments. However, API GateWay will regenerate a random ID for the endpoint so you will need to update the domain of the endpoint you use for testing.

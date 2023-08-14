@@ -12,7 +12,7 @@ If you have chosen a prefix other than `ATLANTIS` use that instead when naming y
 
 ### Step 1: Get the CloudFormationServicePolicy.json file ready
 
-1. In the `/iam-policy-template` folder, make a copy of `ATLANTIS-CloudFormationServicePolicy.json`
+1. In the `/iam-service-role` folder, make a copy of `ATLANTIS-CloudFormationServicePolicy.json`
 2. Open the document copy and do a Find and Replace for each of the following:
    - `$AWS_ACCOUNT$` = Your AWS account number. (ex: 990123456789)
    - `$AWS_REGION$` = Your AWS region (ex: us-east-1) This must be the region you will be deploying in.
@@ -30,7 +30,7 @@ Note: There are few times we use an Uppercase Prefix. Instead we typically use l
 ### Step 3: Create the CloudFormation Service Policy
 
 1. Choose "Create Policy" (it will open in a new window)
-2. In the new tab/window, click on the JSON tab and paste in the json contents of the file you modified from [`iam-policy-template/ATLANTIS-CloudFormationServicePolicy.json`](iam-policy-template/ATLANTIS-CloudFormationServicePolicy.json)
+2. In the new tab/window, click on the JSON tab and paste in the json contents of the file you modified from [`iam-service-role/ATLANTIS-CloudFormationServicePolicy.json`](iam-service-role/ATLANTIS-CloudFormationServicePolicy.json)
 3. Go on to "Next".
 4. Give it the name `PREFIX_UPPER-CloudFormation-Service-Role` (replacing `PREFIX_UPPER` with your chosen prefix) and a description such as `Created by [you] to create CloudFormation stacks for deployment pipelines`.
 5. Add a tag `Atlantis` with value `iam`, `atlantis:Prefix` with the value of your prefix (lower case), and any additional tags you may want (like creator and purpose). Note the casing and `:` in the tag keys. More on tags later.
