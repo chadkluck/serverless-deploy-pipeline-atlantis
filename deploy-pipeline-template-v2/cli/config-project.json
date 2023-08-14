@@ -1,25 +1,26 @@
 {
-    "source_files": {
-        "toolchain_bucketname": "63klabs",
-        "toolchain_bucketkey": "atlantis",
-        "src_bucketname": "63klabs",
-        "src_bucketkey": "atlantis"
+    "toolchain_template_location": {
+        "BucketName": "63klabs",
+        "BucketKey": "atlantis/v2",
+        "FileName": "pipeline-toolchain.yml"
     },
     "project": {
         "aws_account": "9912345678900",
         "aws_region": "us-east-1",
-        "id": "my-project",
-        "stage": "",
-        "env": "",
-        "name": "",
-        "description": "",
-        "repository": "",
-        "branch": "",
-        "prefix": "hello",
-        "role_arn": ""
+        "name": "hello world",
+        "description": "My Hello World Project"
     },
     "stack_parameters": {
-        "ParameterStoreBasePath": ""
+        "Prefix": "hello",
+        "ProjectId": "my-project",
+        "StageId": "test",
+        "S3BucketNameOrgPrefix": "",
+        "DeployEnvironment": "TEST",
+        "ParameterStoreHierarchy": "/",
+        "AlarmNotificationEmail": "nowhere@63klabs.net",
+        "CodeCommitRepository": "ws-hello-world",
+        "CodeCommitBranch": "test"
     },
-    "tags": {}
+    "custom_parameters": {},
+    "custom_tags": {}
 }

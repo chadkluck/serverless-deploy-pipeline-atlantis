@@ -11,7 +11,7 @@
     "Atlantis": "application-infrastructure",
     "atlantis:Prefix": "$PREFIX$",
     "atlantis:Project": "$PREFIX$-$PROJECT_ID$",
-    "atlantis:ProjectDeploymentID": "$PREFIX$-$PROJECT_ID$-$STAGE_ID$",
+    "atlantis:ProjectDeploymentId": "$PREFIX$-$PROJECT_ID$-$STAGE_ID$",
     "CloudFormationStack": "$PREFIX$-$PROJECT_ID$-$STAGE_ID$-infrastructure",
     "CloudFormationStackArn": "arn:aws:cloudformation:$AWS_REGION$:$AWS_ACCOUNT$:stack/$PREFIX$-$PROJECT_ID$-$STAGE_ID$-infrastructure",
     "CodeCommitRepository": "$REPOSITORY$",

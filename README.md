@@ -26,9 +26,19 @@ To deploy application infrastructure and code changes all you need to do is comm
 
 Before skipping over the tutorials you'll need to make sure you have set up required IAM permissions and resources (Refer to documentation).
 
+## AWS Costs
+
+This deploy template will create resources necessary to provide an AWS CodePipeline. After performing any tutorials you will want to delete unused stacks so that you do not incur any unexpected costs. However, most experimentation, and even low production loads, rarely rise above [AWS Free Tier](https://aws.amazon.com/free).
+
+> You get 1 free active pipeline per month. New pipelines are free for the first 30 days. "An active pipeline is a pipeline that has existed for more than 30 days and has at least one code change that runs through it during the month. There is no charge for pipelines that have no new code changes running through them during the month." [CodePipeline Pricing](https://aws.amazon.com/codepipeline/pricing)
+
+You are also charged for AWS CodeBuild if you go over 100 build minutes per month. [CodeBuild Pricing](https://aws.amazon.com/codebuild/pricing)
+
+To delete the stacks and resources refer to [README 6: Deleting](deploy-pipeline-template-v2/README-6-Deleting.md).
+
 ## Documentation
 
-There are 6 README documents to walk you through setting up the required IAM Policy and Role, CodeCommit Repository for your application's code, and CloudFormation Deploy Stack. 
+There are 7 README documents to walk you through setting up the required IAM Policy and Role, CodeCommit Repository for your application's code, and CloudFormation Deploy Stack. 
 
 - [README 0 Start Here](deploy-pipeline-template-v2/README-0-Start-Here.md)
 - [README 1 Create IAM Policies](deploy-pipeline-template-v2/README-1-IAM-Policies.md)
@@ -36,4 +46,5 @@ There are 6 README documents to walk you through setting up the required IAM Pol
 - [README 3 Create and Update CloudFormation Deploy Pipeline Stack](deploy-pipeline-template-v2/README-3-CloudFormation-Deploy-Stack.md)
 - [README 4 Tutorial](deploy-pipeline-template-v2/README-4-Tutorial.md)
 - [README 5 Advanced](deploy-pipeline-template-v2/README-5-Advanced.md)
+- [README 6 Deleting](deploy-pipeline-template-v2/README-6-Deleting.md)
 - [CHANGELOG - Updates to Existing Deploy Stacks](CHANGELOG.md)

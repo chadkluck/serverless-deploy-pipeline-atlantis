@@ -1,6 +1,6 @@
 {
     "StackName": "$PREFIX$-$PROJECT_ID$-$STAGE_ID$-deploy",
-    "TemplateURL": "https://$TOOLCHAIN_BUCKETNAME$.s3.amazonaws.com/$TOOLCHAIN_BUCKETKEY$/pipeline-toolchain.yml",
+    "TemplateURL": "https://$TOOLCHAIN_BUCKETNAME$.s3.amazonaws.com/$TOOLCHAIN_BUCKETKEY$/$TOOLCHAIN_FILENAME$",
     "Parameters": [
         {
             "ParameterKey": "Prefix",
@@ -28,8 +28,8 @@
             "UsePreviousValue": true
         },
         {
-            "ParameterKey": "ParameterStoreBasePath",
-            "ParameterValue": "$PARAM_STORE_PATH$",
+            "ParameterKey": "ParameterStoreHierarchy",
+            "ParameterValue": "$PARAM_STORE_HIERARCHY$",
             "UsePreviousValue": true
         },
         {
@@ -51,16 +51,16 @@
     "Capabilities": [
         "CAPABILITY_NAMED_IAM"
     ],
-    "RoleARN": "arn:aws:iam::$AWS_ACCOUNT$:role/$PREFIX$-CloudFormation-Service-Role",
+    "RoleARN": "arn:aws:iam::$AWS_ACCOUNT$:role/$PREFIX_UPPER$-CloudFormation-Service-Role",
     "OnFailure": "ROLLBACK",
     "Tags": [
         {
             "Key": "Name",
-            "Value": "Hello World"
+            "Value": "$NAME$"
         },
         {
             "Key": "Application",
-            "Value": "Hello World"
+            "Value": "$NAME$"
         },
         {
             "Key": "Department",
@@ -75,6 +75,10 @@
             "Value": "deploy-pipeline"
         },
         {
+            "Key": "atlantis:ToolChainTemplate",
+            "Value": "Atlantis.v2"
+        },
+        {
             "Key": "atlantis:Prefix",
             "Value": "$PREFIX$"
         },
@@ -83,7 +87,7 @@
             "Value": "$PREFIX$-$PROJECT_ID$"
         },
         {
-            "Key": "atlantis:ProjectDeploymentID",
+            "Key": "atlantis:ProjectDeploymentId",
             "Value": "$PREFIX$-$PROJECT_ID$-$STAGE_ID$"
         },
         {
