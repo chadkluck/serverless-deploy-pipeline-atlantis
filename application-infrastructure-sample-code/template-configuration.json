@@ -4,16 +4,13 @@
   },
   "Tags":
   {
-    "Name": "Hello World",
-    "Application": "Hello World",
+    "Name": "Hello World $PREFIX$-$PROJECT_ID$",
     "Department": "Web Services",
     "Provisioner": "CloudFormation",
     "Atlantis": "application-infrastructure",
     "atlantis:Prefix": "$PREFIX$",
     "atlantis:Project": "$PREFIX$-$PROJECT_ID$",
     "atlantis:ProjectDeploymentId": "$PREFIX$-$PROJECT_ID$-$STAGE_ID$",
-    "CloudFormationStack": "$PREFIX$-$PROJECT_ID$-$STAGE_ID$-infrastructure",
-    "CloudFormationStackArn": "arn:aws:cloudformation:$AWS_REGION$:$AWS_ACCOUNT$:stack/$PREFIX$-$PROJECT_ID$-$STAGE_ID$-infrastructure",
     "CodeCommitRepository": "$REPOSITORY$",
     "CodeCommitBranch": "$REPOSITORY$:$REPOSITORY_BRANCH$",
     "CodeCommitRepositoryArn": "arn:aws:codecommit:$AWS_REGION$:$AWS_ACCOUNT$:$REPOSITORY$",

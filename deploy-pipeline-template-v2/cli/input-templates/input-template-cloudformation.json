@@ -91,14 +91,6 @@
             "Value": "$PREFIX$-$PROJECT_ID$-$STAGE_ID$"
         },
         {
-            "Key": "CloudFormationStack",
-            "Value": "$PREFIX$-$PROJECT_ID$-$STAGE_ID$-deploy"
-        },
-        {
-            "Key": "CloudFormationStackArn",
-            "Value": "arn:aws:cloudformation:$AWS_REGION$:$AWS_ACCOUNT$:stack/$PREFIX$-$PROJECT_ID$-$STAGE_ID$-deploy"
-        },
-        {
             "Key": "CodeCommitRepository",
             "Value": "$REPOSITORY$"
         },
