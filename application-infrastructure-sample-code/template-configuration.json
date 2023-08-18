@@ -2,8 +2,7 @@
   "Parameters": {
     "ApiPathBase": "$PROJECT_ID$-$STAGE_ID$"
   },
-  "Tags":
-  {
+  "Tags": {
     "Name": "Hello World $PREFIX$-$PROJECT_ID$",
     "Department": "Web Services",
     "Provisioner": "CloudFormation",

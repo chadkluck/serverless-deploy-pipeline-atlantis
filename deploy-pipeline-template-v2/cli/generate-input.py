@@ -1,6 +1,8 @@
 import json
 import sys
 
+configProjectJson = "config-project.json"
+
 def deleteEmptyValues(data, listtype, valuekey):
 
     if listtype == "indexed":
@@ -100,7 +102,7 @@ with open('./input-templates/input-template-cloudformation.json') as templateCF_
 # TODO if no config file as param, then check to see if config-project exists. 
 # TODO if not, then copy the config-project template and instruct user to fill it out
 # Bring in the project config file
-with open('./config-project.json') as config_file:
+with open('./'+configProjectJson) as config_file:
     config = json.load(config_file)
 
 # Set the standard variables

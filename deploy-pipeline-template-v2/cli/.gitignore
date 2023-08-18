@@ -1,0 +1,5 @@
+config-project*.json
+!config-project.json
+
+generate-input*.py
+!generate-input.py
