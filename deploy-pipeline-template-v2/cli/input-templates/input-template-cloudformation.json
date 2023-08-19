@@ -59,10 +59,6 @@
             "Value": "$NAME$"
         },
         {
-            "Key": "Application",
-            "Value": "$NAME$"
-        },
-        {
             "Key": "Department",
             "Value": "Web Services"
         },

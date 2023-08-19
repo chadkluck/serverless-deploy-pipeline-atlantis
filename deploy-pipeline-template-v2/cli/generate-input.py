@@ -136,8 +136,10 @@ if toolchain_BucketName == "":
 # Fill in Name and Description
 #------------------------------------------------------------------------------
 
-if proj_name == "":
-    proj_name = stack_param_Prefix + " - " + stack_param__ProjectId + " - " + stack_param_StageId
+if proj_name != "":
+    proj_name = proj_name + " " # add a space
+
+proj_name = proj_name + stack_param_Prefix + "-" + stack_param__ProjectId
 
 if proj_desc == "":
     proj_desc = "Project: "+stack_param_Prefix + "-" + stack_param__ProjectId
