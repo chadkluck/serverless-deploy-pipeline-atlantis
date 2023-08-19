@@ -256,7 +256,6 @@ Resources:
           detailedLogs: !If [ IsProduction, "0",  "2"]
           deployEnvironment: !Ref DeployEnvironment
           paramStore: !Ref ParameterStoreHierarchy
-          user_agent_identifier: !Ref UserAgent
           lambdaTimeoutInSeconds: !Ref FunctionTimeOutInSeconds # so we can calculate any external connection timeout in our code
 
       Events:
