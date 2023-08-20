@@ -4,10 +4,10 @@
         "BucketKey": "atlantis/v2",
         "FileName": "pipeline-toolchain.yml"
     },
-    "project": {
+    "application": {
         "aws_account": "9912345678900",
         "aws_region": "us-east-1",
-        "name": "hello world",
+        "name": "Hello World",
         "description": "My Hello World Project"
     },
     "stack_parameters": {

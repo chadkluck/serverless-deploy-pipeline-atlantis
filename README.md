@@ -1,10 +1,10 @@
 # CloudFormation Template for a Deployment Pipeline (CI/CD)
 
-This project template will create an automated deployment pipeline based on changes commited to a branch in CodeCommit. The project to be deployed is built using the Serverless Application Model (SAM).
+This CloudFormation template will create an automated deployment pipeline when changes are commited to a watched branch CodeCommit.
 
 ## Pros to using a template like this:
 
-- Precisely scoped IAM Policies and Roles are created for you (more secure: principle of least privilege)
+- Precisely scoped IAM Policies and Roles are created for you (more secure, principle of least privilege)
 - Structured naming and tagging (better organization)
 - No need to start from scratch
 - No reason to create a messy application base and say "I'll structure, organize, and add security controls later"
@@ -14,17 +14,17 @@ This project template will create an automated deployment pipeline based on chan
 - You need to understand someone else's code
 - It stifles your creativity
 
-I do beleive that the cons are only temporary and I set the toolchain up as a learning experience. As you begin to look under the hood you can use it as a model for learning AWS Cloud Concepts such as Infrastructure as Code (IaC), AWS CodePipeline, AWS Lambda, and CloudFormation.
+I do beleive that the cons are only temporary and I set the toolchain up as a learning experience. As you begin to look under the hood you can use it as a model for learning AWS Cloud Concepts such as Infrastructure as Code (IaC), CloudFormation, AWS CodePipeline, and serverless architecture.
 
 ## Modify to Suit Your Needs
 
-Once an understanding of the `pipeline-toolchain.yml`, `application-infrastructure-sample-code/template.yml`, and IAM policy and role is achieved, they can all be modified to extend a project to use any AWS resource. As demonstrated in the tutorial, the templates are simple and easy to use to create and re-create sandboxes for experiementation.
+Once an understanding of the `pipeline-toolchain.yml`, `application-infrastructure-sample-code/template.yml`, and IAM policy and role is achieved, they can all be modified to extend a project or application infrastructure to use any AWS resource. As demonstrated in the tutorial, the templates are simple and easy to use to create and re-create sandboxes for experiementation or move from development to production.
 
-The application deployed in the tutorials use a sample of the Serverless Application Model that deviates from the traditional "Hello World" example as instead it returns JSON formatted predictions. It is an extention of the [Serverless SAM 8-Ball example](https://github.com/chadkluck/serverless-sam-8ball-example) which I highly recommend checking out for the sake of learning more about the Serverless Application Model.
+The application deployed in the tutorials deviates from the traditional "Hello World" example as instead it returns JSON formatted predictions. It is an extention of the [Serverless SAM 8-Ball example](https://github.com/chadkluck/serverless-sam-8ball-example) which I highly recommend checking out for the sake of learning more about the Serverless Application Model, Lambda, and API Gateway.
 
 To deploy application infrastructure and code changes all you need to do is commit to a monitored branch of the repository.
 
-Before skipping over the tutorials you'll need to make sure you have set up required IAM permissions and resources (Refer to documentation).
+Before skipping over the tutorials you'll need to make sure you have set up the required IAM Role and CodeCommit repository [Refer to documentation](deploy-pipeline-template-v2/README-0-Start-Here.md).
 
 ## AWS Costs
 
@@ -38,7 +38,9 @@ To delete the stacks and resources refer to [README 6: Deleting](deploy-pipeline
 
 ## Documentation
 
-README 0 through 3 will get you started quickly as they walk you through setting up the required IAM Policy and Role, CodeCommit Repository for your application's code, and CloudFormation Deploy Stack. README 4 through 7 will guide you through advanced concepts with a tutorial and additional information about deleting stacks and using the AWS CLI to create stacks.
+README 0 through 3 will get you started quickly as they walk you through setting up the required IAM Policy and Role, CodeCommit Repository for your application's code, and CloudFormation Deploy Stack.
+
+README 4 through 7 will guide you through advanced concepts with a tutorial and additional information about deleting stacks and using the AWS CLI to create stacks.
 
 - [README 0 Start Here](deploy-pipeline-template-v2/README-0-Start-Here.md)
 - [README 1 Create IAM CloudFormation Service Role](deploy-pipeline-template-v2/README-1-IAM-CloudFormation-Service_Role.md)

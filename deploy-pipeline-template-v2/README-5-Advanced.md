@@ -237,37 +237,18 @@ First, complete Step 0 in each of the tutorials to set up your IAM policies
 
 Once the IAM policies are set, it is important to take a careful look at your `config-project.json` file and make sure you have everything set correctly. After you've created your first project and set up the role_arn, account, region, tags, etc. you'll want to make sure you update project id, stage, env, repo, and branch for every project. (Leave project id as an existing project if you are just creating a new deploy off an existing repo).
 
-### CodeStar
-
-Remember, you can only have 1 branch in your repo for CodeStar. Great for sandboxes and temporary projects.
-
-1. Update config-project.json
-2. `py generate.py`
-3. That's it!
-
-### CloudFormation project stack
-
-1. Update config-project.json
-2. `py generate.py`
-3. Create repository using the CLI examples generated from `generate.py`
-4. Create stack using the CLI examples generated from `generate.py`
-
-#### Adding a new deploy
-
-1. Create branch and merge current source into it
-2. Update `config-project.json` by updating the `stage`, `env` and pointing to the new `branch`.
-3. `py generate.py`
-4. Create stack using the CLI examples generated from `generate.py`
-
 ## Documentation
 
 There are 5 README documents to walk you through setting up the required IAM Policies and Roles, CodeCommit Repository, and Deploy CloudFormation Stack. 
 
 IAM Policies and Roles only need to be set up once. CodeCommit Repositories only need to be set up once per application. A deploy stack needs to be set up for each deployment stage of an application (test, beta, prod).
 
-- [README 1 Create IAM Policies](README-1-IAM-Policies.md)
-- [README 2 Create CodeCommit Repository](README-2-CodeCommit-Repository.md)
-- [README 3 Create and Update CloudFormation Deploy Pipeline Stack](README-3-CloudFormation-Deploy-Stack.md)
-- [README 4 Tutorial](README-4-Tutorial.md)
-- [README 5 Advanced](README-5-Advanced.md)
-- [CHANGELOG - Updates to Existing Deploy Stacks](CHANGELOG.md)
+- [README 0 Start Here](./README-0-Start-Here.md)
+- [README 1 Create IAM CloudFormation Service Role](./README-1-IAM-CloudFormation-Service_Role.md)
+- [README 2 Create CodeCommit Repository](./README-2-CodeCommit-Repository.md)
+- [README 3 Create and Update CloudFormation Deploy Pipeline Stack](./README-3-CloudFormation-Deploy-Stack.md)
+- [README 4 Tutorial](./README-4-Tutorial.md)
+- **README 5 Advanced**
+- [README 6 Deleting](./README-6-Deleting.md)
+- [README 7 CLI (Create Stack from AWS Command Line Interface)](./README-7-CLI.md)
+- [CHANGELOG - Updates to Existing Deploy Stacks](../CHANGELOG.md)

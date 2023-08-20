@@ -1,7 +1,7 @@
 import json
 import sys
 
-configProjectJson = "config-project.json"
+configStackJson = "config-stack.json"
 
 def deleteEmptyValues(data, listtype, valuekey):
 
@@ -48,14 +48,14 @@ def inputFile(template, filename):
     string = string.replace("$TOOLCHAIN_BUCKETKEY$", toolchain_BucketKey)
     string = string.replace("$TOOLCHAIN_FILENAME$", toolchain_FileName)
 
-    string = string.replace("$AWS_ACCOUNT$", proj_aws_account)
-    string = string.replace("$AWS_REGION$", proj_aws_region)
-    string = string.replace("$NAME$", proj_name)
-    string = string.replace("$DESCRIPTION$", proj_desc)
+    string = string.replace("$AWS_ACCOUNT$", app_aws_account)
+    string = string.replace("$AWS_REGION$", app_aws_region)
+    string = string.replace("$NAME$", app_name)
+    string = string.replace("$DESCRIPTION$", app_desc)
 
     string = string.replace("$PREFIX_UPPER$", stack_param_Prefix.upper())
     string = string.replace("$PREFIX$", stack_param_Prefix)
-    string = string.replace("$PROJECT_ID$", stack_param__ProjectId)
+    string = string.replace("$PROJECT_ID$", stack_param_ProjectId)
     string = string.replace("$STAGE_ID$", stack_param_StageId)
     string = string.replace("$S3_ORG_PREFIX$", stack_param_S3BucketNameOrgPrefix)
     string = string.replace("$DEPLOY_ENVIRONMENT$", stack_param_DeployEnvironment)
@@ -102,7 +102,7 @@ with open('./input-templates/input-template-cloudformation.json') as templateCF_
 # TODO if no config file as param, then check to see if config-project exists. 
 # TODO if not, then copy the config-project template and instruct user to fill it out
 # Bring in the project config file
-with open('./'+configProjectJson) as config_file:
+with open('./'+configStackJson) as config_file:
     config = json.load(config_file)
 
 # Set the standard variables
@@ -110,13 +110,13 @@ toolchain_BucketName = config['toolchain_template_location']['BucketName']
 toolchain_BucketKey = config['toolchain_template_location']['BucketKey']
 toolchain_FileName = config['toolchain_template_location']['FileName']
 
-proj_aws_account = config['project']['aws_account']
-proj_aws_region = config['project']['aws_region']
-proj_name = config['project']['name']
-proj_desc = config['project']['description']
+app_aws_account = config['application']['aws_account']
+app_aws_region = config['application']['aws_region']
+app_name = config['application']['name']
+app_desc = config['application']['description']
 
 stack_param_Prefix = config['stack_parameters']['Prefix']
-stack_param__ProjectId = config['stack_parameters']['ProjectId']
+stack_param_ProjectId = config['stack_parameters']['ProjectId']
 stack_param_StageId = config['stack_parameters']['StageId']
 stack_param_S3BucketNameOrgPrefix = config['stack_parameters']['S3BucketNameOrgPrefix']
 stack_param_DeployEnvironment = config['stack_parameters']['DeployEnvironment']
@@ -136,21 +136,21 @@ if toolchain_BucketName == "":
 # Fill in Name and Description
 #------------------------------------------------------------------------------
 
-if proj_name != "":
-    proj_name = proj_name + " " # add a space
+if app_name != "":
+    app_name = app_name + " " # add a space
 
-proj_name = proj_name + stack_param_Prefix + "-" + stack_param__ProjectId
+app_name = app_name + stack_param_Prefix + "-" + stack_param_ProjectId
 
-if proj_desc == "":
-    proj_desc = "Project: "+stack_param_Prefix + "-" + stack_param__ProjectId
+if app_desc == "":
+    app_desc = "Project: "+stack_param_Prefix + "-" + stack_param_ProjectId
     if stack_param_StageId != "":
-        proj_desc += " Stage: " + stack_param_StageId
+        app_desc += " Stage: " + stack_param_StageId
     if stack_param_DeployEnvironment != "":
-        proj_desc += " Env: " + stack_param_DeployEnvironment
-    if stack_param__ProjectId != "":
-        proj_desc += " Repo: " + stack_param_CodeCommitRepository
+        app_desc += " Env: " + stack_param_DeployEnvironment
+    if stack_param_ProjectId != "":
+        app_desc += " Repo: " + stack_param_CodeCommitRepository
     if stack_param_CodeCommitBranch != "":
-        proj_desc += " Branch: " + stack_param_CodeCommitBranch
+        app_desc += " Branch: " + stack_param_CodeCommitBranch
 
 #------------------------------------------------------------------------------
 #  CUSTOM PARAMETERS
@@ -227,7 +227,7 @@ aws cloudformation describe-stacks --stack-name $PREFIX$-$PROJECT_ID$-$STAGE_ID$
 string = stringDone + stringCF + stringS3
 
 string = string.replace("$STAGE_ID$", stack_param_StageId)
-string = string.replace("$PROJECT_ID$", stack_param__ProjectId)
+string = string.replace("$PROJECT_ID$", stack_param_ProjectId)
 string = string.replace("$PREFIX$", stack_param_Prefix)
 
 string = string.replace("$TOOLCHAIN_BUCKETNAME$", toolchain_BucketName)

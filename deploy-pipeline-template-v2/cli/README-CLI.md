@@ -11,7 +11,7 @@ Instead of creating a stack through the AWS Web Console, stacks may be created f
 
 ## Basic Steps
 
-1. Update [config project json](./config-project.json)
-2. Run the generate input Python script: `py generate-input`
+1. Update [config stack json](./config-stack.json)
+2. Run the generate input Python script: `py generate-input.py`
 3. IF you are using your own S3 bucket for `pipeline-toolchain.yml` upload it using the S3 copy command listed in the output of generate-input.
 4. Run the CloudFormation create-stack command listed in the output of generate-input.
