@@ -16,6 +16,28 @@ This CloudFormation template will create an automated deployment pipeline when c
 
 I do beleive that the cons are only temporary and I set the toolchain up as a learning experience. As you begin to look under the hood you can use it as a model for learning AWS Cloud Concepts such as Infrastructure as Code (IaC), CloudFormation, AWS CodePipeline, and serverless architecture.
 
+## Important Files
+
+### Deploy Pipeline IAM Policy Template for CloudFormation Service Role
+
+[deploy-pipeline-template-v2/iam-policy-template/ATLANTIS-CloudFormationServicePolicy.json](./deploy-pipeline-template-v2/iam-policy-template/ATLANTIS-CloudFormationServicePolicy.json)
+
+The IAM policy template for the necessary CloudFormation Service Role. You will need to add in some details using a search/replace as instructed in [README 1 Create IAM CloudFormation Service Role](deploy-pipeline-template-v2/README-1-IAM-CloudFormation-Service_Role.md).
+
+### Application Infrastructure Code in CodeCommit
+
+[Sample code for your Application Infrastructure](./application-infrastructure-sample-code/) is available to seed your CodeCommit Repository. Use the sample code for your initial experiments, tutorials, and as a template for structuring your own code to work with the pipeline. (Basically setting up the proper parameters and tags to allow the deploy pipeline to work its magic.)
+
+[README 2 Create CodeCommit Repository](deploy-pipeline-template-v2/README-2-CodeCommit-Repository.md) goes over creating the CodeCommit repository and branch to deploy from.
+
+### Deploy Pipeline CloudFormation Template
+
+[deploy-pipeline-template-v2/pipeline-toolchain.yml](./deploy-pipeline-template-v2/pipeline-toolchain.yml)
+
+The CloudFormation template you will be using to create the Deploy Stack which creates and manages the AWS Code Pipeline. It will utilize the CloudFormation Service Role you created. The Code Pipeline is what builds and deploys your infrastructure stack.
+
+Utilize either the template in the public 63klabs S3 bucket, upload to your own bucket, or upload using the AWS CloudFormation Web Console. Follow the instructions in [README 3 Create and Update CloudFormation Deploy Pipeline Stack](deploy-pipeline-template-v2/README-3-CloudFormation-Deploy-Stack.md).
+
 ## Modify to Suit Your Needs
 
 Once an understanding of the `pipeline-toolchain.yml`, `application-infrastructure-sample-code/template.yml`, and IAM policy and role is achieved, they can all be modified to extend a project or application infrastructure to use any AWS resource. As demonstrated in the tutorial, the templates are simple and easy to use to create and re-create sandboxes for experiementation or move from development to production.

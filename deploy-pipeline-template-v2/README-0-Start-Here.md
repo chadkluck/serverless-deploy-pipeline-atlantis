@@ -6,7 +6,7 @@ A series of short READMEs will walk you through the 3 concepts to get you starte
 2. Creating a repository you will store your code in
 3. Creating a CloudFormation stack that will create an AWS CodePipeline to deploy your code
 
-Step 1 only needs to be done once. Step 2 only needs to be done once per application.
+Step 1 (Creating an IAM Service Role) only needs to be done once. Step 2 (Creating a CodeCommit repository) only needs to be done once per application.
 
 You can perform Step 3 as many times as you wish as you begin your wonderful journey into Infrastructure as Code (IaC) and Continuous Integration and Continuous Deployment (CI/CD) pipelines.
 
@@ -18,7 +18,7 @@ An IAM CloudFormation Service Role is necessary in order for your deploy stack t
 
 You will first create a policy and then attach it to the new service role.
 
-The policy template is included in the [iam service role directory](./iam-service-role/ATLANTIS-CloudFormationServicePolicy.json).
+The policy template is included in the [iam service role directory](./iam-cloudformation-service-role/ATLANTIS-CloudFormationServicePolicy.json).
 
 [README 1 IAM Policies](./README-1-IAM-CloudFormation-Service-Role.md) will walk you through creating the policy and CloudFormation Service Role that will give your deploy stack the proper permissions.
 
@@ -38,7 +38,7 @@ Use the [Pipeline Toolchain YAML CloudFormation template](./pipeline-toolchain.y
 
 [README 3: CloudFormation Deploy Stack](./README-3-CloudFormation-Deploy-Stack.md) 
 
-If you wish to use the CLI, instructions will be made available in the future, however you may find [the CLI directory](./cli/) useful (though currently out of date).
+If you wish to use the AWS CLI you will find instructions in [README 7: CLI](./README-7-CLI.md).
 
 Once the Deploy stack is created it will automatically grab your code from the repository branch and create the Infrastructure stack.
 
@@ -67,7 +67,7 @@ To conserve resources of unused stacks or to "start over" with a mangled stack, 
 
 ## Use the CLI to Create Stacks
 
-To assist with entering parameters and tags for your CloudFormation deploy stack, a [project configuration JSON file](./cli/config-project.json) and `generate-input.py` Python script is included in the [CLI directory](./cli/).
+To assist with entering parameters and tags for your CloudFormation deploy stack, a [project configuration JSON file](./cli/config-stack.json) and `generate-input.py` Python script is included in the [CLI directory](./cli/).
 
 Filling in the information and running the script will give you all you need to run a `aws cloudformation create-stack` command from the AWS Command Line Interface without having to go through the console.
 
