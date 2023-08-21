@@ -72,7 +72,7 @@
         },
         {
             "Key": "atlantis:ToolChainTemplate",
-            "Value": "Atlantis.v2"
+            "Value": "Atlantis.v2.0.0"
         },
         {
             "Key": "atlantis:Prefix",
