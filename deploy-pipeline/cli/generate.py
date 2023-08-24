@@ -40,7 +40,7 @@ def deleteEmptyValues(data, listtype, valuekey):
     return data
 
 
-def inputFile(template, filename):
+def inputFile(template, filetype):
 
     string = json.dumps(template, indent=4)
 
@@ -64,7 +64,7 @@ def inputFile(template, filename):
     string = string.replace("$REPOSITORY$", stack_param_CodeCommitRepository)
     string = string.replace("$REPOSITORY_BRANCH$", stack_param_CodeCommitBranch)
 
-    if filename == "cloudformation":
+    if filetype == "cloudformation":
         # convert back to array
         # remove empty param: ['Parameters']
         # remove empty tags
@@ -72,27 +72,28 @@ def inputFile(template, filename):
 
         myData = json.loads(string)
 
-        if filename == "cloudformation":
+        myData['Parameters'] = deleteEmptyValues(myData['Parameters'], "indexed", "ParameterValue")
+        # if tags are empty, delete
+        if len(myData['Parameters']) == 0:
+            del myData['Parameters']
 
-            myData['Parameters'] = deleteEmptyValues(myData['Parameters'], "indexed", "ParameterValue")
-            # if tags are empty, delete
-            if len(myData['Parameters']) == 0:
-                del myData['Parameters']
-
-            myData['Tags'] = deleteEmptyValues(myData['Tags'], "indexed", "Value")
-            # if tags are empty, delete
-            if len(myData['Tags']) == 0:
-                del myData['Tags']
+        myData['Tags'] = deleteEmptyValues(myData['Tags'], "indexed", "Value")
+        # if tags are empty, delete
+        if len(myData['Tags']) == 0:
+            del myData['Tags']
 
         string = json.dumps(myData, indent=4)
 
-    myFile = open("input/"+filename+".json", "w")
+    filename = "custom/"+filetype+"-"+stack_param_Prefix+"-"+stack_param_ProjectId+"-"+stack_param_StageId+".json"
+    myFile = open(filename, "w")
     n = myFile.write(string)
     myFile.close()
 
-    print("\n\n======================== input/"+filename+".json ========================\n\n")
+    print("\n\n================== "+filename+".json ==================\n\n")
     print(string)
-    print("\n\n=================== input/"+filename+".json COMPLETE! ===================\n\n")
+    print("\n\n============= "+filename+".json COMPLETE! =============\n\n")
+
+    return filename
 
 
 # Bring in the template files
@@ -185,7 +186,7 @@ if len(stackTags) > 0:
 # =============================================================================
 # Export to input.json files
 
-inputFile(templateCF, "cloudformation")
+inputCFFilename = inputFile(templateCF, "cloudformation")
 
 stringDone = """
 =========================================================================
@@ -214,7 +215,7 @@ stringCF = """
 =========================================================================
 Run cloudformation create-stack command
 -------------------------------------------------------------------------
-aws cloudformation create-stack --cli-input-json file://input/cloudformation.json
+aws cloudformation create-stack --cli-input-json file://$INPUTCFFILENAME$
 =========================================================================
 
 =========================================================================
@@ -233,5 +234,7 @@ string = string.replace("$PREFIX$", stack_param_Prefix)
 string = string.replace("$TOOLCHAIN_BUCKETNAME$", toolchain_BucketName)
 string = string.replace("$TOOLCHAIN_BUCKETKEY$", toolchain_BucketKey)
 string = string.replace("$TOOLCHAIN_FILENAME$", toolchain_FileName)
+
+string = string.replace("$INPUTCFFILENAME$", inputCFFilename)
 
 print(string)

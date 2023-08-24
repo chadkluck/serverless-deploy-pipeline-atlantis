@@ -102,7 +102,7 @@ Parameters:
     Description: "Do NOT include <Prefix> or <StageId>. This is the Project ID for the application. (Minimum 2 characters, suggested maximum of 20) Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'. If you get 'S3 bucket name too long' errors then you must shorten the Project ID or use an S3 Org Prefix. Long Project IDs may also be truncated when naming resources."
     AllowedPattern: "^[a-z][a-z0-9-]*[a-z0-9]$"
     MinLength: 2
-    ConstraintDescription: "Minimum of 2 characters (suggested maximmum of 20). Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number."
+    ConstraintDescription: "Minimum of 2 characters (suggested maximum of 20). Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number."
   StageId:
     Type: String
     Description: "Do NOT include <Prefix> or <ProjectId>. <StageId> does not need to match <DeployEnvironment>. You can have multiple stages in the TEST environment (e.g. test, john-test), and multiple stages in PROD (e.g. stage, beta, prod). Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'."
@@ -287,7 +287,7 @@ Resources:
           Value: !Ref 'AlarmNotificationEmail'
       Source:
         Type: codepipeline
-        BuildSpec: buildspec.yml # Explicitly set just to note that there should only be one buildspec (not buildspec-dev.yml or buildspec-prod.yml) which if needed to process differently for an environment, that logic should be in the buildspec and SAM template. Otherwise management of 2 or more would be difficult. We have Deploy Stage and Deploy Environment variables so use them.
+        BuildSpec: application-infrastructure/buildspec.yml # Explicitly set just to note that there should only be one buildspec (not buildspec-dev.yml or buildspec-prod.yml) which if needed to process differently for an environment, that logic should be in the buildspec and SAM template. Otherwise management of 2 or more would be difficult. We have Deploy Stage and Deploy Environment variables so use them.
 
   # ---------------------------------------------------------------------------
   # -- Log Group for CodeBuild Project --
@@ -597,7 +597,7 @@ Resources:
           - Id: "ExpireObjects"
             AbortIncompleteMultipartUpload:
               DaysAfterInitiation: 1
-            ExpirationInDays: 366
+            ExpirationInDays: 730 # 2 years - Unfortunately, you can't keep x number of deploys. However, you need to make sure you hang onto a few previous ones in case you need to roll back. If 2 yrs isn't good enough, you could create a script that deletes all but the last x recent deploys from the bucket. They don't actually take up a lot of space but why keep things around?
             NoncurrentVersionExpirationInDays: 30
             Status: "Enabled" # Enable so that you purge old build artifacts - they serve no use, not even for debug and it saves space and $$$
 
@@ -739,7 +739,7 @@ Resources:
             Provider: CodeCommit
             Version: 1
           Configuration:
-            BranchName: !Ref CodeCommitBranch #RepositoryBranch
+            BranchName: !Ref CodeCommitBranch
             PollForSourceChanges: false
             RepositoryName: !Ref CodeCommitRepository
           InputArtifacts: []

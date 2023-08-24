@@ -1,5 +1,0 @@
-config-stack*.json
-!config-stack.json
-
-generate-input*.py
-!generate-input.py

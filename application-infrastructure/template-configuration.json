@@ -3,8 +3,12 @@
     "ApiPathBase": "$PROJECT_ID$-$STAGE_ID$"
   },
   "Tags": {
-    "Name": "Hello World $PREFIX$-$PROJECT_ID$",
+    "Name": "Hello World Web Service API $PREFIX$-$PROJECT_ID$",
+    "CostCenter": "X1234",
+    "Creator": "nowhere@example",
+    "Owner": "nowhere@example",
     "Department": "Web Services",
+    "Function": "web-service",
     "Provisioner": "CloudFormation",
     "Atlantis": "application-infrastructure",
     "atlantis:Prefix": "$PREFIX$",

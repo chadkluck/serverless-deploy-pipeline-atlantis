@@ -7,8 +7,7 @@
     "application": {
         "aws_account": "9912345678900",
         "aws_region": "us-east-1",
-        "name": "Hello World",
-        "description": "My Hello World Project"
+        "name": "Hello World Web Service API"
     },
     "stack_parameters": {
         "Prefix": "hello",
@@ -22,5 +21,11 @@
         "CodeCommitBranch": "test"
     },
     "custom_parameters": {},
-    "custom_tags": {}
+    "custom_tags": {
+        "CostCenter": "X1234",
+        "Creator": "nowhere@example",
+        "Owner": "nowhere@example",
+        "Department": "Web Services",
+        "Function": "web-service"
+    }
 }

@@ -26,7 +26,7 @@ The cli directory contains the following:
 ## Basic Steps
 
 1. Update [config stack json](./config-stack.json)
-2. Run the generate input Python script: `py generate-input.py`
+2. Run the generate input Python script: `py generate.py`
 3. IF you are using your own S3 bucket for `pipeline-toolchain.yml` upload it using the S3 copy command listed in the output of generate-input.
 4. Run the CloudFormation create-stack command listed in the output of generate-input.
 
@@ -72,9 +72,9 @@ If you modified your stack you can add additional parameters under `"custom_para
 
 If you require additional tags beyond what is provided by default you can add them under `"custom_tags"`.
 
-### Run generate-input.py
+### Run generate.py
 
-`py generate-input.py`
+`py generate.py`
 
 This will take your config-stack.json file and generate an input file based on the [input file template](./cli/input-templates/input-template-cloudformation.json). It basically performs a search and replace on the template and saves the result to the input directory as the CloudFormation input JSON file.
 

@@ -67,7 +67,7 @@ To conserve resources of unused stacks or to "start over" with a mangled stack, 
 
 ## Use the CLI to Create Stacks
 
-To assist with entering parameters and tags for your CloudFormation deploy stack, a [project configuration JSON file](./cli/config-stack.json) and `generate-input.py` Python script is included in the [CLI directory](./cli/).
+To assist with entering parameters and tags for your CloudFormation deploy stack, a [project configuration JSON file](./cli/config-stack.json) and `generate.py` Python script is included in the [CLI directory](./cli/).
 
 Filling in the information and running the script will give you all you need to run a `aws cloudformation create-stack` command from the AWS Command Line Interface without having to go through the console.
 

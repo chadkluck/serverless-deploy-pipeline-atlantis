@@ -20,23 +20,23 @@ I do beleive that the cons are only temporary and I set the toolchain up as a le
 
 ### Deploy Pipeline IAM Policy Template for CloudFormation Service Role
 
-[deploy-pipeline-template-v2/iam-policy-template/ATLANTIS-CloudFormationServicePolicy.json](./deploy-pipeline-template-v2/iam-policy-template/ATLANTIS-CloudFormationServicePolicy.json)
+[deploy-pipeline/iam-policy-template/ATLANTIS-CloudFormationServicePolicy.json](./deploy-pipeline/iam-policy-template/ATLANTIS-CloudFormationServicePolicy.json)
 
-The IAM policy template for the necessary CloudFormation Service Role. You will need to add in some details using a search/replace as instructed in [README 1 Create IAM CloudFormation Service Role](deploy-pipeline-template-v2/README-1-IAM-CloudFormation-Service_Role.md).
+The IAM policy template for the necessary CloudFormation Service Role. You will need to add in some details using a search/replace as instructed in [README 1 Create IAM CloudFormation Service Role](deploy-pipeline/README-1-IAM-CloudFormation-Service_Role.md).
 
 ### Application Infrastructure Code in CodeCommit
 
 [Sample code for your Application Infrastructure](./application-infrastructure-sample-code/) is available to seed your CodeCommit Repository. Use the sample code for your initial experiments, tutorials, and as a template for structuring your own code to work with the pipeline. (Basically setting up the proper parameters and tags to allow the deploy pipeline to work its magic.)
 
-[README 2 Create CodeCommit Repository](deploy-pipeline-template-v2/README-2-CodeCommit-Repository.md) goes over creating the CodeCommit repository and branch to deploy from.
+[README 2 Create CodeCommit Repository](deploy-pipeline/README-2-CodeCommit-Repository.md) goes over creating the CodeCommit repository and branch to deploy from.
 
 ### Deploy Pipeline CloudFormation Template
 
-[deploy-pipeline-template-v2/pipeline-toolchain.yml](./deploy-pipeline-template-v2/pipeline-toolchain.yml)
+[deploy-pipeline/pipeline-toolchain.yml](./deploy-pipeline/pipeline-toolchain.yml)
 
 The CloudFormation template you will be using to create the Deploy Stack which creates and manages the AWS Code Pipeline. It will utilize the CloudFormation Service Role you created. The Code Pipeline is what builds and deploys your infrastructure stack.
 
-Utilize either the template in the public 63klabs S3 bucket, upload to your own bucket, or upload using the AWS CloudFormation Web Console. Follow the instructions in [README 3 Create and Update CloudFormation Deploy Pipeline Stack](deploy-pipeline-template-v2/README-3-CloudFormation-Deploy-Stack.md).
+Utilize either the template in the public 63klabs S3 bucket, upload to your own bucket, or upload using the AWS CloudFormation Web Console. Follow the instructions in [README 3 Create and Update CloudFormation Deploy Pipeline Stack](deploy-pipeline/README-3-CloudFormation-Deploy-Stack.md).
 
 ## Modify to Suit Your Needs
 
@@ -46,7 +46,7 @@ The application deployed in the tutorials deviates from the traditional "Hello W
 
 To deploy application infrastructure and code changes all you need to do is commit to a monitored branch of the repository.
 
-Before skipping over the tutorials you'll need to make sure you have set up the required IAM Role and CodeCommit repository [Refer to documentation](deploy-pipeline-template-v2/README-0-Start-Here.md).
+Before skipping over the tutorials you'll need to make sure you have set up the required IAM Role and CodeCommit repository [Refer to documentation](deploy-pipeline/README-0-Start-Here.md).
 
 ## AWS Costs
 
@@ -56,7 +56,7 @@ This deploy template will create resources necessary to provide an AWS CodePipel
 
 You are also charged for AWS CodeBuild if you go over 100 build minutes per month. [CodeBuild Pricing](https://aws.amazon.com/codebuild/pricing)
 
-To delete the stacks and resources refer to [README 6: Deleting](deploy-pipeline-template-v2/README-6-Deleting.md).
+To delete the stacks and resources refer to [README 6: Deleting](deploy-pipeline/README-6-Deleting.md).
 
 ## Documentation
 
@@ -64,12 +64,12 @@ README 0 through 3 will get you started quickly as they walk you through setting
 
 README 4 through 7 will guide you through advanced concepts with a tutorial and additional information about deleting stacks and using the AWS CLI to create stacks.
 
-- [README 0 Start Here](deploy-pipeline-template-v2/README-0-Start-Here.md)
-- [README 1 Create IAM CloudFormation Service Role](deploy-pipeline-template-v2/README-1-IAM-CloudFormation-Service_Role.md)
-- [README 2 Create CodeCommit Repository](deploy-pipeline-template-v2/README-2-CodeCommit-Repository.md)
-- [README 3 Create and Update CloudFormation Deploy Pipeline Stack](deploy-pipeline-template-v2/README-3-CloudFormation-Deploy-Stack.md)
-- [README 4 Tutorial](deploy-pipeline-template-v2/README-4-Tutorial.md)
-- [README 5 Advanced](deploy-pipeline-template-v2/README-5-Advanced.md)
-- [README 6 Deleting](deploy-pipeline-template-v2/README-6-Deleting.md)
-- [README 7 CLI (Create Stack from AWS Command Line Interface)](deploy-pipeline-template-v2/README-7-CLI.md)
+- [README 0 Start Here](deploy-pipeline/README-0-Start-Here.md)
+- [README 1 Create IAM CloudFormation Service Role](deploy-pipeline/README-1-IAM-CloudFormation-Service_Role.md)
+- [README 2 Create CodeCommit Repository](deploy-pipeline/README-2-CodeCommit-Repository.md)
+- [README 3 Create and Update CloudFormation Deploy Pipeline Stack](deploy-pipeline/README-3-CloudFormation-Deploy-Stack.md)
+- [README 4 Tutorial](deploy-pipeline/README-4-Tutorial.md)
+- [README 5 Advanced](deploy-pipeline/README-5-Advanced.md)
+- [README 6 Deleting](deploy-pipeline/README-6-Deleting.md)
+- [README 7 CLI (Create Stack from AWS Command Line Interface)](deploy-pipeline/README-7-CLI.md)
 - [CHANGELOG - Updates to Existing Deploy Stacks](CHANGELOG.md)

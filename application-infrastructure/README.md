@@ -16,6 +16,6 @@ If everything went well during deployment, you should be able to access your app
 
 If it did not deploy correctly, please troubleshoot before continuing.
 
-Once everything is tested and working correctly, follow the tutorials for deploying code and adding additional pipelines in [README 4: Atlantis Deploy Pipeline Tutorial](../deploy-pipeline-template-v2/README-4-Tutorial.md).
+Once everything is tested and working correctly, follow the tutorials for deploying code and adding additional pipelines in [README 4: Atlantis Deploy Pipeline Tutorial](../deploy-pipeline/README-4-Tutorial.md).
 
 If you want a more advanced, real-world web service application infrastructure stack with internal caching using S3, DynamoDb and access to SSM Parameter Store for keys and secrets, check out the repository: [Serverless Webservice Template for Pipeline Atlantis](https://github.com/chadkluck/serverless-webservice-template-for-pipeline-atlantis). It is production ready code for a true CI/CD pipeline and I use it as the base of most of my API development.
