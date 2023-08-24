@@ -2,6 +2,7 @@ import json
 import sys
 
 configStackJson = "config-deploy-stack.json"
+saveToDir = "" # ex: "custom/" or "" (same dir)
 
 def deleteEmptyValues(data, listtype, valuekey):
 
@@ -83,14 +84,14 @@ def inputFile(template, filetype):
 
         string = json.dumps(myData, indent=4)
 
-    filename = "custom/"+filetype+"-"+stack_param_Prefix+"-"+stack_param_ProjectId+"-"+stack_param_StageId+".json"
+    filename = saveToDir+"input-"+filetype+"-"+stack_param_Prefix+"-"+stack_param_ProjectId+"-"+stack_param_StageId+".json"
     myFile = open(filename, "w")
     n = myFile.write(string)
     myFile.close()
 
-    print("\n\n================== "+filename+".json ==================\n\n")
+    print("\n\n================== "+filename+" ==================\n\n")
     print(string)
-    print("\n\n============= "+filename+".json COMPLETE! =============\n\n")
+    print("\n\n============= "+filename+" COMPLETE! =============\n\n")
 
     return filename
 
@@ -180,12 +181,13 @@ stringDone = """
 --------------------------------- DONE! ---------------------------------
 =========================================================================
 
-The CloudFormation input JSON file for this project has been saved to the 
-input folder and may now be used as the --cli-input-json parameter when
-creating the CloudFormation stack.
+The CloudFormation input JSON file for this project has been saved to 
+$INPUTCFFILENAME$
+and may now be used as the --cli-input-json parameter when creating or 
+updating the CloudFormation stack.
 
 """
-    
+
 stringS3Text = """
 =========================================================================
 IF YOU NEED TO UPLOAD pipeline-toolchain.yml to S3, run the following command:

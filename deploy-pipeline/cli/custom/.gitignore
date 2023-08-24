@@ -1,6 +1,0 @@
-# Remove this .gitignore file if you are using a repository and wish to keep copies of your IAM policies.
-# You may always copy the JSON from your IAM policy in AWS - But if you want a reference or backup, you
-# can keep copies here.
-
-*
-!.gitignore

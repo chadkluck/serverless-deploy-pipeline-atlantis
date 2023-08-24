@@ -132,7 +132,7 @@ Parameters:
 
   ParameterStoreHierarchy:
     Type: String
-    Description: "Parameters may be organized within a hierarcy based on your organizational or operations structure. The application will create its parameters within this hierarchy. For example, /Finance/ops/ for this value would then generate /Finance/ops/<env>/<prefix>-<project_id>-<stage>/<parameterName>. Must either be a single '/' or begin and end with a '/'."
+    Description: "Parameters may be organized within a hierarchy based on your organizational or operations structure. The application will create its parameters within this hierarchy. For example, /Finance/ops/ for this value would then generate /Finance/ops/<env>/<prefix>-<project_id>-<stage>/<parameterName>. Must either be a single '/' or begin and end with a '/'."
     Default: "/"
     AllowedPattern: "^\\/([a-zA-Z0-9_.-]*[\\/])+$|^\\/$"
     ConstraintDescription: "Must only contain alpha-numeric, dashes, underscores, or slashes. Must be a single slash or begin and end with a slash. (/Finance/, /Finance/ops/, or /)"
