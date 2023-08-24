@@ -1,7 +1,7 @@
 import json
 import sys
 
-configStackJson = "config-stack.json"
+configStackJson = "config-deploy-stack.json"
 
 def deleteEmptyValues(data, listtype, valuekey):
 
@@ -51,7 +51,6 @@ def inputFile(template, filetype):
     string = string.replace("$AWS_ACCOUNT$", app_aws_account)
     string = string.replace("$AWS_REGION$", app_aws_region)
     string = string.replace("$NAME$", app_name)
-    string = string.replace("$DESCRIPTION$", app_desc)
 
     string = string.replace("$PREFIX_UPPER$", stack_param_Prefix.upper())
     string = string.replace("$PREFIX$", stack_param_Prefix)
@@ -114,7 +113,6 @@ toolchain_FileName = config['toolchain_template_location']['FileName']
 app_aws_account = config['application']['aws_account']
 app_aws_region = config['application']['aws_region']
 app_name = config['application']['name']
-app_desc = config['application']['description']
 
 stack_param_Prefix = config['stack_parameters']['Prefix']
 stack_param_ProjectId = config['stack_parameters']['ProjectId']
@@ -141,17 +139,6 @@ if app_name != "":
     app_name = app_name + " " # add a space
 
 app_name = app_name + stack_param_Prefix + "-" + stack_param_ProjectId
-
-if app_desc == "":
-    app_desc = "Project: "+stack_param_Prefix + "-" + stack_param_ProjectId
-    if stack_param_StageId != "":
-        app_desc += " Stage: " + stack_param_StageId
-    if stack_param_DeployEnvironment != "":
-        app_desc += " Env: " + stack_param_DeployEnvironment
-    if stack_param_ProjectId != "":
-        app_desc += " Repo: " + stack_param_CodeCommitRepository
-    if stack_param_CodeCommitBranch != "":
-        app_desc += " Branch: " + stack_param_CodeCommitBranch
 
 #------------------------------------------------------------------------------
 #  CUSTOM PARAMETERS
