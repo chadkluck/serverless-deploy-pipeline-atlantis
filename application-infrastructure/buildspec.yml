@@ -36,6 +36,10 @@ phases:
       # Upgrade AWS CLI to the latest version
       - pip install --upgrade awscli
 
+  pre_build:
+    commands:
+    - cd application-infrastructure
+
   build:
     commands:
 
@@ -49,5 +53,5 @@ phases:
 
 artifacts:
   files:
-    - template-export.yml
-    - template-configuration.json
+    - application-infrastructure/template-export.yml
+    - application-infrastructure/template-configuration.json
