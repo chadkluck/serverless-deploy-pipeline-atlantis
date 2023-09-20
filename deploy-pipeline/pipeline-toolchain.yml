@@ -8,34 +8,12 @@
 # v2.2023-07-22 HPAD (Happy Pi Approximation Day!)
 # 
 # NOTE: As of v2 this toolchain no longer supports CodeStar. Including it complicated the set-up 
-# and learning process and it wasn't too useful. The old toolchain can be found in the 
-# /x-deprecated-versions directory for reference.
-# 
-# This template creates a CodePipeline triggered by commits to a CodeCommit repository to deploy 
-# a simple API Gateway + Lambda web service or Event Bridge + Lambda service. It also generates
-# a second CloudFormation stack in which it manages your application's infrastructure.
-# 
-# It creates a minimal set of IAM permissions to perform the deploy of application resources as 
-# outlined under its unique CF Worker Role (which give it access to only modify its own assigned 
-# infrastructure stack).
-# 
-# Modify this pipeline-toolchain CF template to meet your needs as you expand the number of 
-# resources required by your application's infrastructure. Add permissions to the CF Worker Role 
-# in order to create, modify, or delete resources in your application's infrastructure.
-# 
-# The CF Worker Role created and used by the Deploy Pipeline is scoped to ONLY have permission 
-# to modify its own resources and Least Privilege should be maintained when defining IAM policies
-# in this and subsequent templates.
-# 
-# (Note that there are a few IAM areas that are still under development for providing least 
-# privilege. Feel free to offer code recommendations using the proper channels on the GitHub 
-# repository.)
+# and learning process and it wasn't too useful.
 #
-# Security and operational improvements will evolve and be implemented as I get the chance.
-# Check the change log on the GitHub repo to keep up to date with the latest changes which you 
-# may add to this template in your CloudFormation stack. If you have suggestions please submit 
-# them via the proper GitHub repository channels. I check the AWS Security Hub against my stacks 
-# to find areas of improvement but must prioritize.
+# Security and operational improvements will evolve.
+# - Check the change log on the GitHub repo to keep up to date with the latest suggestions
+# - Scope down the role permissions as you see fit
+# - If you have suggestions please submit an issue via the GitHub repository
 #
 # README documentation goes through installation steps. 
 # https://github.com/chadkluck/serverless-deploy-pipeline-atlantis/README-0-Start-Here.md
@@ -179,9 +157,11 @@ Resources:
   # Each AWS CodeBuild project requires a role for AWS CodeBuild to operate on your code.
 
   CodeBuildRole:
+    Type: AWS::IAM::Role
     Description: Creating service role in IAM for AWS CodeBuild
     Condition: IsNotDevelopment
     Properties:
+      RoleName: !Sub "${Prefix}-Worker-${ProjectId}-${StageId}-CodeBuild"
       AssumeRolePolicyDocument:
         Statement:
         - Action: sts:AssumeRole
@@ -189,8 +169,6 @@ Resources:
           Principal:
             Service: codebuild.amazonaws.com
       Path: /
-      RoleName: !Sub "${Prefix}-Worker-${ProjectId}-${StageId}-CodeBuild"
-    Type: AWS::IAM::Role
 
   # ---------------------------------------------------------------------------
   # -- CodeBuild Policy --

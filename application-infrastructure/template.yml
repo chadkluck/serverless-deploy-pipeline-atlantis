@@ -39,6 +39,8 @@ Metadata:
           default: "Deployment Environment Identification"
         Parameters:
           - DeployEnvironment
+          - FunctionGradualDeploymentType
+          - DeployRole
       -
         Label:
           default: "External Resources and Alarm Notifications"
@@ -51,8 +53,6 @@ Metadata:
         Parameters:
           - FunctionTimeOutInSeconds
           - FunctionMaxMemoryInMB
-          - FunctionGradualDeploymentType
-          - DeployRole
       -
         Label:
           default: "Application Parameters"
@@ -101,7 +101,7 @@ Parameters:
     ConstraintDescription: "May be empty or at least 2 characters long. Must start with a alphanumeric character, may contain lowercase letters, numbers, and hyphens."
 
   # ---------------------------------------------------------------------------
-  # Deployment Environment Identification
+  # Deployment Environment
 
   DeployEnvironment:
     Type: String
@@ -109,6 +109,23 @@ Parameters:
     Default: "PROD"
     AllowedValues: ["DEV", "TEST", "PROD"]
     ConstraintDescription: "Must specify DEV, TEST, or PROD."
+  FunctionGradualDeploymentType:
+    Type: String
+    Description: "For production environments, what method do you want to use to gradually deploy before rolling back in case of errors. Note that when 'DeployEnvironment' is TEST or DEV, gradual deploy will not be enabled and will be same as All At Once"
+    Default: "Linear10PercentEvery3Minutes"
+    AllowedValues:
+      - "Canary10Percent5Minutes" # Canary = First 10%, then after x minutes, full 90% (full deploy after x minutes)
+      - "Canary10Percent10Minutes"
+      - "Canary10Percent15Minutes"
+      - "Canary10Percent30Minutes"
+      - "Linear10PercentEvery1Minute" # Linear = Total of 10 deploys every x minutes: 10%, wait x minutes, another 10%, wait, 10%.... (full deploy after 10 * x minutes)
+      - "Linear10PercentEvery2Minutes"
+      - "Linear10PercentEvery3Minutes"
+      - "Linear10PercentEvery10Minutes"
+      - "AllAtOnce" # All at once. Recommended only for TEST and DEV environments.
+  DeployRole:
+    Type: String
+    Description: "IAM role to allow AWS CodeDeploy to manage deployment of AWS Lambda functions"
 
   # ---------------------------------------------------------------------------
   # External Resources and Alarm Notifications
@@ -140,24 +157,6 @@ Parameters:
     Default: 128
     AllowedValues: [128, 192, 256, 320, 384, 448, 512]
     ConstraintDescription: "Min 128, Max 512 in increments of 64"
-  FunctionGradualDeploymentType:
-    Type: String
-    Description: "For production environments, what method do you want to use to gradually deploy before rolling back in case of errors. Note that when 'DeployEnvironment' is TEST or DEV, gradual deploy will not be enabled and will be same as All At Once"
-    Default: "Linear10PercentEvery3Minutes"
-    AllowedValues:
-      - "Canary10Percent5Minutes" # Canary = First 10%, then after x minutes, full 90% (full deploy after x minutes)
-      - "Canary10Percent10Minutes"
-      - "Canary10Percent15Minutes"
-      - "Canary10Percent30Minutes"
-      - "Linear10PercentEvery1Minute" # Linear = Total of 10 deploys every x minutes: 10%, wait x minutes, another 10%, wait, 10%.... (full deploy after 10 * x minutes)
-      - "Linear10PercentEvery2Minutes"
-      - "Linear10PercentEvery3Minutes"
-      - "Linear10PercentEvery10Minutes"
-      - "AllAtOnce" # All at once. Recommended only for TEST and DEV environments.
-  DeployRole:
-    Type: String
-    Description: "IAM role to allow AWS CodeDeploy to manage deployment of AWS Lambda functions"
-
 
   # ---------------------------------------------------------------------------
   # Application Settings
