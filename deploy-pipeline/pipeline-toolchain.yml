@@ -768,8 +768,8 @@ Resources:
               "DeployRole": "${CodeDeployTrustRole.Arn}",
               "AlarmNotificationEmail": "${AlarmNotificationEmail}"
             }'
-            TemplateConfiguration: !Sub '${ProjectId}-${StageId}-BuildArtifact::template-configuration.json'
-            TemplatePath: !Sub "${ProjectId}-${StageId}-BuildArtifact::template-export.yml"
+            TemplateConfiguration: !Sub '${ProjectId}-${StageId}-BuildArtifact::application-infrastructure/template-configuration.json'
+            TemplatePath: !Sub "${ProjectId}-${StageId}-BuildArtifact::application-infrastructure/template-export.yml"
           InputArtifacts:
           - Name: !Sub "${ProjectId}-${StageId}-BuildArtifact"
           OutputArtifacts: []
