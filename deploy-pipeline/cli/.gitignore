@@ -1,3 +1,4 @@
 custom-*.json
-input-*.json
 custom-*.py
+input-*.json
+!input-template-cloudformation.json
