@@ -16,7 +16,7 @@
 # - If you have suggestions please submit an issue via the GitHub repository
 #
 # README documentation goes through installation steps. 
-# https://github.com/chadkluck/serverless-deploy-pipeline-atlantis/README-0-Start-Here.md
+# https://github.com/chadkluck/serverless-deploy-pipeline-atlantis/README.md
 #
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "Deploy Pipeline CloudFormation Template v2. Creates a CodePipeline for API Gateway or Event Bridge to Lambda services that watches a CodeCommit repository for changes. github.com/chadkluck/serverless-deploy-pipeline-atlantis"
