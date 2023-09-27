@@ -556,9 +556,6 @@ Resources:
         - "-"
         - - !If [UseS3BucketNameOrgPrefix, !Sub "${S3BucketNameOrgPrefix}-${Prefix}", !Sub "${Prefix}-${AWS::Region}-${AWS::AccountId}" ]
           - !Sub "${ProjectId}-${StageId}-deploy"
-      Tags:
-      - Key: Name
-        Value: !Sub "${Prefix}-${ProjectId}-${StageId}-Artifacts"
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:
