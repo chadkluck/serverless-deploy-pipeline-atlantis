@@ -1,36 +1,32 @@
 # Start Here
 
-A series of short READMEs will walk you through the 3 concepts to get you started:
+A series of READMEs will walk you through the 3 concepts to get you started:
 
-1. Creating an IAM Role for your CloudFormation Service
-2. Creating a repository you will store your code in
-3. Creating a CloudFormation stack that will create an AWS CodePipeline to deploy your code
+1. Create an IAM Role for your CloudFormation Service
+2. Create a CodeCommit repository you will store your code in
+3. Create a CloudFormation stack that will create an AWS CodePipeline to deploy your code
 
-Step 1 (Creating an IAM Service Role) only needs to be done once. Step 2 (Creating a CodeCommit repository) only needs to be done once per application.
-
-You can perform Step 3 as many times as you wish as you begin your wonderful journey into Infrastructure as Code (IaC) and Continuous Integration and Continuous Deployment (CI/CD) pipelines.
+This will begin your wonderful journey into Infrastructure as Code (IaC) and Continuous Integration and Continuous Deployment (CI/CD) pipelines.
 
 Enjoy!
 
 ## IAM CloudFormation Service Role
 
-An IAM CloudFormation Service Role is necessary in order for your deploy stack to function.
+An IAM CloudFormation Service Role is necessary in order for your deploy stack to create pipeline resources.
 
 You will first create a policy and then attach it to the new service role.
 
-The policy template is included in the [iam service role directory](./iam-cloudformation-service-role/ATLANTIS-CloudFormationServicePolicy.json).
+The policy template is included in the [iam service role directory](../iam-cloudformation-service-role/ATLANTIS-CloudFormationServicePolicy.json).
 
-[README 1 IAM Policies](./README-1-IAM-CloudFormation-Service-Role.md) will walk you through creating the policy and CloudFormation Service Role that will give your deploy stack the proper permissions.
+[README 1: IAM CloudFormation Service Role](../iam-cloudformation-service-role/README-1-IAM-CF-Service-Role.md) will walk you through creating the policy and attaching it to a CloudFormation Service Role.
 
-You only need to do this once for any number of pipelines.
+You only need to do this once for any number of pipelines. You can also create a service role for each unit, team, or department in your organization to separate permissions.
 
 ## Create a CodeCommit Repository
 
-Place the entire contents of the [application infrastructure sample code](../application-infrastructure-sample-code/) into a new CodeCommit repository. Use the sample code given here for your first test. You can use more advanced templates later. 
+Place the entire directory and contents of the [application infrastructure sample code](../application-infrastructure/) into a new CodeCommit repository. Use the sample code given here for your first test. You can use more advanced templates later. 
 
 [README 2: CodeCommit Repository](./README-2-CodeCommit-Repository.md) will walk you through this.
-
-> **TIP:** I typically save a copy of the pipeline-toolchain.yml file in the root of the CodeCommit Respository. This is helpful if you make any customizations or wish to add default values to the parameters. While commiting changes to the toolchain file will not refresh the Deploy stack, it may be helpful to have a local copy.
 
 ## Create the Deploy Pipeline Stack in CloudFormation
 
