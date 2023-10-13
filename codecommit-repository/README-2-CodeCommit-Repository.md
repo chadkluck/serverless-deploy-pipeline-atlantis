@@ -1,20 +1,14 @@
 # READ ME 2: Create CodeCommit Repository for Application Infrastructure
 
-Once the service roles are created it is time to set up your first CodeCommit repository to store your application infrastructure.
+Once the service roles are created it is time to set up your CodeCommit repository to store your application infrastructure.
 
-When the deploy pipeline stack is set up, you will choose a branch of the repository to monitor and deploy from.
-
-You can set up multiple deployment branches such as test, beta, prod (main), or separate feature/developer branches along with a deploy pipeline stack for each.
-
-It is recommended you have a base or work-in-progress branch (such as `dev`) that you can commit code to without initiating a deploy.
-
-You will need to create the CodeCommit repository and seed it with your application infrastructure before you can create the deploy pipeline. To get started, you can use the code found in the `/codecommit-sample-code` directory and replace it later with more functional code such as [Serverless Webservice Template for Pipeline Atlantis](https://github.com/chadkluck/serverless-webservice-template-for-pipeline-atlantis).
+You will need to create the CodeCommit repository and seed it with your application infrastructure before you can create the deploy pipeline. To get started, place the `/application-infrastructure` into the root of the repository. You can replace it later with more functional code such as [Serverless Webservice Template for Pipeline Atlantis](https://github.com/chadkluck/serverless-webservice-template-for-pipeline-atlantis).
 
 ## Create the Repository
 
 1. Create a code commit repository. (You can name it `hello-world`)
 2. Clone the repository to your local machine.
-3. Add the sample code from `/codecommit-sample-code` and commit.
+3. Copy the `/application-infrastructure` directory into the root of the repository and commit.
 4. Create `dev` and `test` branches (you can create additional branches later)
 
 You should now have a repository with 3 branches:
@@ -28,6 +22,28 @@ Each branch should contain the same code.
 When we create the first Deploy Pipeline CloudFormation stack we will have it monitor the "test" branch. Upon successful completion of the test deployment, we will create a production deployment from the "main" branch.
 
 We will leave "dev" as a branch that doesn't have an automatic deploy. You can also create individual developer and feature branches in the future.
+
+## File Structure
+
+> **NOTE:** The deployment pipeline expects to find the application-infrastructure directory containing your application code and infrastructure template in your repository. 
+
+```
+Repository
+| - application-infrastructure/   <-- contains template and application code
+|   | - app/
+|   | - template.yml
+|   | - ...
+| - deploy-pipeline/              <-- (optional) contains a copy of your deploy pipeline and CloudFormation input generators
+    | - pipeline-toolchain.yml
+```
+
+The deploy-pipeline directory is optional and can be helpful if you modify the pipeline-toolchain. The codecommit-repository, iam-cloudformation-service-role, and doc directories do not have to be copied over.
+
+When the deploy pipeline stack is set up, you will choose a branch to monitor and deploy from.
+
+Once you are comfortable setting up deploy pipelines and connecting branches, you can manage multiple deployments such as test, beta, prod (main), or separate feature/developer branches.
+
+It is recommended you have a base or work-in-progress branch (such as `dev`) that you can commit code to without initiating a deploy.
 
 ## Related
 

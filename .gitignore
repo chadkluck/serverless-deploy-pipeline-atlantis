@@ -6,6 +6,7 @@
 *.DS_Store
 *desktop.ini
 
+node_modules/
 !.gitignore
 
 # If you need to remove .DS_Store
