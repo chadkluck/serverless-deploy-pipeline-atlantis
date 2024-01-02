@@ -1,6 +1,6 @@
 # Start Here
 
-A series of READMEs will walk you through the 3 concepts to get you started:
+A series of READMEs will walk you through creating the core infrastructure to get you started:
 
 1. Create an IAM Role for your CloudFormation Service
 2. Create a CodeCommit repository you will store your code in
@@ -20,11 +20,11 @@ The policy template is included in the [iam service role directory](../iam-cloud
 
 [README 1: IAM CloudFormation Service Role](../iam-cloudformation-service-role/README-1-IAM-CF-Service-Role.md) will walk you through creating the policy and attaching it to a CloudFormation Service Role.
 
-You only need to do this once for any number of pipelines. You can also create a service role for each unit, team, or department in your organization to separate permissions.
+You only need to do this once for any number of pipelines. You can also create a service role for each unit, team, or department in your organization to separate out permissions.
 
 ## Create a CodeCommit Repository
 
-Place the entire directory and contents of the [application infrastructure sample code](../application-infrastructure/) into a new CodeCommit repository. Use the sample code given here for your first test. You can use more advanced templates later. 
+Place the [application-infrastructure directory](../application-infrastructure/) into the root of your new CodeCommit repository. Use the sample code given here for your first test. You can use more advanced templates later. 
 
 [README 2: CodeCommit Repository](../codecommit-repository/README-2-CodeCommit-Repository.md) will walk you through this.
 
@@ -52,7 +52,7 @@ If you need to modify the way the CodePipeline performs (maybe you need to give 
 
 The following READMEs will be helpful.
 
-- [README 3: CloudFormation Deploy Stack](./README-3-CloudFormation-Deploy-Stack.md)
+- [README 3: CloudFormation Deploy Stack](../deploy-pipeline/README-3-CloudFormation-Deploy-Stack.md)
 - [README 5: Advanced](./README-5-Advanced.md) goes over advanced concepts.
 
 ## Deleting Stacks
@@ -70,3 +70,20 @@ Filling in the information and running the script will give you all you need to 
 Make sure you have AWS CLI installed and the proper credentials and role to submit `create-stack` commands.
 
 [README 7: CLI](./README-7-CLI.md)
+
+## Terraform or AWS CDK
+
+You may choose to manage the Deploy stack and CloudFormation Service Role using Terraform or the AWS CDK instead of managing each using input files and the AWS CLI.
+
+AWS CDK can be used to automate using a combination of Event Bridge, Lambda, and even Step Functions. For example, you can have Event Bridge monitor repositories tagged a certain way, or for a certain version of the deploy pipeline. That way when a developer creates a repository that is properly tagged, Event Bridge can send a notification to a combination of Lambda and Step Functions that will automate creation and destruction of required deployment stacks.
+
+## Index of READMEs
+
+- [README 1 Create IAM CloudFormation Service Role](../iam-cloudformation-service-role/README-1-IAM-CF-Service-Role.md)
+- [README 2 Create CodeCommit Repository](../codecommit-repository/README-2-CodeCommit-Repository.md)
+- [README 3 Create and Update CloudFormation Deploy Pipeline Stack](../deploy-pipeline/README-3-CloudFormation-Deploy-Stack.md)
+- [README 4 Tutorial](./README-4-Tutorial.md)
+- [README 5 Advanced](./README-5-Advanced.md)
+- [README 6 Deleting](./README-6-Deleting.md)
+- [README 7 CLI (Create Stack from AWS Command Line Interface)](./README-7-CLI.md)
+- [CHANGELOG - Updates to Existing Deploy Stacks](CHANGELOG.md)
