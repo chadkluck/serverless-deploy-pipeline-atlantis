@@ -111,7 +111,7 @@ The most likely time you will want your branch name to deviate from the stage is
 
 The `env` variable can be set to `DEV`, `TEST`, or `PROD` and can be used to switch various pieces of a deploy on or off. Maybe you don't need heavy error reporting in `PROD` or maybe you want to ramp up automated testing in `TEST` but not `DEV` as it could be costly as devs check in code throughout the day.
 
-## Least Privilage and Naming Conventions
+## Least Privilege and Naming Conventions
 
 Both of these options use the same CloudFormation template (`codestar-files/toolchain.yml`) which utilizes CodeStar practices of applying best practice IAM policies to the app (the app only has access to the resources it creates) and its deployment pipelines. Because of this, some resources such as IAM policies will still have CodeStar in their name which can be used as a signifier that it was created using these practices and for permissions.
 
@@ -239,16 +239,3 @@ Once the IAM policies are set, it is important to take a careful look at your `c
 
 ## Documentation
 
-There are 5 README documents to walk you through setting up the required IAM Policies and Roles, CodeCommit Repository, and Deploy CloudFormation Stack. 
-
-IAM Policies and Roles only need to be set up once. CodeCommit Repositories only need to be set up once per application. A deploy stack needs to be set up for each deployment stage of an application (test, beta, prod).
-
-- [README 0 Start Here](./README-0-Start-Here.md)
-- [README 1 Create IAM CloudFormation Service Role](./README-1-IAM-CloudFormation-Service_Role.md)
-- [README 2 Create CodeCommit Repository](./README-2-CodeCommit-Repository.md)
-- [README 3 Create and Update CloudFormation Deploy Pipeline Stack](./README-3-CloudFormation-Deploy-Stack.md)
-- [README 4 Tutorial](./README-4-Tutorial.md)
-- **README 5 Advanced**
-- [README 6 Deleting](./README-6-Deleting.md)
-- [README 7 CLI (Create Stack from AWS Command Line Interface)](./README-7-CLI.md)
-- [CHANGELOG - Updates to Existing Deploy Stacks](../CHANGELOG.md)

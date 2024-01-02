@@ -91,14 +91,13 @@ To delete the stacks and resources refer to [README 6: Deleting](./docs/README-6
 
 README 0 through 3 will get you started quickly as they walk you through setting up the required IAM Policy and Role, CodeCommit Repository for your application's code, and CloudFormation Deploy Stack.
 
-README 4 through 7 will guide you through advanced concepts with a tutorial and additional information about deleting stacks and using the AWS CLI to create stacks.
+README 4 through 6 will guide you through advanced concepts with a tutorial and additional information.
 
-- [README 0 Start Here](./docs/README-0-Start-Here.md)
-- [README 1 Create IAM CloudFormation Service Role](./iam-cloudformation-service-role/README-1-IAM-CF-Service-Role.md)
-- [README 2 Create CodeCommit Repository](./codecommit-repository/README-2-CodeCommit-Repository.md)
-- [README 3 Create and Update CloudFormation Deploy Pipeline Stack](./deploy-pipeline/README-3-CloudFormation-Deploy-Stack.md)
-- [README 4 Tutorial](./docs/README-4-Tutorial.md)
-- [README 5 Advanced](./docs/README-5-Advanced.md)
-- [README 6 Deleting](./docs/README-6-Deleting.md)
-- [README 7 CLI (Create Stack from AWS Command Line Interface)](./docs/README-7-CLI.md)
+- [README 0: Start Here](./docs/README-0-Start-Here.md)
+- [README 1: Create IAM CloudFormation Service Role](./iam-cloudformation-service-role/README-1-IAM-CF-Service-Role.md)
+- [README 2: Create CodeCommit Repository](./codecommit-repository/README-2-CodeCommit-Repository.md)
+- [README 3: Create and Update Deploy Pipeline CloudFormation Stack](./deploy-pipeline/README-3-CloudFormation-Deploy-Stack.md)
+  - [README 3.1: Use AWS CLI to Create and Update Deploy Pipeline CloudFormation Stack](./deploy-pipeline/cli/README-CLI.md)- [README 4 Tutorial](./docs/README-4-Tutorial.md)
+- [README 5: Advanced](./docs/README-5-Advanced.md)
+- [README 6: Deleting](./docs/README-6-Deleting.md)
 - [CHANGELOG - Updates to Existing Deploy Stacks](CHANGELOG.md)

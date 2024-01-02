@@ -1,11 +1,11 @@
-# Create Stack Using the AWS CLI
+# Use AWS CLI to Create and Update Deploy Pipeline CloudFormation Stack
 
-Instead of managing your stack through the AWS Web Console, you can use the AWS CLI.
+Instead of managing your stack through the AWS Web Console, you can use the AWS CLI (AWS Command Line Interface).
 
 Benefits of using the CLI:
 
 - You can maintain an input.json file with your parameter and tag settings.
-- With an input.json file you don't have to manually enter parameters and tags.
+- With an input.json file you don't have to manually enter parameters and tags via the Web Console.
 
 Since many of the provided tags are based on parameter values, a Python script to generate the input.json file is included.
 
@@ -25,17 +25,18 @@ The cli directory contains the following:
 
 ## Basic Steps
 
-1. Update [config stack json](./config-stack.json)
+1. Update [config deploy stack json](./config-deploy-stack.json)
 2. Run the generate input Python script: `py generate.py`
 3. IF you are using your own S3 bucket for `pipeline-toolchain.yml` upload it using the S3 copy command listed in the output of generate-input.
 4. Run the CloudFormation create-stack command listed in the output of generate-input.
 
 ## Step by Step
 
-
 ### Create Repository and Branch
 
-If you don't already have a repository and branch created, you will need to do it now. Once the deploy stack is finished being created it will check the repository and begin generation of the infrastructure stack.
+If you don't already have a repository and branch created, you will need to do it now. Once the deploy stack is finished being created it will check the repository branch assigned to it and begin generation of the infrastructure stack.
+
+If the branch doesn't exist, or your application code and infrastructure template doesn't exist, then the pipeline will fail.
 
 ### Update config-stack.json
 
@@ -98,14 +99,6 @@ Make sure you have access to upload and that CloudFormation also has access to r
 
 ### Updating Stacks
 
-## Documentation
+### Alternatives
 
-- [README 0 Start Here](./README-0-Start-Here.md)
-- [README 1 Create IAM CloudFormation Service Role](./README-1-IAM-CloudFormation-Service_Role.md)
-- [README 2 Create CodeCommit Repository](./README-2-CodeCommit-Repository.md)
-- [README 3 Create and Update CloudFormation Deploy Pipeline Stack](./README-3-CloudFormation-Deploy-Stack.md)
-- [README 4 Tutorial](./README-4-Tutorial.md)
-- [README 5 Advanced](./README-5-Advanced.md)
-- [README 6 Deleting](./README-6-Deleting.md)
-- [README 7 CLI (Create Stack from AWS Command Line Interface)](./README-7-CLI.md)
-- [CHANGELOG - Updates to Existing Deploy Stacks](../CHANGELOG.md)
+Terraform or the AWS CDK may be used to manage your Deploy Pipeline stack.

@@ -1,4 +1,4 @@
-# Easy as 1-2-3!
+# Set Up: Easy as 1-2-3!
 
 1. [Create an IAM Role for your CloudFormation Service](../iam-cloudformation-service-role/README-1-IAM-CF-Service-Role.md)
 2. [Create a CodeCommit repository you will store your code in](../codecommit-repository/README-2-CodeCommit-Repository.md)

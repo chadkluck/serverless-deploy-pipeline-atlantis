@@ -2,7 +2,7 @@
 
 Once the service roles are created it is time to set up your CodeCommit repository to store your application infrastructure.
 
-You will need to create the CodeCommit repository and seed it with your application infrastructure before you can create the deploy pipeline. To get started, place the `/application-infrastructure` into the root of the repository. You can replace it later with more functional code such as [Serverless Webservice Template for Pipeline Atlantis](https://github.com/chadkluck/serverless-webservice-template-for-pipeline-atlantis).
+You will need to create the CodeCommit repository and seed it with your application infrastructure before you can create the deploy pipeline. To get started, place the `/application-infrastructure` into the root of the repository. You can replace it later with more functional code such as [Serverless Web Service Template for Pipeline Atlantis](https://github.com/chadkluck/serverless-webservice-template-for-pipeline-atlantis).
 
 ## Create the Repository
 
@@ -52,16 +52,4 @@ It is recommended you have a base or work-in-progress branch (such as `dev`) tha
 
 ## Documentation
 
-There are 5 README documents to walk you through setting up the required IAM Policies and Roles, CodeCommit Repository, and Deploy CloudFormation Stack. 
-
-IAM Policies and Roles only need to be set up once. CodeCommit Repositories only need to be set up once per application. A deploy stack needs to be set up for each deployment stage of an application (test, beta, prod).
-
-- [README 0 Start Here](./README-0-Start-Here.md)
-- [README 1 Create IAM CloudFormation Service Role](./README-1-IAM-CloudFormation-Service_Role.md)
-- **README 2 Create CodeCommit Repository**
-- [README 3 Create and Update CloudFormation Deploy Pipeline Stack](./README-3-CloudFormation-Deploy-Stack.md)
-- [README 4 Tutorial](./README-4-Tutorial.md)
-- [README 5 Advanced](./README-5-Advanced.md)
-- [README 6 Deleting](./README-6-Deleting.md)
-- [README 7 CLI (Create Stack from AWS Command Line Interface)](./README-7-CLI.md)
-- [CHANGELOG - Updates to Existing Deploy Stacks](../CHANGELOG.md)
+TODO

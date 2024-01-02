@@ -1,4 +1,4 @@
-# READ ME 3: Create or Update Deploy CloudFormation Stack Using pipeline-toolchain.yml
+# READ ME 3: Create or Update Deploy Pipeline CloudFormation Stack Using pipeline-toolchain.yml
 
 The pipeline-toolchain.yml file is a CloudFormation template that creates the deployment pipeline for your application. The generated CloudFormation stack will have `*-deploy` appended to the name as well as the "stage" assigned to a specific branch in your CodeCommit repository (test, beta, prod, main, etc). There will be a deploy stack for each of the stages/branches you wish to deploy from.
 
@@ -6,7 +6,7 @@ Though you will most likely always have a prod stage tied to your main/master br
 
 Each deploy pipeline monitors a specific branch in the CodeCommit repository and automatically kicks off a deployment when changes are committed to it. The application has its own CloudFormation infrastructure stack with `*-infrastructure` appended to it. The infrastructure stack manages all the resources (S3, API Gateway, Lambda, DynamoDb, etc) needed to run your application. The deploy stack only manages the pipeline and only needs to be updated if you are modifying the way the pipeline operates.
 
-**REMEMBER:** For each "-deploy" stack, there will be a corresponding "-infrastructure". The deploy stack created the Code Pipeline that monitors the CodeCommit repository. Commiting code to a branch monitored by the pipleine will cause it to execute updates to the infrastructure stack. The deploy stack ONLY creates the pipeline for monitoring and executing changes. If you need to modify the pipeline, you can update the deploy stack template. Your application resides in the application infrastructure stack.
+**REMEMBER:** For each "-deploy" stack, there will be a corresponding "-infrastructure". The deploy stack created the Code Pipeline that monitors the CodeCommit repository. Committing code to a branch monitored by the pipeline will cause it to execute updates to the infrastructure stack. The deploy stack ONLY creates the pipeline for monitoring and executing changes. If you need to modify the pipeline, you can update the deploy stack template. Your application resides in the application infrastructure stack.
 
 ## Crate a Deploy Pipeline Stack
 
@@ -16,7 +16,7 @@ There are 3 ways to create the deployment pipeline.
 2. Point to the 63K Labs S3 bucket (or your own) through the CloudFormation web console
 3. Use the AWS CLI (Command Line Interface) (Advanced)
 
-I will cover "Option 1" for the tutorial, however, as you become familiar with CloudFormation you may explore Options 2 and 3 by using the steps outlined under "Edit or Replace" below.
+I will cover "Option 1" for this tutorial, however, as you become familiar with CloudFormation you may explore Options 2 and 3 by using the steps outlined under "Edit or Replace" below.
 
 ### Upload pipeline-toolchain.yml from Local Machine
 
@@ -68,7 +68,7 @@ If you are replacing the entire contents of the template file then you can do th
 1. Upload `pipeline-toolchain.yml` from your local machine
 2. Point to the 63klabs S3 Bucket (or your own bucket)
 3. Edit Template "In Place" in the Template Designer
-4. Create or Update the stack using AWC CLI (Command Line Interface)
+4. Create or Update the stack using AWS CLI (Command Line Interface)
 
 Note! If you have made your own modifications by adding additional permissions or resources, replacing the entire template will remove your changes. In that case, it is recommended you either manually update the pieces of code that need updating following the instructions in each update, or make note of your changes and re-implement them.
 
@@ -110,22 +110,20 @@ If you are updating pieces of the template manually "In Place" by following the 
 6. Check the box for acknowledging AWS may create resources.
 7. Watch the stack update progress. Hopefully it is successful!
 
+### Option 4: Create or Update using the AWS CLI
+
+This option is outlined in [README: Use AWS CLI to Create and Update Deploy Pipeline CloudFormation Stack](./cli/README-CLI.md).
+
+It may be beneficial to use this option as you can maintain input files that define your stack using parameters and tags. This is helpful as it avoids manual entry, is re-producible, self-documents, and maintains the concept of infrastructure as code.
+
+Other similar options that avoid the Web Console and follow Infrastructure as Code are using Terraform and AWS CDK for the process of creating and updating the deploy pipeline stack. (Exploring and implementing those options are far beyond the scope of this template and tutorial.)
+
 ## Change Log
 
 Once you have your pipeline set up you may want to watch the [CloudFormation Template for a Deployment Pipeline (CI/CD)](https://github.com/chadkluck/serverless-deploy-pipeline-atlantis) repository for any updates. Using the instructions for editing your deployment pipeline stack above you can walk through the instructions in the Change Log and make updates to your deploy pipeline stack.
 
 ## Documentation
 
-There are 5 README documents to walk you through setting up the required IAM Policies and Roles, CodeCommit Repository, and Deploy CloudFormation Stack. 
-
-IAM Policies and Roles only need to be set up once. CodeCommit Repositories only need to be set up once per application. A deploy stack needs to be set up for each deployment stage of an application (test, beta, prod).
-
-- [README 0 Start Here](./README-0-Start-Here.md)
-- [README 1 Create IAM CloudFormation Service Role](./README-1-IAM-CloudFormation-Service_Role.md)
-- [README 2 Create CodeCommit Repository](./README-2-CodeCommit-Repository.md)
-- **README 3 Create and Update CloudFormation Deploy Pipeline Stack**
-- [README 4 Tutorial](./README-4-Tutorial.md)
-- [README 5 Advanced](./README-5-Advanced.md)
-- [README 6 Deleting](./README-6-Deleting.md)
-- [README 7 CLI (Create Stack from AWS Command Line Interface)](./README-7-CLI.md)
-- [CHANGELOG - Updates to Existing Deploy Stacks](../CHANGELOG.md)
+Next: [README 4: Tutorial](../doc/README-4-Tutorial.md)
+Previous: [README 2: CodeCommit Repository](../doc/README-2-CodeCommit-Repository.md)
+Back to the Beginning: [README 0: Start Here](./README-0-Start-Here.md)
