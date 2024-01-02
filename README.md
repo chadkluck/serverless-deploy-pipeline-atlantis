@@ -1,6 +1,8 @@
-# CloudFormation Template for a Deployment Pipeline (CI/CD)
+# CloudFormation Template for CI/CD using AWS Code Pipeline
 
-This CloudFormation template will create an automated deployment pipeline when changes are commited to a watched branch CodeCommit.
+This CloudFormation template will create an automated deployment pipeline when changes are committed to a monitored CodeCommit branch.
+
+Each branch will have its own deploy stack and application infrastructure stack. This allows you to separate dev, test, prod, grant developer access via CodeCommit policies, and create or destroy test and staging branches/pipelines as necessary.
 
 ## Pros to using a template like this:
 
@@ -14,7 +16,7 @@ This CloudFormation template will create an automated deployment pipeline when c
 - You need to understand someone else's code
 - It stifles your creativity
 
-I do beleive that the cons are only temporary and I set the toolchain up as a learning experience. As you begin to look under the hood you can use it as a model for learning AWS Cloud Concepts such as Infrastructure as Code (IaC), CloudFormation, AWS CodePipeline, and serverless architecture.
+However, I do believe that the cons are only temporary and I set the toolchain up as a learning experience. As you begin to look under the hood you can use it as a model for learning AWS Cloud Concepts such as Infrastructure as Code (IaC), CloudFormation, AWS CodePipeline, and serverless architecture. Once you have played around with it, the sky is the limit as you add your own modifications for your own use case.
 
 ## Important Files
 
@@ -22,7 +24,7 @@ I do beleive that the cons are only temporary and I set the toolchain up as a le
 
 [deploy-pipeline/iam-policy-template/ATLANTIS-CloudFormationServicePolicy.json](./deploy-pipeline/iam-policy-template/ATLANTIS-CloudFormationServicePolicy.json)
 
-The IAM policy template for the necessary CloudFormation Service Role. You will need to add in some details using a search/replace as instructed in [README 1 Create IAM CloudFormation Service Role](deploy-pipeline/README-1-IAM-CloudFormation-Service_Role.md).
+The IAM policy template for the necessary CloudFormation Service Role. You will need to add in some details using a search/replace as instructed in [README 1 Create IAM CloudFormation Service Role](./iam-cloudformation-service-role/README-IAM-CF-Service-Role.md).
 
 ### Application Infrastructure Code in CodeCommit
 
