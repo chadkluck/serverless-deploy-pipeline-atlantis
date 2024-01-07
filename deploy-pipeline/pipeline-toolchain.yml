@@ -456,13 +456,18 @@ Resources:
             - logs:PutRetentionPolicy
             - logs:CreateLogGroup
             - logs:TagLogGroup
+            - logs:UntagLogGroup
+            - logs:TagResource
+            - logs:UntagResource
             Effect: Allow
             Resource:
             - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${Prefix}-${ProjectId}-${StageId}-*'
             
-          - Sid: "LogGroupsReadThisDeploymentOnly"
+          - Sid: "LogGroupsListAll"
             Action:
             - logs:DescribeLogGroups
+            - logs:ListTagsLogGroup
+            - logs:ListTagsForResource
             Effect: Allow
             Resource: 
             - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group::*' # cannot scope down to resource

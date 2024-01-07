@@ -4,219 +4,33 @@ In order to complete the tutorials you must have completed the steps outlined in
 
 If you have completed the steps in these 3 READMEs, then congratulations! Your tutorial journey has already begun!
 
-## Tutorial 1: CloudFormation Deploy Stack from Web Console
+Let us review what has been completed:
 
+1. IAM CloudFormation Service Role
+2. CodeCommit Repository
+3. Pipeline deploy stack creation
 
+When you create a CloudFormation stack you must assign it a service role so it has permissions to create the resources specified in the CloudFormation stack template. The IAM policy and service role we created grants the deploy stack permission to create the AWS CodePipeline including the AWS CodeBuild and CodeDeploy stages. It also grants access to CodePipeline to monitor repositories assigned to the pipeline using AWS Event Bridge.
 
-## Tutorial 2: CloudFormation Deploy Stack from the CLI
+The IAM policy and service role is scoped down to just the prefix and resource types assigned to it. So, for example, if you have two teams, Accounting (ACCT) and Engineering (ENGR), each can have their own Service Role to create their own deploy and application stacks. The engineering team will only have access to create stacks under the ENGR prefix, and the accounting team will only have access to create stacks under the ACCT prefix.
 
-Before we begin, make sure you have set up the proper permissions using [README #1 IAM Policies](README-1-IAM-Policies.md).
+Similarly, ENGR deploy stacks can only modify ENGR resources. For example, an ENGR stack cannot delete or modify resources assigned to an ACCT stack. Furthermore, each stack has its own policy that restricts its own access to resources under its name and stage.
 
-A CodeStar project is good for quick and dirty applications. Maybe proof of concepts, sandboxes, etc., but doesn't really have a development to production pipeline. Plus, it has limitations, such as:
+Stacks `ENGR-atomic-particle-manager-test-deploy` and `ENGR-atomic-particle-manager-infrastructure` can only modify resources with names (or specified tags) starting with `ENGR-atomic-particle-manager-test-*` and cannot modify resources under the name `ENGR-atomic-particle-manager-beta-*` and certainly not `ACCT-payroll-prod-*`.
 
-- 15 character limit on ID
-- Single branch/stage
+The deployment stacks also create Worker Roles specific to the application infrastructure stack. The Worker CFRole takes the place of the Service Role for the infrastructure stack. Just like how the Service Role grants the deploy stack permissions, the Worker CFRole grants the infrastructure stack permission to create all the resources necessary for your application infrastructure.
 
-If you want to push your project further and use CodeCommit for your complete development pipeline where each branch represents a depoloy stage (test, qa, production) then you will want to explore creating a project stack using CloudFormation.
+Right now the infrastructure stack has permission to create resources such as S3, DynamoDb, and Lambda functions. If it tried to create an EC2 instance, Event Bridge rule, or Step Function it would fail due to inadequate permissions.
 
-It is a little more complex to set up but it is a lot easier now that you've done one or two CodeStar creations! So, if you skipped the CodeStar CLI tutorials go back and do them!
+However, depending on the needs of your application, you can add and remove permissions to these Roles. We will have a tutorial on this later.
 
-Once you've laid the groundwork in setting up your first project, adding additional stages and projects will go like clockwork.
+For now remember the following:
 
-Since we'll be adding additional deployment stages to our development pipeline, we'll start with a test stage in a test environment.
+1. The Service Role grants the deploy stack permission to create the Code Pipeline and worker roles for the application infrastructure stack. If you want to add to your deploy stack such as pipeline execution notifications via SNS or other event triggers, add them to the service role.
+2. The worker roles created by the deploy stack grant permission for the infrastructure stack to create all resources and execution roles for your application. If you need your infrastructure stack to create EC2 instances, Databases, and Step Functions, you need to add these permissions to the Worker Role definition in the pipeline-toolchain.yml template.
+3. Execution roles are created and defined in the infrastructure stack template. If your application needs additional access to S3 buckets or databases that are not created by the stack then you can add them to the execution role definitions in the template.yml file.
 
-Go into `config-project.json` and set `stage` to `test` and `env` to `TEST` (case matters on both!). 
-
-```JSON
-  "id": "my8ball",
-  "stage": "test",
-  "env": "TEST",
-```
-
-We'll leave the project id the same (I'll explain later).
-
-I'll also explain the difference between "stage" and "env" later as well.
-
-### Create CodeCommit repository
-
-With the roles created, and `config-project.json` updated, let's Generate Py! Yum!
-
-In the CLI, run the command:
-
-`py generate.py`
-
-In the previous tutorial we created an input file for your CodeStar project using the `generate.py` script. There were input files generated to create your code repository as well.
-
-Creating a CodeCommit repository, initializing it, and creating a branch isn't a single command line. You need to run a code commit create command and then run two more lines to create the branch you will be using for deployments.
-
-You can just create the CodeCommit repository using the AWS Web Console but you will have to add your tags manually, create a first file, and create a new branch.
-
-While you could use CloudFormation, like CodeStar does, it seems silly to maintain a stack for a single resource. (However, if you were to expand your repository's functionality with additional triggers, notifications, work-flows, etc, a CloudFormation template would assist in maintaining and replicating it.)
-
-The nice thing about using the AWS CLI with the input file is that it uses what you put in the config and it takes less than 20 seconds (Depending on how quickly you can cut and paste 3 lines of commands).
-
-So, just for experience, let's use the AWS CLI to create our repository and branch.
-
-We'll be using 3 input files generated by the Python script, feel free to inspect them prior to submitting the commands.
-
-1. Create the repository:
-  - `aws codecommit create-repository --cli-input-json file://input/codecommit.json`
-2. Perform the initial commit and make the "main" branch default:
-  - `aws codecommit create-commit --cli-input-json file://input/codecommit-init.json`
-  - `aws codecommit put-file --cli-input-json file://input/codecommit-init.json`
-3. Create the "test" branch (since we are creating the "test" stage):
-  - You will need to copy the `commitId` from the previous command result into `[commitId]`
-  - `aws codecommit create-branch --commit-id [commitId] --cli-input-json file://input/codecommit-branch.json`
-4. Check your work: 
-  - `aws codecommit get-repository --repository-name my8ball`
-  - Note the `cloneUrlHttp` value, you'll use this later to clone the repository to your local machine later.
-
-You're done getting your repository ready!
-
-A few notes:
-
-- If you wanted a different branch in your new repository as default, you could change the branch in `codecommit-init.json` to whatever you want as the default branch. But most repositories use "main" or "master" as their default.
-- You'll notice that in order to initialize the repository, we created a single text file called "hello.txt" with the contents "Hello, World" (which is "SGVsbG8sIFdvcmxk" encoded in base64 necessary for `fileContent`)
-- In this example we are using the "test" branch. If we were going to use the "main" branch we wouldn't need to perform step 3 as we created "main" during the initial commit in step 2.
-- You could also use `git` commands to create a new branch (e.g. `git checkout -b dev` and then `git push --set-upstream origin dev`).
-- If you inspect the codecommit-branch.json file, you'll see that a commitId is already filled in with placeholder text. Placing the `--commit-id` parameter in the command will override this. So, essentially, the commitId in the input file is just a placeholder as it is required to be there, but not used.
-
-### Load up your SAM application using git
-
-Let's run the "get repository" command again to get the clone URL.
-
-`aws codecommit get-repository --repository-name my8ball`
-
-Copy the `cloneUrlHttp` value.
-
-We are now ready to run the `git clone` command once you change directories in your command prompt to the directory you wish to clone the repository to.
-
-Such as:
-
-`cd ..` (to get out of the project stack directory)
-
-`git clone [paste_cloneUrlHttp_here]` (will clone it into a new directory, `my8ball`)
-
-Or, `git clone [paste_cloneUrlHttp_here] repo_my8ball` will clone it into a directory called `repo_my8ball`
-
-Once you have cloned your repository, `cd` into that directory check out branches:
-
-`git branch -a`
-
-You should see:
-
-```
-* main
-  remotes/origin/HEAD -> origin/main
-  remotes/origin/main
-  remotes/origin/test
-```
-
-Checkout the test branch:
-
-`git checkout test`
-
-If you perform `git branch` you should see that you are now in the test branch. (If you haven't already, you may want to make sure you are using a command line window that is set up with git or gitbash so that your working branch is displayed in your command prompt.)
-
-```
-clkluck@wallace-ii MINGW64 ~/projects/demo/v2/repos/my8ball (main)
-$ git branch -a
-* main
-  remotes/origin/HEAD -> origin/main
-  remotes/origin/main
-  remotes/origin/test
-
-clkluck@wallace-ii MINGW64 ~/projects/demo/v2/repos/my8ball (main)
-$ git checkout test
-Switched to a new branch 'test'
-Branch 'test' set up to track remote branch 'test' from 'origin'.
-
-clkluck@wallace-ii MINGW64 ~/projects/demo/v2/repos/my8ball (test)
-$ git branch
-  main
-* test
-
-```
-
-Now, take the source files for your SAM application and place them into your repository directory.
-
-When you run a `dir` or `ls` you should now see:
-
-```
-clkluck@wallace-ii MINGW64 ~/projects/demo/v2/repos/my8ball (test)
-$ dir
-app  buildspec.yml  hello.txt  README.md  template.yml  template-configuration.json
-```
-
-Feel free to delete the "hello.txt" file.
-
-`rm hello.txt`
-
-Now (assuming you have your git config set up with your credentials, email, and username) go ahead and push your changes which will now kick off a deploy!
-
-`git add --all`
-
-`git commit -m "Placed application in repo"`
-
-`git push`
-
-We'll also merge the changes into "main"
-
-`git checkout main`
-
-`git merge test`
-
-`git push`
-
-In the future, as you add more deployments you'll need to add the branch the project stack will deploy from first. Just create a new branch in the repository based off another branch before creating the new project deploy stack.
-
-### Create Project Deploy Stack
-
-We are now ready to create your project deploy stack!
-
-Feel free to inspect the input file. You'll immediately notice it has a different structure from the codestar input file, especially the Tag and Parameter object. Since each generate.py creates both a CodeStar and CloudFormation input file you can compare them side by side.
-
-Run the following to create the project stack.
-
-`aws cloudformation create-stack --cli-input-json file://input/cloudformation.json`
-
-Watch the progress on the AWS Console.
-
-When it is complete you can go to the Outputs tab and use the link to go to the ProjectPipeline.
-
-You should see that it detected a commit, and then built, or is building, the code which it will then deploy.
-
-When the infrastructure stack has completed deploying, go into it's Output section and click on the WebAPI link. (Don't forget to ask a yes or no question!)
-
-### Create another deploy stack
-
-So the app is performing well, let's deploy it to production by attaching a production deploy stage to the "main" branch.
-
-The stage name does not have to match the branch name.
-
-In `config-projects.json` set the following:
-
-```json
-  "stage": "prod",
-  "env": "PROD",
-  "name": "",
-  "description": "",
-  "branch": "main"
-```
-
-Run the command:
-
-`py generate.py`
-
-Now run the command to create the stack:
-
-`aws cloudformation create-stack --cli-input-json file://input/cloudformation.json`
-
-Check progress in CloudFormation. Once the deploy stack is complete, go under Outputs and click on the Pipeline link and watch the CodeBuild and Deploy process.
-
-After it is complete you'll see the new infrastructure stack. Go to its Output section and click on the WebAPI link (be sure to ask a Yes or No question!)
-
-### Deploying changes
+## Tutorial 1: Deploying Changes
 
 Change into the "my8ball" repository directory. (e.g. `cd ../my8ball`)
 
@@ -266,15 +80,16 @@ Hopefully you now know your way around the infrastructure and test stacks for te
 
 Note that since we set the `env` for main/production to `PROD` there will be a gradual deploy so you may not see your new sayings in production for a while.
 
-## Tutorial 4: On your own
+## Tutorial 2: Expanding Infrastructure Stack
 
-Go ahead and update config-project.json for another stage and branch and create it. (You can use `staging`, `dev`, `qa`). Don't forget to set your env variable to `DEV` or `TEST`.
+Infrastructure Stack permissions come from the IAM Worker defined in the Deploy Pipeline Stack.
 
-Once you've added a few new stages and branches, create a new project, maybe give it an ID of `my8ballv2`
-
-`py generate.py` and create the CodeCommit, branches, and cloudformation stack.
 
 Commit a few changes, and you're a pro!
+
+## Tutorial 3: Expanding Deploy Stack
+
+Deploy stack permissions come from the Service Role.
 
 ### Deleting stacks
 
