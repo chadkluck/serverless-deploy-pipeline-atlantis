@@ -6,7 +6,7 @@ This CloudFormation template will create an AWS CodePipeline that monitors a Cod
 
 Each branch will have its own deploy stack and application infrastructure stack. This allows you to separate dev, test, prod, grant developer access via CodeCommit policies, and create or destroy test and staging branches/pipelines as necessary.
 
-- The Deploy CloudFormation stack creates the Pipeline and resources for the pipeline to operate (such as IAM roles and S3 artifact buckets). It only runs when you need to make changes to how the Pipeline works.
+- The Deploy CloudFormation stack template creates the Pipeline and resources for the pipeline to operate (such as IAM roles and S3 artifact buckets). It only runs when you need to make changes to how the Pipeline works.
 - The AWS CodePipeline continually monitors and runs the deployment from the repository.
 - The Infrastructure CloudFormation stack manages actual application resources.
 
