@@ -1,4 +1,4 @@
-# READ ME 2: Create CodeCommit Repository for Application Infrastructure
+# README 2: Create CodeCommit Repository for Application Infrastructure
 
 Once the service roles are created it is time to set up your CodeCommit repository to store your application infrastructure.
 
@@ -25,7 +25,7 @@ We will leave "dev" as a branch that doesn't have an automatic deploy. You can a
 
 ## File Structure
 
-> **NOTE:** The deployment pipeline expects to find the application-infrastructure directory containing your application code and infrastructure template in your repository. 
+> **NOTE:** The deployment pipeline expects to find the application-infrastructure directory containing your application code and infrastructure template in your repository.
 
 ```
 Repository
@@ -37,11 +37,13 @@ Repository
     | - pipeline-toolchain.yml
 ```
 
-The deploy-pipeline directory is optional and can be helpful if you modify the pipeline-toolchain. The codecommit-repository, iam-cloudformation-service-role, and doc directories do not have to be copied over.
+The deploy-pipeline directory is optional and can be helpful if you modify the pipeline-toolchain. You can also move it (and iam-cloudformation-service-role) to where your organization manages set-up templates centrally or convert to Terraform or AWS CDK script. 
+
+The codecommit-repository, iam-cloudformation-service-role, and doc directories do not have to be copied over to your application repository.
 
 When the deploy pipeline stack is set up, you will choose a branch to monitor and deploy from.
 
-Once you are comfortable setting up deploy pipelines and connecting branches, you can manage multiple deployments such as test, beta, prod (main), or separate feature/developer branches.
+Once you are comfortable setting up deploy pipelines and connecting branches, you can manage multiple deployments such as test, beta, prod (main), or for separate feature/developer branches.
 
 It is recommended you have a base or work-in-progress branch (such as `dev`) that you can commit code to without initiating a deploy.
 

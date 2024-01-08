@@ -564,3 +564,7 @@ While CodeStar isn't the best option for multi-stage, multi-deployment projects,
 When you are done experimenting and learning, and perhaps obliterating any once-working code, you can just take what you learned, destroy the instance and either start over with a fresh copy or head back to regular development.
 
 So, before you strip out all references to CodeStar in your SAM template, consider the benefits of having CodeStar as a sandboxing tool at your disposal.
+
+## Documentation
+
+TODO

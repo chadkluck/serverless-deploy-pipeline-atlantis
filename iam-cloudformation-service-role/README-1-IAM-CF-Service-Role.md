@@ -1,4 +1,4 @@
-# READ ME 1: Create IAM CloudFormation Service Role
+# README 1: Create IAM CloudFormation Service Role
 
 In order for the Deploy Pipeline stack to execute, it will need to assume an IAM role with proper permissions. A CloudFormation service role will need to be created before you can create any Deploy Pipeline stacks.
 
@@ -22,12 +22,18 @@ If you have chosen a prefix other than `ATLANTIS` use that instead when naming y
 
 > Note: This is the only time we will include an Uppercase Prefix. Instead, we use lower case because S3 buckets must be in all lower case and it would complicate automated provisioning if UPPERCASE, CamelCase, _and_ lowercase had to be accounted for. Also, mixing cases and using them consistently can be confusing.
 
-### Step 2: Go to IAM in the Web Console
+### Step 2: Create Role
+
+The following instructions walk you though creating the role manually through the AWS Web Console. Instructions for creating the role using the AWS CLI are under Step 2 (Alternate): Create Role using CLI. (You can also use it as a basis for Terraform or AWS CDK.)
+
+You should still review Web Console instructions before proceeding to CLI instructions.
+
+#### Step 2.1 Create Role Using IAM Web Console
 
 1. In the AWS Web Console go to IAM > Roles and "Create a Role"
 2. Leave "Trusted entity type" as AWS service, and from the "Use case list" choose CloudFormation. Go to "Next: Permissions"
 
-### Step 3: Create the CloudFormation Service Policy
+#### Step 2.2: Create the CloudFormation Service Policy
 
 Before we can attach a policy to the role we need to create the policy!
 
@@ -41,7 +47,7 @@ Before we can attach a policy to the role we need to create the policy!
 6. Click on Create Policy.
 7. Close that browser tab/window and go back to the Create Role tab in your browser.
 
-### Step 4: Add the Policy to the CloudFormation Service Role
+#### Step 2.3: Add the Policy to the CloudFormation Service Role
 
 1. Back on the Create Role page, hit the refresh icon.
 2. In Filter policies search box, type in `ATLANTIS` (or your chosen prefix)
@@ -52,7 +58,23 @@ Before we can attach a policy to the role we need to create the policy!
 
 > Note: Again, you can create roles and stacks to segment permissions among your functional teams (e.g. `websvc` or `accounting`). Cool, huh?! Just make another copy of `ATLANTIS-CloudFormationServicePolicy.json` and do a new search/replace.
 
-### Step 5: Update user to assume role
+#### Step 2a (Alternate): Create Role using CLI
+
+Change directory `cd` to where your CloudFormationServicePolicy is. Then run the following command (be sure to update `PREFIX_UPPER` in `role-name`, the CloudFormationServicePolicy name for `assume-role-policy-document`, and `your_prefix_lower` for `tags`).
+
+```
+aws iam create-role \
+    --role-name PREFIX_UPPER-CloudFormation-Service-Role \
+    --assume-role-policy-document file://YOUR-CloudFormationServicePolicy.json
+    --tags '{"Key": "Atlantis", "Value": "iam"}' '{"Key": "atlantis:Prefix", "Value": "your_prefix_lower"}'
+```
+
+More information:
+
+- [AWS Documentation: Creating IAM Role using AWS CLI](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/iam/create-role.html)
+- [AWS Documentation: Updating IAM Role using AWS CLI](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/iam/update-role.html)
+
+### Step 3: Update user to assume role
 
 The user role you use to access the Web Console or submit CLI commands will need the following IAM Policy added (Replace `$AWS_ACCOUNT$` and `$PREFIX$` with appropriate values). You can create it as a stand alone policy and attach it to a role, or add it to the inline policy statement. If you create it as a stand alone policy I recommend tagging it with: `Atlantis` with value `iam`, `atlantis:Prefix` with the value of your prefix (lowercase), and any additional tags you may want.
 
@@ -94,3 +116,4 @@ For example, if you were updating a role used by your Web Service developers in 
 
 ## Documentation
 
+TODO

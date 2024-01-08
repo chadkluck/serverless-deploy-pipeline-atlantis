@@ -25,7 +25,6 @@ The templates can be extended to meet your needs simply by adding the appropriat
 ### Cons to using a template like this:
 
 - You need to understand someone else's construct
-- It stifles your creativity
 
 However, I do believe that the cons are only temporary and I set the toolchain up as a learning experience. As you begin to look under the hood you can use it as a model for learning AWS Cloud Concepts such as Infrastructure as Code (IaC), CloudFormation, AWS CodePipeline, and serverless architecture. Once you have played around with it, the sky is the limit as you add your own modifications for your own use case.
 
@@ -35,15 +34,24 @@ You should start with the [README 0 Start Here](./docs/README-0-Start-Here.md) i
 
 But, if you are one to skip documentation...
 
-## Important Files
+## Quick Overview of Important Files
 
-If this is your first CloudFormation stack and/or Code Pipeline, PLEASE refer to [README 0 Start Here](./docs/README-0-Start-Here.md) before starting as it provides step by step tutorials and walk-throughs. I recommend doing this before performing ANY customizations.
+If this is your first CloudFormation stack and/or CodePipeline, PLEASE refer to [README 0 Start Here](./docs/README-0-Start-Here.md) before starting as it provides step by step tutorials and walk-throughs. I recommend doing this before performing ANY customizations.
 
 If you are familiar with CLoudFormation and CodePipeline, and have a understanding of how this template is laid out, read on as it will give you a better understanding of the directory structure and insight into how you can expand your use of this template.
 
-The files in this repository are laid out for a basic cloud application and should be maintained in your repository. While `/codecommit-repository` and additional documentation may eventually be discarded, you may choose to move/convert the contents/concepts of `/iam-cloudformation-service-role` and `/deploy-pipeline` to another central repository where you manage your organization's cloud infrastructure (either by using Terraform or AWS CDK).
+The files in this repository are laid out for a basic cloud application and should be maintained in your repository. 
 
-HOWEVER, it is necessary you KEEP the `/application-infrastructure` directory in the root of your repository as this is where CodePipeline expects to find your application infrastructure (Unless you know how to update the locations in the deploy pipeline template).
+- repository root
+  - `application-infrastructure/` (application CloudFormation template and code - KEEP in root of repository and don't rename)
+  - `codecommit-repository/` (instructions for creating the repository - can be deleted after creation)
+  - `deploy-pipeline/` (deploy CloudFormation template, generation files, and CLI commands - keep for reference or move to your organization's CloudFormation template repository)
+  - `iam-cloudformation-service-role` (instructions and template for creating a CloudFormation service IAM role - move to your organization's template repository for reference)
+  - `docs` (documentation and tutorials)
+
+While `/codecommit-repository` and additional documentation may eventually be discarded, you may choose to move/convert the contents/concepts of `/iam-cloudformation-service-role` and `/deploy-pipeline` to another central repository where you manage your organization's cloud infrastructure (either by using Terraform or AWS CLI or CDK).
+
+HOWEVER, it is necessary you KEEP the `/application-infrastructure` directory in the root of your repository and NOT rename it as this is where CodePipeline expects to find your application infrastructure. (Those with advanced understanding of the Deploy Pipeline CloudFormation template should be able to update the location and name.)
 
 ### Deploy Pipeline IAM Policy Template for CloudFormation Service Role
 
