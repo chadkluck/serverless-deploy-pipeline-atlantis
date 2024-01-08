@@ -455,8 +455,8 @@ Resources:
             - logs:DeleteRetentionPolicy
             - logs:PutRetentionPolicy
             - logs:CreateLogGroup
-            - logs:TagLogGroup
-            - logs:UntagLogGroup
+            - logs:TagLogGroup # AWS is phasing out, replacing with TagResource
+            - logs:UntagLogGroup # AWS is phasing out, replacing with UntagResource
             - logs:TagResource
             - logs:UntagResource
             Effect: Allow

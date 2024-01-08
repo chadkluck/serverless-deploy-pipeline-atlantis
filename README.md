@@ -2,11 +2,17 @@
 
 ## About
 
-This CloudFormation template will create an automated deployment pipeline when changes are committed to a monitored CodeCommit branch.
+This CloudFormation template will create an AWS CodePipeline that monitors a CodeCommit branch for changes and then deploys the changes through an application infrastructure stack.
 
 Each branch will have its own deploy stack and application infrastructure stack. This allows you to separate dev, test, prod, grant developer access via CodeCommit policies, and create or destroy test and staging branches/pipelines as necessary.
 
-The templates, documentation, and tutorials were created by a software engineer, AWS Certified as both a Cloud Practitioner and Developer Associate, in hopes to bridge the gap between quick-start online examples and well-architected production-ready applications.
+- The Deploy CloudFormation stack creates the Pipeline and resources for the pipeline to operate (such as IAM roles and S3 artifact buckets). It only runs when you need to make changes to how the Pipeline works.
+- The AWS CodePipeline continually monitors and runs the deployment from the repository.
+- The Infrastructure CloudFormation stack manages actual application resources.
+
+The templates, documentation, and tutorials were created by a software engineer, AWS Certified as both a Cloud Practitioner and Developer Associate, in hopes to bridge the gap between quick-start online examples and well-architected production-ready applications. The template is actively used in production and receives periodic updates for security and recommendations from AWS.
+
+The templates can be extended to meet your needs simply by adding the appropriate IAM policies to the CloudFormation Role. For example, your developers cannot add EC2 instances to their application infrastructure unless the Pipeline has been granted permission to do so from the Deploy Stack.
 
 ### Pros to using a template like this:
 
