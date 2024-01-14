@@ -2,17 +2,19 @@
 
 ## About
 
-This CloudFormation template will create an AWS CodePipeline that monitors a CodeCommit branch for changes and then deploys the changes through an application infrastructure stack.
+This CloudFormation template will create an AWS CodePipeline that monitors a single CodeCommit branch for changes and then deploys the application to a separate application infrastructure stack. It is recommended that you familiarize yourself with CloudFormation, CloudFormation templates, and CodePipeline.
 
-Each branch will have its own deploy stack and application infrastructure stack. This allows you to separate dev, test, prod, grant developer access via CodeCommit policies, and create or destroy test and staging branches/pipelines as necessary.
+Each branch will have its own deploy stack and application infrastructure stack. This allows you to separate dev, test, prod, grant developer access via CodeCommit policies, and create or destroy temporary or per-developer/feature test and staging branches/pipelines as necessary.
 
-- The Deploy CloudFormation stack template creates the Pipeline and resources for the pipeline to operate (such as IAM roles and S3 artifact buckets). It only runs when you need to make changes to how the Pipeline works.
-- The AWS CodePipeline continually monitors and runs the deployment from the repository.
-- The Infrastructure CloudFormation stack manages actual application resources.
+- The Deploy CloudFormation stack template creates the Pipeline and resources for the pipeline to operate (such as IAM roles and S3 artifact buckets). It only runs when you need to make changes to HOW the Pipeline works.
+- The AWS CodePipeline receives an event notification from the repository branch and builds and deploys the application infrastructure template.
+- The CloudFormation Infrastructure stack manages actual application resources.
 
-The templates, documentation, and tutorials were created by a software engineer, AWS Certified as both a Cloud Practitioner and Developer Associate, in hopes to bridge the gap between quick-start online examples and well-architected production-ready applications. The template is actively used in production and receives periodic updates for security and recommendations from AWS.
+The templates, documentation, and tutorials were created by an AWS Certified developer in hopes to bridge the gap between quick-start online examples and well-architected production-ready applications. The template is actively used in production and receives periodic updates for security and best practices from AWS.
 
-The templates can be extended to meet your needs simply by adding the appropriate IAM policies to the CloudFormation Role. For example, your developers cannot add EC2 instances to their application infrastructure unless the Pipeline has been granted permission to do so from the Deploy Stack.
+This template can serve as a base or example template as you modify it to meet your needs. It is developed with the Principle of Least Privilege, and can deploy applications that utilize S3, DynamoDb, Lambda, API Gateway, CloudWatch Logs, Alarms, and Dashboards right out of the box. The templates can be extended to meet your needs simply by adding the appropriate IAM policies to the CloudFormation Role. For example, your developers cannot add Event Bridge or EC2 instances to their application infrastructure unless you first add the appropriate IAM policies to the CodePipeline Cloud Formation Role.
+
+As you begin to look under the hood you can use it as a model for learning AWS Cloud Concepts such as Infrastructure as Code (IaC), CloudFormation, AWS CodePipeline, and serverless architecture. Once you have played around with it, the sky is the limit as you add your own modifications for your own use case.
 
 ### Pros to using a template like this:
 
@@ -22,36 +24,62 @@ The templates can be extended to meet your needs simply by adding the appropriat
 - No reason to create a messy application base and say "I'll structure, organize, and add security controls later"
 - Provides a tutorial for creating production-ready applications rather than examples pieced together
 
-### Cons to using a template like this:
+## Usage
 
-- You need to understand someone else's construct
+### File Structure
 
-However, I do believe that the cons are only temporary and I set the toolchain up as a learning experience. As you begin to look under the hood you can use it as a model for learning AWS Cloud Concepts such as Infrastructure as Code (IaC), CloudFormation, AWS CodePipeline, and serverless architecture. Once you have played around with it, the sky is the limit as you add your own modifications for your own use case.
+There are 3 main directories in the root of this repository.
 
-## Where to Start/Install
+```text
+/
+| - application-infrastructure/
+|   | - app/
+|   | - buildspec.yml
+|   | - template-configuration.json
+|   | - template.yml
+| 
+| - deploy-pipeline/
+|   | - scripts-cli/
+|   | - pipeline-toolchain.yml
+|
+| - iam-cloudformation-service-role/
+    | - scripts-cli/
+    | - CloudFormationServicePolicy.json
+```
 
-You should start with the [README 0 Start Here](./docs/README-0-Start-Here.md) in the /docs directory.
+#### Application Infrastructure directory
 
-But, if you are one to skip documentation...
+This is where your application CloudFormation template and code reside. This entire directory needs to be placed at the root of your repository. CodePipeline will look for `/application-infrastructure/` when executing.
 
-## Quick Overview of Important Files
+AWS pipeline will use the `buildspec.yml` to run the build and then the CloudFormation template `template.yml` to deploy an application infrastructure stack.
 
-If this is your first CloudFormation stack and/or CodePipeline, PLEASE refer to [README 0 Start Here](./docs/README-0-Start-Here.md) before starting as it provides step by step tutorials and walk-throughs. I recommend doing this before performing ANY customizations.
+The buildspec and template files are structured to receive environment variables to execute logic based on whether it is building a DEV, TEST, or PROD environment. You will not need separate buildspec files (such as `buildspec-test.yml`) for each environment. Utilize parameters and environment variables.
 
-If you are familiar with CLoudFormation and CodePipeline, and have a understanding of how this template is laid out, read on as it will give you a better understanding of the directory structure and insight into how you can expand your use of this template.
+#### Deploy Pipeline directory
 
-The files in this repository are laid out for a basic cloud application and should be maintained in your repository. 
+This contains `pipeline-toolchain.yml` which is the CloudFormation template that defines the CloudFormation stack which creates and maintains the AWS CodePipeline. This can be kept in the application repository, or moved to where your organization stores and maintains cloud infrastructure templates (such as Terraform or AWS CDK scripts). You can convert the pipeline to a Terraform or CDK script, upload it through the console, or use the AWS CLI.
 
-- repository root
-  - `application-infrastructure/` (application CloudFormation template and code - KEEP in root of repository and don't rename)
-  - `codecommit-repository/` (instructions for creating the repository - can be deleted after creation)
-  - `deploy-pipeline/` (deploy CloudFormation template, generation files, and CLI commands - keep for reference or move to your organization's CloudFormation template repository)
-  - `iam-cloudformation-service-role` (instructions and template for creating a CloudFormation service IAM role - move to your organization's template repository for reference)
-  - `docs` (documentation and tutorials)
+The pipeline toolchain is also available from a public S3 bucket if you wish to use the latest version as-is.
 
-While `/codecommit-repository` and additional documentation may eventually be discarded, you may choose to move/convert the contents/concepts of `/iam-cloudformation-service-role` and `/deploy-pipeline` to another central repository where you manage your organization's cloud infrastructure (either by using Terraform or AWS CLI or CDK).
+There is a `scripts-cli/` directory that assists in generating input.json files for use with the AWS CLI rather than uploading the template through the web console.
 
-HOWEVER, it is necessary you KEEP the `/application-infrastructure` directory in the root of your repository and NOT rename it as this is where CodePipeline expects to find your application infrastructure. (Those with advanced understanding of the Deploy Pipeline CloudFormation template should be able to update the location and name.)
+#### CloudFormation Service Role directory
+
+
+## AWS Costs
+
+This deploy template will create resources necessary to provide an AWS CodePipeline. After performing any tutorials you will want to delete unused stacks so that you do not incur any unexpected costs. However, most experimentation, and even low production loads, rarely rise above [AWS Free Tier](https://aws.amazon.com/free).
+
+> You get 1 free active pipeline per month. New pipelines are free for the first 30 days. "An active pipeline is a pipeline that has existed for more than 30 days and has at least one code change that runs through it during the month. There is no charge for pipelines that have no new code changes running through them during the month." [CodePipeline Pricing](https://aws.amazon.com/codepipeline/pricing)
+
+In short: Pipelines can sit idle without incurring any cost.
+
+You are also charged for AWS CodeBuild if you go over 100 build minutes per month. If you are committing and deploying only a few changes a month you should not see any charges for CodeBuild. If you are frequently committing changes for deployment several times a day, several days a week during the month, you may see charges. [CodeBuild Pricing](https://aws.amazon.com/codebuild/pricing)
+
+To delete the stacks and resources refer to the Clean Up section.
+
+### Quick Start
+
 
 ### Deploy Pipeline IAM Policy Template for CloudFormation Service Role
 
@@ -111,7 +139,8 @@ README 4 through 6 will guide you through advanced concepts with a tutorial and 
 - [README 1: Create IAM CloudFormation Service Role](./iam-cloudformation-service-role/README-1-IAM-CF-Service-Role.md)
 - [README 2: Create CodeCommit Repository](./codecommit-repository/README-2-CodeCommit-Repository.md)
 - [README 3: Create and Update Deploy Pipeline CloudFormation Stack](./deploy-pipeline/README-3-CloudFormation-Deploy-Stack.md)
-  - [README 3.1: Use AWS CLI to Create and Update Deploy Pipeline CloudFormation Stack](./deploy-pipeline/cli/README-CLI.md)- [README 4 Tutorial](./docs/README-4-Tutorial.md)
+  - [README 3.1: Use AWS CLI to Create and Update Deploy Pipeline CloudFormation Stack](./deploy-pipeline/cli/README-CLI.md)
+- [README 4 Tutorial](./docs/README-4-Tutorial.md)
 - [README 5: Advanced](./docs/README-5-Advanced.md)
 - [README 6: Deleting](./docs/README-6-Deleting.md)
 - [CHANGELOG - Updates to Existing Deploy Stacks](CHANGELOG.md)
