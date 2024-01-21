@@ -53,12 +53,33 @@ with open(
 	else:
 		contents = contents.replace("$S3_ORG_PREFIX$", s3_bucket_prefix + "-")
 	# Write the updated contents to a new file in the generated directory
-	with open(os.path.join(generated_dir, "generated-policy.json"), "w") as g:
+	new_file_name = prefix.upper()+"-CloudFormationServicePolicy.json"
+	with open(os.path.join(generated_dir, new_file_name), "w") as g:
 		g.write(contents)
 		g.close()
 		f.close()
 
 		# Print a message indicating that the file has been copied
-		print("File copied successfully!")
-		print(os.path.join(generated_dir, "generated-policy.json"))
-		print(os.path.join(cwd, "sample-ATLANTIS-CloudFormationServicePolicy.json"))
+		print("File copied and updated successfully!")
+		print(os.path.join(generated_dir, new_file_name))
+
+		# Print a message indicating the aws iam cli commands to create the role and policy and attach it to the role
+		print("To create the role and policy and attach it to the role:")
+		print("aws iam create-role --role-name "+prefix.upper()+"-CloudFormation-Service-Role --assume-role-policy-document file://../Trust-Policy-for-Service-Role.json --tags '{\"Key\": \"Atlantis\", \"Value\": \"iam\"}' '{\"Key\": \"atlantis:Prefix\", \"Value\": \""+prefix+"\"}'")
+		print("aws iam put-role-policy--role-name "+prefix.upper()+"-CloudFormation-Service-Role --policy-name "+prefix.upper()+"-CloudFormationServicePolicy --policy-document file://"+generated_dir+"/"+new_file_name)
+
+# ```bash
+# aws iam create-role \
+#     --role-name PREFIX_UPPER-CloudFormation-Service-Role \
+#     --assume-role-policy-document file://Trust-Policy-for-Service-Role.json \
+#     --tags '{"Key": "Atlantis", "Value": "iam"}' '{"Key": "atlantis:Prefix", "Value": "your_prefix_lower"}'
+# ```
+
+# You'll then see output upon successful completion of the role's creation. Now you need to attach the policy:
+
+# ```bash
+# aws iam put-role-policy \
+#     --role-name PREFIX_UPPER-CloudFormation-Service-Role \
+#     --policy-name PREFIX_UPPER-CloudFormationServicePolicy \
+#     --policy-document file://scripts-cli/generated/PREFIX_UPPER-CloudFormationServicePolicy.json
+# ```
