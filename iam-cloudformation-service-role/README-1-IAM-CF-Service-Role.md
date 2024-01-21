@@ -62,11 +62,20 @@ Before we can attach a policy to the role we need to create the policy!
 
 Change directory `cd` to where your CloudFormationServicePolicy is. Then run the following command (be sure to update `PREFIX_UPPER` in `role-name`, the CloudFormationServicePolicy name for `assume-role-policy-document`, and `your_prefix_lower` for `tags`).
 
-```
+```bash
 aws iam create-role \
     --role-name PREFIX_UPPER-CloudFormation-Service-Role \
-    --assume-role-policy-document file://YOUR-CloudFormationServicePolicy.json
+    --assume-role-policy-document file://Role-Trusted-Entities.json \
     --tags '{"Key": "Atlantis", "Value": "iam"}' '{"Key": "atlantis:Prefix", "Value": "your_prefix_lower"}'
+```
+
+You'll then see output upon successful completion of the role's creation. Now you need to attach the policy:
+
+```bash
+aws iam put-role-policy \
+    --role-name PREFIX_UPPER-CloudFormation-Service-Role \
+    --policy-name PREFIX_UPPER-CloudFormationServicePolicy \
+    --policy-document file://PREFIX_UPPER-CloudFormationServicePolicy.json
 ```
 
 More information:

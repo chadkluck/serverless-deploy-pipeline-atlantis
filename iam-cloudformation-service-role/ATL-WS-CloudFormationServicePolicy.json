@@ -1,0 +1,109 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+			"Sid": "AtlantisPipelineEventRules",
+            "Action": [
+                "events:PutTargets",
+                "events:RemoveTargets",
+                "events:PutRule",
+                "events:DeleteRule",
+                "events:DescribeRule"
+            ],
+            "Effect": "Allow",
+            "Resource": "arn:aws:events:us-east-2:458901159113:rule/atl-ws-*"
+        },
+        {
+            "Sid": "AtlantisPipeline",
+            "Action": [
+                "cloudformation:*Stack*",
+                "cloudformation:CreateChangeSet",
+                "cloudformation:ExecuteChangeSet",
+                "cloudformation:DeleteChangeSet",
+                "cloudformation:DescribeChangeSet",
+                "cloudformation:GetTemplate",
+                "cloudformation:GetTemplateSummary"
+            ],
+            "Effect": "Allow",
+            "Resource": "arn:aws:cloudformation:us-east-2:458901159113:stack/atl-ws-*"
+        },
+        {
+            "Sid": "AtlantisPipelineS3Buckets",
+            "Action": [
+                "s3:*"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+                "arn:aws:s3:::atl-ws-*",
+                "arn:aws:s3:::atl-ws-*/*"
+            ]
+        },
+        {
+            "Sid": "AtlantisPipelineLogs",
+            "Action": [
+                "logs:*"
+            ],
+            "Effect": "Allow",
+            "Resource": "arn:aws:logs:us-east-2:458901159113:log-group:/aws/codebuild/atl-ws-*"
+        },
+        {
+            "Sid": "AtlantisPipelineServicesCodePipeline",
+            "Action": [
+                "codepipeline:*"
+            ],
+            "Effect": "Allow",
+            "Resource": "arn:aws:codepipeline:us-east-2:458901159113:atl-ws-*"
+        },
+        {
+            "Sid": "AtlantisPipelineServicesCodeBuild",
+            "Action": [
+                "codebuild:*"
+            ],
+            "Effect": "Allow",
+            "Resource": "arn:aws:codebuild:us-east-2:458901159113:project/atl-ws-*"
+        },
+        {
+            "Sid": "AtlantisPipelineIAMReadOnly",
+            "Action": [
+                "iam:List*",
+                "iam:Get*"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+                "arn:aws:iam::458901159113:policy/*",
+                "arn:aws:iam::458901159113:role/*"
+            ]
+        },
+        {
+            "Sid": "AtlantisPipelineWorkerRoles",
+            "Action": [
+                "iam:AttachRolePolicy",
+                "iam:CreateRole",
+                "iam:DeleteRole",
+                "iam:DeleteRolePolicy",
+                "iam:DetachRolePolicy",
+                "iam:GetRole",
+                "iam:PassRole",
+                "iam:GetRolePolicy",
+                "iam:PutRolePolicy",
+                "iam:UntagRole",
+                "iam:TagRole"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+                "arn:aws:iam::458901159113:role/atl-ws-Worker-*"
+            ]
+        },
+        {
+            "Sid": "InspectServiceRole",
+            "Action": [
+                "iam:ListAttachedRolePolicies"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+                "arn:aws:iam::458901159113:role/ATL-WS-CloudFormation-Service-Role",
+                "arn:aws:iam::458901159113:role/service-role/ATL-WS-CloudFormation-Service-Role"
+            ]
+        }
+    ]
+}

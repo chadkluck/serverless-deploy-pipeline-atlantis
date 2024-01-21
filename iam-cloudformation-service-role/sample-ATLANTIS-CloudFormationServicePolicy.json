@@ -28,8 +28,7 @@
             ],
             "Effect": "Allow",
             "Resource": [
-                "arn:aws:cloudformation:$AWS_REGION$:$AWS_ACCOUNT$:stack/$PREFIX$-*",
-                "arn:aws:cloudformation:$AWS_REGION$:$AWS_ACCOUNT$:stackset/$PREFIX$-*"
+                "arn:aws:cloudformation:$AWS_REGION$:$AWS_ACCOUNT$:stack/$PREFIX$-*"
             ]
         },
         {
@@ -44,16 +43,40 @@
             ]
         },
         {
-            "Sid": "AtlantisPipelineServices",
+            "Sid": "AtlantisPipelineLogs",
             "Action": [
-                "codepipeline:*",
-                "codebuild:*",
-                "iam:ListRoles",
-                "logs:*",
-                "sns:*"
+                "logs:*"
             ],
             "Effect": "Allow",
-            "Resource": "*"
+            "Resource": "arn:aws:logs:$AWS_REGION$:$AWS_ACCOUNT$:log-group:/aws/codebuild/$PREFIX$-*"
+        },
+        {
+            "Sid": "AtlantisPipelineServicesCodePipeline",
+            "Action": [
+                "codepipeline:*"
+            ],
+            "Effect": "Allow",
+            "Resource": "arn:aws:codepipeline:$AWS_REGION$:$AWS_ACCOUNT$:$PREFIX$-*"
+        },
+        {
+            "Sid": "AtlantisPipelineServicesCodeBuild",
+            "Action": [
+                "codebuild:*"
+            ],
+            "Effect": "Allow",
+            "Resource": "arn:aws:codebuild:$AWS_REGION$:$AWS_ACCOUNT$:project/$PREFIX$-*"
+        },
+        {
+            "Sid": "AtlantisPipelineIAMReadOnly",
+            "Action": [
+                "iam:List*",
+                "iam:Get*"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+                "arn:aws:iam::$AWS_ACCOUNT$:policy/*",
+                "arn:aws:iam::$AWS_ACCOUNT$:role/*"
+            ]
         },
         {
             "Sid": "AtlantisPipelineWorkerRoles",
@@ -73,16 +96,6 @@
             "Effect": "Allow",
             "Resource": [
                 "arn:aws:iam::$AWS_ACCOUNT$:role/$PREFIX$-Worker-*"
-            ]
-        },
-        {
-            "Sid": "AtlantisPipelineRoles",
-            "Action": [
-                "iam:GetPolicy"
-            ],
-            "Effect": "Allow",
-            "Resource": [
-                "arn:aws:iam::$AWS_ACCOUNT$:policy/$PREFIX$-*"
             ]
         },
         {
