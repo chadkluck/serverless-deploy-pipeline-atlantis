@@ -129,13 +129,20 @@ There are two ways to check this, either navigate through IAM and see what your 
 }
 ```
 
-This is an overly permissive statement as it allows you access to update any role (`Resource: *`). If it is your own, personal account that is fine, but if you are part of an organization you may be required to add a permissions boundary or scope down the resource to just the role you wish to manage (`arn:aws:iam::990123456789:role/ATLANTIS-CloudFormation-Service-Role`).
+This is an overly permissive statement as it allows you access to update any role (`"Resource": "*"`). If it is your own, personal account that is fine, but if you are part of an organization you may be required to add a permissions boundary or scope down the resource to just the role you wish to manage (`arn:aws:iam::990123456789:role/ATLANTIS-CloudFormation-Service-Role`).
 
 Also note that if you are passing this information to an administrator, they should also update any user roles that only need access to `iam:PassRole` as outlined in IAM Step 3. (Though you'll need the role ARN, this can be done before creating the role.)
 
 #### IAM Step 1: Get the CloudFormationServicePolicy.json file ready
 
-1. In the `/iam-cloudformation-service-role/` folder, make a copy of `sample-ATLANTIS-CloudFormationServicePolicy.json`
+You can generate the CloudFormation Service Policy one of two ways:
+
+1. Manually copy the file and do a manual search/replace for each of the 5 parameters.
+2. Use the copy-policy.py script to easily perform the copy and search/replace operation.
+
+##### Manually Copy and Perform Search/Replace
+
+1. In the `/iam-cloudformation-service-role/` folder, make a copy of `sample-ATLANTIS-CloudFormationServicePolicy.json` and store it in the `iam-cloudformation-service-role/scripts-cli/generated/` directory. Rename it by removing `sample-` and giving it the proper prefix (instead of ATLANTIS if you are not using that as your prefix.) The following command will do this assuming you are in the iam directory: `cp sample-ATLANTIS-CloudFormationServicePolicy.json scripts-cli/generated/ATLANTIS-CloudFormationServicePolicy.json`
 2. Open the copy and do a Find and Replace for each of the following:
    - `$AWS_ACCOUNT$` = Your AWS account number. (ex: 990123456789)
    - `$AWS_REGION$` = Your AWS region (ex: us-east-1) This must be the region you will be deploying in.
@@ -145,36 +152,46 @@ Also note that if you are passing this information to an administrator, they sho
 
 > Note: This is the only time we will include an Upper-case Prefix. Instead, we use lower-case because S3 buckets must be in all lower-case and it would complicate automated provisioning if UPPERCASE, CamelCase, _and_ lowercase had to be accounted for. Also, mixing cases and using them inconsistently can be confusing.
 
+##### Use the Script to Perform Copy and Replace
+
+From within the `iam-cloudformation-service-role/scripts-cli` directory, run the `copy-policy.py` script and follow the prompts. A default value will be listed within the square brackets, hit enter to accept the default value or enter your own.
+
+`py copy-policy.py`
+
+Or, if you are on a Mac, it might be:
+
+`python3 copy-policy.py`
+
+Once the script runs it will provide you with the two AWS CLI commands to create the role. You can choose to use the CLI commands or create the role through the Web Console and copy/paste the generated file manually. For either, follow the instructions below.
+
 #### IAM Step 2: Create Service Role
 
-The following instructions walk you though creating the role manually through the AWS Web Console. Instructions for creating the role using the AWS CLI are under Step 2 (Alternate): Create Role using CLI. (You can also use it as a basis for Terraform or AWS CDK.)
+The following instructions walk you though creating the role manually through the AWS Web Console. Instructions for creating the role using the AWS CLI are under IAM AWS CLI Step 2B: Create Service Role via AWS CLI. (You can also use it as a basis for Terraform or AWS CDK.)
 
 You should still review Web Console instructions before proceeding to CLI instructions.
 
 ##### IAM Web Console Step 2A: Create Service Role via Web Console
 
-1. In the AWS Web Console go to IAM > Roles and "Create a Role"
-2. Leave "Trusted entity type" as AWS service, and from the "Use case list" choose CloudFormation. Go to "Next: Permissions"
-
 ###### IAM Web Console Step 2A.1: Create the CloudFormation Service Policy
 
 Before we can attach a policy to the role we need to create the policy!
 
-1. Choose "Create Policy" (it will open in a new window)
-2. In the new tab/window, click on the JSON tab and paste in the json contents of the file you modified from [`iam-cloudformation-service-role/ATLANTIS-CloudFormationServicePolicy.json`](iam-service-role/ATLANTIS-CloudFormationServicePolicy.json)
+1. In the AWS Web Console go to IAM > Policies and "Create policy"
+2. Click on the JSON button and paste in the json contents of `script-cli/generated/ATLANTIS-CloudFormationServicePolicy.json` (the file you generated)
 3. Go on to "Next".
 4. Give it the name `PREFIX_UPPER-CloudFormation-Service-Role` (replacing `PREFIX_UPPER` with your chosen prefix in UPPER CASE) and a description such as `Created by [you] to create CloudFormation stacks for deployment pipelines`.
 5. Add at least 2 tags. Note the casing and `:` in the tag keys. More on tags later.
    -  `Atlantis` with value `iam`
    -  `atlantis:Prefix` with the value of your prefix (lower case), and any additional tags you may want (like creator and purpose). 
 6. Click on Create Policy.
-7. Close that browser tab/window and go back to the Create Role tab in your browser.
 
 ###### IAM Web Console Step 2A.2: Add the Policy to the CloudFormation Service Role
 
-1. Back on the Create Role page, hit the refresh icon.
+1. Under IAM in the Web Console, choose "Roles" from the left-hand side.
+2. Click on "Create role"
+2. Leave "Trusted entity type" as AWS service, and from the "Use case list" choose CloudFormation. Go to "Next: Permissions"
 2. In Filter policies search box, type in `ATLANTIS` (or your chosen prefix)
-3. Check the boxes next to "_PREFIX_-CloudFormationServicePolicy"
+3. Check the box next to "_PREFIX_-CloudFormationServicePolicy" and click Next
 4. Give it the name `PREFIX_UPPER-CloudFormation-Service-Role` and a description such as `Allows CloudFormation to create and manage AWS stacks and resources on your behalf.`
 5. Enter a tag `Atlantis` with value `iam`, `atlantis:Prefix` with the value of your prefix (lower case), and any additional tags you may want.
 6. Create the Role
@@ -186,22 +203,22 @@ Before we can attach a policy to the role we need to create the policy!
 Two Policy Documents are located in the `/iam-cloudformation-service-role` directory:
 
 - Trust Policy for Service Role
-- CloudFormation Service Policy
+- CloudFormation Service Policy (which you should have made a copy of in `scripts-cli/generated/`)
 
 The Trust Policy specifies the trusted service (CloudFormation) which is allowed to assume the role we will be creating. This policy is the same for all service roles we will create for CloudFormation and must be attached to the role using the `--assume-role-policy-document` parameter during the create role process.
 
 The Service Policy specifies the permissions the CloudFormation service will have when it assumes the CloudFormation Service Role and creates, updates, or deletes the CodePipeline and associated resources. The sample service policy must be updated to reflect your AWS Account ID, Region, Bucket Prefix, and your Prefix (both upper and lowercase variations will be needed). This is covered under Step 1: Get the CloudFormationServicePolicy.json file ready.
 
-Change directory `cd` to where your Trusted Entities and CloudFormationServicePolicy are. Then run the following command (be sure to update `PREFIX_UPPER` in `role-name`, the CloudFormationServicePolicy name for `assume-role-policy-document`, and `your_prefix_lower` for `tags`).
-
 ##### IAM AWS CLI Step 2B.1: Create Role and attach Assume Role and Service Policies
 
-We will need to use two commands, `aws iam create-role` to create the role, attach the assume role policy, and tag it. Next, we will use `aws iam put-role-policy` to put the necessary permissions on the policy.
+We will need to use two commands, `aws iam create-role` to create the role, attach the assume role policy, and tag it. Then, we will use `aws iam put-role-policy` to put the necessary permissions on the policy.
+
+The following commands assume you are in the `iam-cloudformation-service-role/scripts-cli/` directory. Make sure the CloudFormation policy JSON file is stored in the `scripts-cl/generated/` directory. (Note that if you used `copy-policy.py` to generate the file, then all values in the prompts are already updated for you in the script output.)
 
 ```bash
 aws iam create-role \
     --role-name PREFIX_UPPER-CloudFormation-Service-Role \
-    --assume-role-policy-document file://Trust-Policy-for-Service-Role.json \
+    --assume-role-policy-document file://../Trust-Policy-for-Service-Role.json \
     --tags '{"Key": "Atlantis", "Value": "iam"}' '{"Key": "atlantis:Prefix", "Value": "your_prefix_lower"}'
 ```
 
@@ -211,7 +228,7 @@ You'll then see output upon successful completion of the role's creation. Now yo
 aws iam put-role-policy \
     --role-name PREFIX_UPPER-CloudFormation-Service-Role \
     --policy-name PREFIX_UPPER-CloudFormationServicePolicy \
-    --policy-document file://scripts-cli/generated/PREFIX_UPPER-CloudFormationServicePolicy.json
+    --policy-document file://generated/PREFIX_UPPER-CloudFormationServicePolicy.json
 ```
 
 More information on creating and updating an IAM Role Using CLI:
@@ -225,9 +242,9 @@ You can always take the trust and permissions policy and adapt it to a Terraform
 
 #### IAM Step 3: Update User to Assume Role
 
-The user role you use to access the Web Console or submit CLI commands will need the following IAM Policy added (Replace `$AWS_ACCOUNT$` and `$PREFIX_UPPER$` with appropriate values). You can create it as a stand alone policy and attach it to a role, or add it to the inline policy statement. If you create it as a stand alone policy I recommend tagging it with: `Atlantis` with value `iam`, `atlantis:Prefix` with the value of your prefix (lowercase), and any additional tags you may want.
+Note that if you are the only user in your account and/or you will be using the same user role that you gave the CreateRole permissions to in IAM Step 0, this has already been done if you kept `iam:PassRole` in the `Action` field from before. You may then skip this step.
 
-Note that if you are the only user in the system and/or you will be using the same user role that you gave the CreateRole permissions to in IAM Step 0, this has already been done if you kept `iam:PassRole` in the `Action` field from before.
+The user role you use to access the Web Console or submit CLI commands will need the following IAM Policy added (Replace `$AWS_ACCOUNT$` and `$PREFIX_UPPER$` with appropriate values). You can create it as a stand alone policy and attach it to a role, or add it to the inline policy statement. If you create it as a stand alone policy I recommend tagging it with: `Atlantis` with value `iam`, `atlantis:Prefix` with the value of your prefix (lowercase), and any additional tags you may want.
 
 ```JSON
 {
@@ -267,7 +284,7 @@ More Information on granting users permissions to pass roles:
 
 ### CodeCommit: Create Repository and Structure It
 
- Application Infrastructure Code in CodeCommit
+Application Infrastructure Code in CodeCommit
 
 [Application Infrastructure](./application-infrastructure/) is available to seed your CodeCommit repository. Use the sample code for your initial experiments, tutorials, and as a template for structuring your own code to work with the pipeline. (Basically setting up the proper parameters and tags to allow the deploy pipeline to work its magic.)
 

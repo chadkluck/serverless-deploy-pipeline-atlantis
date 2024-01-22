@@ -3,4 +3,5 @@
 # can keep copies here.
 
 generated/*
+.defaults
 !.gitignore
