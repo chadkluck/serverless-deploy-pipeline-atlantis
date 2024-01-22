@@ -9,10 +9,12 @@ default_aws_account_id = "" # You can set this to your own for future use
 default_aws_region = "us-east-1"
 
 # Get the prefix, s3 bucket prefix, aws account id, and aws region from the command line
-prefix = input("Enter the prefix ["+default_prefix+"]: ")
-s3_bucket_prefix = input("Enter the s3 bucket prefix (optional) ["+default_s3_bucket_prefix+"]: ")
+prefix = input("Enter the prefix ["+default_prefix+"]: ").lower()
+s3_bucket_prefix = input("Enter the s3 bucket prefix (optional) ["+default_s3_bucket_prefix+"]: ").lower()
 aws_account_id = input("Enter the aws account id ["+default_aws_account_id+"]: ")
-aws_region = input("Enter the aws region ["+default_aws_region+"]: ")
+aws_region = input("Enter the aws region ["+default_aws_region+"]: ").lower()
+
+print("\n------------------------------------------------------------------------------\n")
 
 # if any input is empty, use the default value
 if not prefix:
@@ -30,6 +32,8 @@ if not aws_account_id:
 if not aws_region:
 	aws_region = default_aws_region
 	print("Using default aws region:", aws_region)
+
+print("\n------------------------------------------------------------------------------\n")
 
 # Get the current working directory
 cwd = os.getcwd()
@@ -68,21 +72,8 @@ with open(
 
 		# Print a message indicating the aws iam cli commands to create the role and policy and attach it to the role
 		print("To create the role attach the permissions policy, execute the following AWS CLI commands:\n")
-		print("aws iam create-role --role-name "+prefix.upper()+"-CloudFormation-Service-Role /\n\t --assume-role-policy-document file://../Trust-Policy-for-Service-Role.json /\n\t --tags '{\"Key\": \"Atlantis\", \"Value\": \"iam\"}' '{\"Key\": \"atlantis:Prefix\", \"Value\": \""+prefix+"\"}'\n")
-		print("aws iam put-role-policy--role-name "+prefix.upper()+"-CloudFormation-Service-Role /\n\t --policy-name "+prefix.upper()+"-CloudFormationServicePolicy /\n\t --policy-document file://generated/"+new_file_name)
 
-# ```bash
-# aws iam create-role \
-#     --role-name PREFIX_UPPER-CloudFormation-Service-Role \
-#     --assume-role-policy-document file://Trust-Policy-for-Service-Role.json \
-#     --tags '{"Key": "Atlantis", "Value": "iam"}' '{"Key": "atlantis:Prefix", "Value": "your_prefix_lower"}'
-# ```
+		print("aws iam create-role --role-name "+prefix.upper()+"-CloudFormation-Service-Role \\\n\t --assume-role-policy-document file://../Trust-Policy-for-Service-Role.json \\\n\t --tags '{\"Key\": \"Atlantis\", \"Value\": \"iam\"}' '{\"Key\": \"atlantis:Prefix\", \"Value\": \""+prefix+"\"}'\n")
+		print("aws iam put-role-policy --role-name "+prefix.upper()+"-CloudFormation-Service-Role \\\n\t --policy-name "+prefix.upper()+"-CloudFormationServicePolicy \\\n\t --policy-document file://generated/"+new_file_name+"\n")
 
-# You'll then see output upon successful completion of the role's creation. Now you need to attach the policy:
-
-# ```bash
-# aws iam put-role-policy \
-#     --role-name PREFIX_UPPER-CloudFormation-Service-Role \
-#     --policy-name PREFIX_UPPER-CloudFormationServicePolicy \
-#     --policy-document file://scripts-cli/generated/PREFIX_UPPER-CloudFormationServicePolicy.json
-# ```
+		print("==============================================================================\n")
