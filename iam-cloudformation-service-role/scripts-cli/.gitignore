@@ -2,5 +2,5 @@
 # You may always copy the JSON from your IAM policy in AWS - But if you want a reference or backup, you
 # can keep copies here.
 
-*
+generated/*
 !.gitignore
