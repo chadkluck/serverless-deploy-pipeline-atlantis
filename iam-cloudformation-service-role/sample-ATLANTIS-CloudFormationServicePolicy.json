@@ -2,7 +2,7 @@
     "Version": "2012-10-17",
     "Statement": [
         {
-			"Sid": "AtlantisPipelineEventRules",
+			"Sid": "ManageEventRulesByResourcePrefix",
             "Action": [
                 "events:PutTargets",
                 "events:RemoveTargets",
@@ -11,12 +11,10 @@
                 "events:DescribeRule"
             ],
             "Effect": "Allow",
-            "Resource": [
-                "arn:aws:events:$AWS_REGION$:$AWS_ACCOUNT$:rule/$PREFIX$-*"
-            ]
+            "Resource": "arn:aws:events:$AWS_REGION$:$AWS_ACCOUNT$:rule/$PREFIX$-*"
         },
         {
-            "Sid": "AtlantisPipeline",
+            "Sid": "ManageCloudFormationStacksByResourcePrefix",
             "Action": [
                 "cloudformation:*Stack*",
                 "cloudformation:CreateChangeSet",
@@ -27,12 +25,10 @@
                 "cloudformation:GetTemplateSummary"
             ],
             "Effect": "Allow",
-            "Resource": [
-                "arn:aws:cloudformation:$AWS_REGION$:$AWS_ACCOUNT$:stack/$PREFIX$-*"
-            ]
+            "Resource": "arn:aws:cloudformation:$AWS_REGION$:$AWS_ACCOUNT$:stack/$PREFIX$-*"
         },
         {
-            "Sid": "AtlantisPipelineS3Buckets",
+            "Sid": "ManageBucketsByResourcePrefix",
             "Action": [
                 "s3:*"
             ],
@@ -43,7 +39,7 @@
             ]
         },
         {
-            "Sid": "AtlantisPipelineLogs",
+            "Sid": "ManageLogsByResourcePrefix",
             "Action": [
                 "logs:*"
             ],
@@ -51,7 +47,7 @@
             "Resource": "arn:aws:logs:$AWS_REGION$:$AWS_ACCOUNT$:log-group:/aws/codebuild/$PREFIX$-*"
         },
         {
-            "Sid": "AtlantisPipelineServicesCodePipeline",
+            "Sid": "ManageCodePipelineByResourcePrefix",
             "Action": [
                 "codepipeline:*"
             ],
@@ -59,55 +55,55 @@
             "Resource": "arn:aws:codepipeline:$AWS_REGION$:$AWS_ACCOUNT$:$PREFIX$-*"
         },
         {
-            "Sid": "AtlantisPipelineServicesCodeBuild",
+            "Sid": "ManageCodeBuildByResourcePrefix",
             "Action": [
                 "codebuild:*"
             ],
             "Effect": "Allow",
             "Resource": "arn:aws:codebuild:$AWS_REGION$:$AWS_ACCOUNT$:project/$PREFIX$-*"
         },
+		{
+			"Sid": "PassAndDeleteWorkerRolesByResourcePrefix",
+			"Action": [
+				"iam:PassRole",
+				"iam:DeleteRole"
+			],
+			"Effect": "Allow",
+			"Resource": "arn:aws:iam::$AWS_ACCOUNT$:role$ROLE_PATH$$PREFIX$-Worker-*"
+		},
+		{
+			"Sid": "IAMReadOnly",
+			"Action": [
+				"iam:Get*",
+				"iam:List*"
+			],
+			"Effect": "Allow",
+			"Resource": [
+				"arn:aws:iam::$AWS_ACCOUNT$:role$ROLE_PATH$*",
+				"arn:aws:iam::$AWS_ACCOUNT$:policy/*"
+			]
+		},
         {
-            "Sid": "AtlantisPipelineIAMReadOnly",
-            "Action": [
-                "iam:List*",
-                "iam:Get*"
-            ],
-            "Effect": "Allow",
-            "Resource": [
-                "arn:aws:iam::$AWS_ACCOUNT$:policy/*",
-                "arn:aws:iam::$AWS_ACCOUNT$:role/*"
-            ]
-        },
-        {
-            "Sid": "AtlantisPipelineWorkerRoles",
-            "Action": [
-                "iam:AttachRolePolicy",
-                "iam:CreateRole",
-                "iam:DeleteRole",
-                "iam:DeleteRolePolicy",
-                "iam:DetachRolePolicy",
-                "iam:GetRole",
-                "iam:PassRole",
-                "iam:GetRolePolicy",
-                "iam:PutRolePolicy",
-                "iam:UntagRole",
-                "iam:TagRole"
-            ],
-            "Effect": "Allow",
-            "Resource": [
-                "arn:aws:iam::$AWS_ACCOUNT$:role/$PREFIX$-Worker-*"
-            ]
-        },
+			"Sid": "ManageWorkerRolesByResourcePrefix",
+			"Action": [
+				"iam:AttachRolePolicy",
+				"iam:CreateRole",
+				"iam:DeleteRolePolicy",
+				"iam:DetachRolePolicy",
+				"iam:PutRolePolicy",
+				"iam:UntagRole",
+				"iam:TagRole"
+			],
+			"Effect": "Allow",
+			"Resource": "arn:aws:iam::$AWS_ACCOUNT$:role$ROLE_PATH$$PREFIX$-Worker-*","Condition": "$PERMISSIONS_BOUNDARY_CONDITIONAL$"
+		},
         {
             "Sid": "InspectServiceRole",
             "Action": [
                 "iam:ListAttachedRolePolicies"
             ],
             "Effect": "Allow",
-            "Resource": [
-                "arn:aws:iam::$AWS_ACCOUNT$:role/$PREFIX_UPPER$-CloudFormation-Service-Role",
-                "arn:aws:iam::$AWS_ACCOUNT$:role/service-role/$PREFIX_UPPER$-CloudFormation-Service-Role"
-            ]
+            "Resource": "arn:aws:iam::$AWS_ACCOUNT$:role$ROLE_PATH$$PREFIX_UPPER$-CloudFormation-Service-Role"
         }
     ]
 }
