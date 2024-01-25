@@ -8,7 +8,9 @@
                 "events:RemoveTargets",
                 "events:PutRule",
                 "events:DeleteRule",
-                "events:DescribeRule"
+                "events:DescribeRule",
+                "events:TagResource",
+				"events:UntagResource"
             ],
             "Effect": "Allow",
             "Resource": "arn:aws:events:$AWS_REGION$:$AWS_ACCOUNT$:rule/$PREFIX$-*"
