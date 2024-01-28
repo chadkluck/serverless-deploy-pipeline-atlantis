@@ -1,53 +1,77 @@
 # Write a python script that asks the user via the command line for each of the following: prefix, s3 bucket prefix, aws account id, and aws region. Then open the file sample-ATLANTIS-CloudFormationServicePolicy.json and do a search and replace for $PREFIX$, $PREFIX_UPPER$, $S3_ORG_PREFIX$ $AWS_ACCOUNT$, and $AWS_REGION$, and makes a copy of that file, storing it in the generated directory
 import os
 import json
+import sys
 
 # Default values - Set any of these defaults to your own in the .defaults file
-default_prefix = "atlantis"
-default_s3_bucket_prefix = ""
-default_aws_account_id = ""
-default_aws_region = "us-east-1"
-default_role_path = "/"
-default_permissions_boundary_arn = ""
+defaults = {}
+defaults["prefix"] = "atlantis"
+defaults["s3_bucket_prefix"] = ""
+defaults["aws_account_id"] = ""
+defaults["aws_region"] = "us-east-1"
+defaults["role_path"] = "/"
+defaults["permissions_boundary_arn"] = ""
 
-# check if the .defaults.json file exists and if it does read in the 
-if os.path.isfile(".defaults.json"):
-	with open(".defaults.json", "r") as f:
-		defaults = json.load(f)
-		default_prefix = defaults["prefix"]
-		default_s3_bucket_prefix = defaults["s3_bucket_prefix"]
-		default_aws_account_id = defaults["aws_account_id"]
-		default_aws_region = defaults["aws_region"]
-		default_role_path = defaults["role_path"]
-		default_permissions_boundary_arn = defaults["permissions_boundary_arn"]
-		print("\nOffering defaults from .defaults.json file...\n")
+# check if a parameter was passed to script
+if len(sys.argv) > 1:
+	passed_prefix = sys.argv[1]
+	passed_file = ".defaults-"+passed_prefix+".json"
+	# check if the parameter is a valid file
+	if os.path.isfile(passed_file):
+		# read in the parameter file
+		with open(passed_file, "r") as f:
+			defaults = json.load(f)
+			print("\nOffering parameters from "+passed_prefix+" parameter file...\n")
+	else:
+		print("Parameter "+passed_prefix+" file does not exist")
+		sys.exit(1)
+else:
+	# check if the .defaults.json file exists and if it does read in the 
+	if os.path.isfile(".defaults.json"):
+		with open(".defaults.json", "r") as f:
+			defaults = json.load(f)
+			print("\nOffering defaults from .defaults.json file...\n")
 
 # Get the prefix, s3 bucket prefix, aws account id, and aws region from the command line
 print("\n==============================================================================")
 print("Enter the following information to generate the IAM Service Role and CLI prompts:")
-print("Press <RETURN/ENTER> to accept the default in the square brackets [ ]")
+print("Press <RETURN/ENTER> to accept the default in the square brackets [ ] (or dash '-' to clear default)")
 print("==============================================================================\n")
-prefix = input("Prefix ["+default_prefix+"]: ").lower()
-s3_bucket_prefix = input("S3 bucket prefix (optional) ["+default_s3_bucket_prefix+"]: ").lower()
-role_path = input("Role Path ["+default_role_path+"]: ").lower()
-permissions_boundary_arn = input("Permissions Boundary ARN ["+default_permissions_boundary_arn+"]: ").lower()
-aws_account_id = input("AWS Account ID ["+default_aws_account_id+"]: ")
-aws_region = input("AWS Region ["+default_aws_region+"]: ").lower()
+prefix = input("Prefix ["+defaults["prefix"]+"]: ").lower()
+s3_bucket_prefix = input("S3 bucket prefix (optional) ["+defaults["s3_bucket_prefix"]+"]: ").lower()
+role_path = input("Role Path ["+defaults["role_path"]+"]: ").lower()
+permissions_boundary_arn = input("Permissions Boundary ARN ["+defaults["permissions_boundary_arn"]+"]: ").lower()
+aws_account_id = input("AWS Account ID ["+defaults["aws_account_id"]+"]: ")
+aws_region = input("AWS Region ["+defaults["aws_region"]+"]: ").lower()
 
 print("\n------------------------------------------------------------------------------\n")
 
 # if any input is empty, use the default value
+
+
 if not prefix:
-	prefix = default_prefix
+	prefix = defaults["prefix"]
 	print("Using default prefix:", prefix)
 
+if prefix == "-":
+	prefix = ""
+	print("Prefix has been cleared")
+
 if not s3_bucket_prefix:
-	s3_bucket_prefix = default_s3_bucket_prefix
+	s3_bucket_prefix = defaults["s3_bucket_prefix"]
 	print("Using default S3 bucket prefix:", s3_bucket_prefix)
 
+if s3_bucket_prefix == "-":
+	s3_bucket_prefix = ""
+	print("S3 bucket prefix has been cleared")
+
 if not role_path:
-	role_path = default_role_path
+	role_path = defaults["role_path"]
 	print("Using default Role Path:", role_path)
+
+if role_path == "-":
+	role_path = "/"
+	print("Role Path has been cleared")
 
 # make sure role_path is either "/" or starts and ends with "/"
 if role_path != "/":
@@ -57,8 +81,12 @@ if role_path != "/":
 	print("Role Path has been modified to:", role_path)
 
 if not permissions_boundary_arn:
-	permissions_boundary_arn = default_permissions_boundary_arn
+	permissions_boundary_arn = defaults["permissions_boundary_arn"]
 	print("Using default Permissions Boundary ARN:", permissions_boundary_arn)
+
+if permissions_boundary_arn == "-":
+	permissions_boundary_arn = ""
+	print("Permissions Boundary ARN has been cleared")
 
 permissions_boundary_conditional = ""
 permissions_boundary_cli = ""
@@ -73,19 +101,35 @@ if permissions_boundary_arn:
 	permissions_boundary_cli = " --permissions-boundary "+permissions_boundary_arn+" \\\n\t"
 
 if not aws_account_id:
-	aws_account_id = default_aws_account_id
+	aws_account_id = defaults["aws_account_id"]
 	print("Using default AWS Account ID:", aws_account_id)
 
 if not aws_region:
-	aws_region = default_aws_region
+	aws_region = defaults["aws_region"]
 	print("Using default AWS Region:", aws_region)
+	
+json_contents = '{"prefix":"'+prefix+'", "s3_bucket_prefix":"'+s3_bucket_prefix+'", "role_path":"'+role_path+'", "permissions_boundary_arn":"'+permissions_boundary_arn+'", "aws_account_id":"'+aws_account_id+'", "aws_region":"'+aws_region+'"}'
 
 # If .defaults.json does not exist, create it and write out the current values in JSON format
 if not os.path.isfile(".defaults.json"):
 	print("Creating .defaults.json file...")
 	# Write the current values to the .defaults.json file in JSON format
 	with open(".defaults.json", "w") as f:
-		f.write('{"prefix":"'+prefix+'", "s3_bucket_prefix":"'+s3_bucket_prefix+'", "role_path":"'+role_path+'", "permissions_boundary_arn":"'+permissions_boundary_arn+'", "aws_account_id":"'+aws_account_id+'", "aws_region":"'+aws_region+'"}')
+		f.write(json_contents)
+		f.close()
+
+if not os.path.isfile(".defaults-"+prefix+".json"):
+	print("Creating .defaults-"+prefix+".json file...")
+
+# Write the current values to the .defaults-PREFIX.json file in JSON format
+with open(".defaults-"+prefix+".json", "w") as f:
+	f.write(json_contents)
+	f.close()
+
+if not os.path.isdir("generated"):
+	print("Creating generated directory...")
+	os.mkdir("generated")
+	print("Created generated directory.")
 
 print("\n------------------------------------------------------------------------------\n")
 
