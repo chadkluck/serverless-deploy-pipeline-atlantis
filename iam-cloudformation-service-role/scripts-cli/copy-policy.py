@@ -37,78 +37,76 @@ print("\n=======================================================================
 print("Enter the following information to generate the IAM Service Role and CLI prompts:")
 print("Press <RETURN/ENTER> to accept the default in the square brackets [ ] (or dash '-' to clear default)")
 print("==============================================================================\n")
-prefix = input("Prefix ["+defaults["prefix"]+"]: ").lower()
-s3_bucket_prefix = input("S3 bucket prefix (optional) ["+defaults["s3_bucket_prefix"]+"]: ").lower()
-role_path = input("Role Path ["+defaults["role_path"]+"]: ").lower()
-permissions_boundary_arn = input("Permissions Boundary ARN ["+defaults["permissions_boundary_arn"]+"]: ").lower()
-aws_account_id = input("AWS Account ID ["+defaults["aws_account_id"]+"]: ")
-aws_region = input("AWS Region ["+defaults["aws_region"]+"]: ").lower()
+parameters = {}
+parameters["prefix"] = input("Prefix ["+defaults["prefix"]+"]: ").lower()
+parameters["s3_bucket_prefix"] = input("S3 bucket prefix (optional) ["+defaults["s3_bucket_prefix"]+"]: ").lower()
+parameters["role_path"] = input("Role Path ["+defaults["role_path"]+"]: ").lower()
+parameters["permissions_boundary_arn"] = input("Permissions Boundary ARN ["+defaults["permissions_boundary_arn"]+"]: ").lower()
+parameters["aws_account_id"] = input("AWS Account ID ["+defaults["aws_account_id"]+"]: ")
+parameters["aws_region"] = input("AWS Region ["+defaults["aws_region"]+"]: ").lower()
 
 print("\n------------------------------------------------------------------------------\n")
 
 # if any input is empty, use the default value
 
 
-if not prefix:
-	prefix = defaults["prefix"]
-	print("Using default prefix:", prefix)
+if not parameters["prefix"]:
+	parameters["prefix"] = defaults["prefix"]
+	print("Using default prefix:", parameters["prefix"])
 
-if prefix == "-":
-	prefix = ""
-	print("Prefix has been cleared")
+if not parameters["s3_bucket_prefix"]:
+	parameters["s3_bucket_prefix"] = defaults["s3_bucket_prefix"]
+	print("Using default S3 bucket prefix:", parameters["s3_bucket_prefix"])
 
-if not s3_bucket_prefix:
-	s3_bucket_prefix = defaults["s3_bucket_prefix"]
-	print("Using default S3 bucket prefix:", s3_bucket_prefix)
-
-if s3_bucket_prefix == "-":
-	s3_bucket_prefix = ""
+if parameters["s3_bucket_prefix"] == "-":
+	parameters["s3_bucket_prefix"] = ""
 	print("S3 bucket prefix has been cleared")
 
-if not role_path:
-	role_path = defaults["role_path"]
-	print("Using default Role Path:", role_path)
+if not parameters["role_path"]:
+	parameters["role_path"] = defaults["role_path"]
+	print("Using default Role Path:", parameters["role_path"])
 
-if role_path == "-":
-	role_path = "/"
+if parameters["role_path"] == "-":
+	parameters["role_path"] = "/"
 	print("Role Path has been cleared")
 
 # make sure role_path is either "/" or starts and ends with "/"
-if role_path != "/":
+if parameters["role_path"] != "/":
 	# remove slashes from front and end of role_path
-	role_path = role_path.strip("/")
-	role_path = "/" + role_path + "/"
-	print("Role Path has been modified to:", role_path)
+	parameters["role_path"] = parameters["role_path"].strip("/")
+	parameters["role_path"] = "/" + parameters["role_path"] + "/"
+	print("Role Path has been modified to:", parameters["role_path"])
 
-if not permissions_boundary_arn:
-	permissions_boundary_arn = defaults["permissions_boundary_arn"]
-	print("Using default Permissions Boundary ARN:", permissions_boundary_arn)
+if not parameters["permissions_boundary_arn"]:
+	parameters["permissions_boundary_arn"] = defaults["permissions_boundary_arn"]
+	print("Using default Permissions Boundary ARN:", parameters["permissions_boundary_arn"])
 
-if permissions_boundary_arn == "-":
-	permissions_boundary_arn = ""
+if parameters["permissions_boundary_arn"] == "-":
+	parameters["permissions_boundary_arn"] = ""
 	print("Permissions Boundary ARN has been cleared")
 
 permissions_boundary_conditional = ""
 permissions_boundary_cli = ""
 
-if permissions_boundary_arn:
+if parameters["permissions_boundary_arn"]:
 	permissions_boundary_conditional = """,
 			"Condition": {
 				"StringLike": {
 					"$PERMISSIONS_BOUNDARY_ARN$"
 				}
 			}"""
-	permissions_boundary_cli = " --permissions-boundary "+permissions_boundary_arn+" \\\n\t"
+	permissions_boundary_cli = " --permissions-boundary "+parameters["permissions_boundary_arn"]+" \\\n\t"
 
-if not aws_account_id:
-	aws_account_id = defaults["aws_account_id"]
-	print("Using default AWS Account ID:", aws_account_id)
+if not parameters["aws_account_id"]:
+	parameters["aws_account_id"] = defaults["aws_account_id"]
+	print("Using default AWS Account ID:", parameters["aws_account_id"])
 
-if not aws_region:
-	aws_region = defaults["aws_region"]
-	print("Using default AWS Region:", aws_region)
-	
-json_contents = '{"prefix":"'+prefix+'", "s3_bucket_prefix":"'+s3_bucket_prefix+'", "role_path":"'+role_path+'", "permissions_boundary_arn":"'+permissions_boundary_arn+'", "aws_account_id":"'+aws_account_id+'", "aws_region":"'+aws_region+'"}'
+if not parameters["aws_region"]:
+	parameters["aws_region"] = defaults["aws_region"]
+	print("Using default AWS Region:", parameters["aws_region"])
+
+# set json_contents to stringified json parameters
+json_contents = json.dumps(parameters)
 
 # If .defaults.json does not exist, create it and write out the current values in JSON format
 if not os.path.isfile(".defaults.json"):
@@ -118,11 +116,11 @@ if not os.path.isfile(".defaults.json"):
 		f.write(json_contents)
 		f.close()
 
-if not os.path.isfile(".defaults-"+prefix+".json"):
-	print("Creating .defaults-"+prefix+".json file...")
+if not os.path.isfile(".defaults-"+parameters["prefix"]+".json"):
+	print("Creating .defaults-"+parameters["prefix"]+".json file...")
 
 # Write the current values to the .defaults-PREFIX.json file in JSON format
-with open(".defaults-"+prefix+".json", "w") as f:
+with open(".defaults-"+parameters["prefix"]+".json", "w") as f:
 	f.write(json_contents)
 	f.close()
 
@@ -144,21 +142,21 @@ with open(
 	# Read the contents of the file
 	contents = f.read()
 	# Replace the placeholders with the values from the command line
-	contents = contents.replace("$PREFIX$", prefix)
-	contents = contents.replace("$PREFIX_UPPER$", prefix.upper())
-	contents = contents.replace("$ROLE_PATH$", role_path)
-	contents = contents.replace("$AWS_ACCOUNT$", aws_account_id)
-	contents = contents.replace("$AWS_REGION$", aws_region)
+	contents = contents.replace("$PREFIX$", parameters["prefix"])
+	contents = contents.replace("$PREFIX_UPPER$", parameters["prefix"].upper())
+	contents = contents.replace("$ROLE_PATH$", parameters["role_path"])
+	contents = contents.replace("$AWS_ACCOUNT$", parameters["aws_account"])
+	contents = contents.replace("$AWS_REGION$", parameters["aws_region"])
 	contents = contents.replace(",\"Condition\": \"$PERMISSIONS_BOUNDARY_CONDITIONAL$\"", permissions_boundary_conditional)
-	contents = contents.replace("$PERMISSIONS_BOUNDARY_ARN$", permissions_boundary_arn)
+	contents = contents.replace("$PERMISSIONS_BOUNDARY_ARN$", parameters["permissions_boundary_arn"])
 	# if s3_bucket_prefix is provided, replace the placeholder with the value from the command line followed by a hyphen, else replace with blank
-	if not s3_bucket_prefix:
+	if not parameters["s3_bucket_prefix"]:
 		contents = contents.replace("$S3_ORG_PREFIX$", "")
 		print("No S3 bucket prefix provided. Using blank string for s3_bucket_prefix.")
 	else:
-		contents = contents.replace("$S3_ORG_PREFIX$", s3_bucket_prefix + "-")
+		contents = contents.replace("$S3_ORG_PREFIX$", parameters["s3_bucket_prefix"] + "-")
 	# Write the updated contents to a new file in the generated directory
-	new_file_name = prefix.upper()+"-CloudFormationServicePolicy.json"
+	new_file_name = parameters["prefix"].upper()+"-CloudFormationServicePolicy.json"
 	with open(os.path.join(generated_dir, new_file_name), "w") as g:
 		g.write(contents)
 		g.close()
@@ -174,7 +172,7 @@ with open(
 		# Print a message indicating the aws iam cli commands to create the role and policy and attach it to the role
 		print("To create the role attach the permissions policy, execute the following AWS CLI commands (Make sure you are logged into AWS CLI with a user role holding permissions to create the service role!):\n")
 
-		print("aws iam create-role --path "+role_path+" \\\n\t --role-name "+prefix.upper()+"-CloudFormation-Service-Role \\\n\t --assume-role-policy-document file://../Trust-Policy-for-Service-Role.json \\\n\t"+permissions_boundary_cli+" --tags '{\"Key\": \"Atlantis\", \"Value\": \"iam\"}' '{\"Key\": \"atlantis:Prefix\", \"Value\": \""+prefix+"\"}'\n")
-		print("aws iam put-role-policy --role-name "+prefix.upper()+"-CloudFormation-Service-Role \\\n\t --policy-name "+prefix.upper()+"-CloudFormationServicePolicy \\\n\t --policy-document file://generated/"+new_file_name+"\n")
+		print("aws iam create-role --path "+parameters["role_path"]+" \\\n\t --role-name "+parameters["prefix"].upper()+"-CloudFormation-Service-Role \\\n\t --assume-role-policy-document file://../Trust-Policy-for-Service-Role.json \\\n\t"+permissions_boundary_cli+" --tags '{\"Key\": \"Atlantis\", \"Value\": \"iam\"}' '{\"Key\": \"atlantis:Prefix\", \"Value\": \""+parameters["prefix"]+"\"}'\n")
+		print("aws iam put-role-policy --role-name "+parameters["prefix"].upper()+"-CloudFormation-Service-Role \\\n\t --policy-name "+parameters["prefix"].upper()+"-CloudFormationServicePolicy \\\n\t --policy-document file://generated/"+new_file_name+"\n")
 
 		print("==============================================================================\n")
