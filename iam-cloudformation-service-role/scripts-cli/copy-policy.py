@@ -150,7 +150,7 @@ parameters = {}
 # loop through each parameter and prompt the user for it, then validate input based on requirement and regex
 for key in prompts:
 	prompt = prompts[key]
-	req = ""
+	req = " "
 	if prompt["required"]:
 		req = " (required)"
 	
