@@ -1,5 +1,50 @@
+import os
 import json
 import sys
+import re
+
+# Default values - Set any of these defaults to your own in the .defaults file
+defaults = {}
+defaults["toolchain_template_location"]["BucketName"] = "63klabs"
+defaults["toolchain_template_location"]["BucketKey"] = "atlantis/v2"
+defaults["toolchain_template_location"]["FileName"] = "pipeline-toolchain.yml"
+
+defaults["application"]["aws_account_id"] = "123456789012"
+defaults["application"]["aws_region"] = "us-east-1"
+
+defaults["stack_parameters"]["Prefix"] = "atlantis"
+defaults["stack_parameters"]["S3BucketNameOrgPrefix"] = ""
+defaults["stack_parameters"]["ParameterStoreHierarchy"] = ""
+defaults["stack_parameters"]["S3BucketNameOrgPrefix"] = ""
+defaults["stack_parameters"]["RolePath"] = ""
+defaults["stack_parameters"]["PermissionsBoundaryARN"] = ""
+
+# check if the .defaults.json file exists and if it does read in the defaults
+if os.path.isfile(".defaults.json"):
+    with open(".defaults.json", "r") as f:
+        defaults = json.load(f)
+        print("\nFound .defaults.json file...\n")
+
+# Up to 3 parameters may be passed to the script and each parameter will correspond to a default file
+# For example, atlantis will use the .defaults-atlantis.json file and will be loaded first. Any values in this file will overwrite values in defaults.
+# atlantis myproject will use the .defaults-myproject.json file and will be loaded second. Any values in this file will overwrite values in atlantis.
+# atlantis myproject test will use the .defaults-myproject-test.json file and will be loaded third. Any values in this file will overwrite values in myproject.
+if len(sys.argv) > 1:
+    fname = ".defaults"
+    for i in range(1, len(sys.argv)):
+        fname += "-"+sys.argv[i]
+        if os.path.isfile(fname+".json"):
+            with open(".defaults-"+sys.argv[i]+".json", "r") as f:
+                temp = json.load(f)
+                # iterate through temp 2D array and replace any values in defaults
+                for key in temp.keys():
+                    for key2 in temp[key].keys():
+                        defaults[key][key2] = temp[key][key2]
+                print("\nFound "+fname+".json file...\n")
+
+
+
+
 
 configStackJson = "config-deploy-stack.json"
 saveToDir = "" # ex: "custom/" or "" (same dir)
@@ -49,7 +94,7 @@ def inputFile(template, filetype):
     string = string.replace("$TOOLCHAIN_BUCKETKEY$", toolchain_BucketKey)
     string = string.replace("$TOOLCHAIN_FILENAME$", toolchain_FileName)
 
-    string = string.replace("$AWS_ACCOUNT$", app_aws_account)
+    string = string.replace("$AWS_ACCOUNT$", app_aws_account_id)
     string = string.replace("$AWS_REGION$", app_aws_region)
     string = string.replace("$NAME$", app_name)
 
@@ -111,7 +156,7 @@ toolchain_BucketName = config['toolchain_template_location']['BucketName']
 toolchain_BucketKey = config['toolchain_template_location']['BucketKey']
 toolchain_FileName = config['toolchain_template_location']['FileName']
 
-app_aws_account = config['application']['aws_account']
+app_aws_account_id = config['application']['aws_account_id']
 app_aws_region = config['application']['aws_region']
 app_name = config['application']['name']
 

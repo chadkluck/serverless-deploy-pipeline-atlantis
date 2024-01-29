@@ -1,4 +1,3 @@
-# Write a python script that asks the user via the command line for each of the following: prefix, s3 bucket prefix, aws account id, and aws region. Then open the file sample-ATLANTIS-CloudFormationServicePolicy.json and do a search and replace for $PREFIX$, $PREFIX_UPPER$, $S3_ORG_PREFIX$ $AWS_ACCOUNT$, and $AWS_REGION$, and makes a copy of that file, storing it in the generated directory
 import os
 import json
 import sys
@@ -6,12 +5,12 @@ import re
 
 # Default values - Set any of these defaults to your own in the .defaults file
 defaults = {}
-defaults["prefix"] = "atlantis"
-defaults["s3_bucket_prefix"] = ""
+defaults["Prefix"] = "atlantis"
+defaults["S3BucketNameOrgPrefix"] = ""
 defaults["aws_account_id"] = ""
 defaults["aws_region"] = "us-east-1"
-defaults["role_path"] = "/"
-defaults["permissions_boundary_arn"] = ""
+defaults["RolePath"] = "/"
+defaults["PermissionsBoundaryARN"] = ""
 
 # check if a parameter was passed to script
 if len(sys.argv) > 1:
@@ -24,10 +23,10 @@ if len(sys.argv) > 1:
 			defaults = json.load(f)
 			print("\nOffering default parameters from "+passed_prefix+" file...\n")
 	else:
-		print("Parameter "+passed_prefix+" file does not exist")
+		print("Parameter file '"+passed_prefix+"' does not exist")
 		sys.exit(1)
 else:
-	# check if the .defaults.json file exists and if it does read in the 
+	# check if the .defaults.json file exists and if it does read in the defaults
 	if os.path.isfile(".defaults.json"):
 		with open(".defaults.json", "r") as f:
 			defaults = json.load(f)
@@ -42,41 +41,41 @@ print("( Enter carat '^' at any prompt to exit script                           
 print("================================================================================\n")
 
 prompts = {}
-prompts["prefix"] = {
+prompts["Prefix"] = {
 	"name": "Prefix",
 	"required": True,
 	"regex": "^[a-z][a-z0-9-]{0,12}[a-z0-9]$",
 	"help": "2 to 8 characters. Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number.",
 	"description": "A prefix helps distinguish applications and assign permissions among teams, departments, and organizational units. For example, users with Finance Development roles may be restricted to resources named with the 'finc' prefix or resources tagged with the 'finc' prefix.",
 	"examples": "atlantis, finc, ops, dev-ops, b2b",
-	"default": defaults["prefix"],
+	"default": defaults["Prefix"],
 }
-prompts["s3_bucket_prefix"] = {
+prompts["S3BucketNameOrgPrefix"] = {
 	"name": "S3 Bucket Name Org Prefix",
 	"required": False,
 	"regex": "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^$",
 	"help": "S3 bucket prefix must be lowercase, start with a letter, and contain only letters, numbers, and dashes",
 	"description": "S3 bucket names must be unique across all AWS accounts. This prefix helps distinguish S3 buckets from each other and will be used in place of using account ID and region to establish uniqueness resulting in shorter bucket names.",
 	"examples": "xyzcompany, acme, b2b-solutions-inc",
-	"default": defaults["s3_bucket_prefix"],
+	"default": defaults["S3BucketNameOrgPrefix"],
 }
-prompts["role_path"] = {
+prompts["RolePath"] = {
 	"name": "Role Path",
 	"required": False,
 	"regex": "^\/[a-zA-Z0-9\/_-]+\/$|^\/$",
 	"help": "Role Path must be a single slash OR start and end with a slash, contain alpha numeric characters, dashes, underscores, and slashes.",
 	"description": "Role Path is a string of characters that designates the path to the role. For example, the path to the role 'atlantis-admin' is '/atlantis-admin/'.",
 	"examples": "/, /atlantis-admin/, /atlantis-admin/dev/, /service-roles/, /application_roles/dev-ops/",
-	"default": defaults["role_path"],
+	"default": defaults["RolePath"],
 }
-prompts["permissions_boundary_arn"] = {
+prompts["PermissionsBoundaryARN"] = {
 	"name": "Permissions Boundary ARN",
 	"required": False,
 	"regex": "^$|^arn:aws:iam::[0-9]{12}:policy\/[a-zA-Z0-9\/_-]+$",
 	"help": "Permissions Boundary ARN must be in the format: arn:aws:iam::{account_id}:policy/{policy_name}",
 	"description": "Permissions Boundary is a policy that is attached to the role and can be used to further restrict the permissions of the role. Your organization may or may not require boundaries.",
 	"examples": "arn:aws:iam::123456789012:policy/xyz-org-boundary-policy",
-	"default": defaults["permissions_boundary_arn"],
+	"default": defaults["PermissionsBoundaryARN"],
 }
 prompts["aws_account_id"] = {
 	"name": "AWS Account ID",
@@ -158,7 +157,7 @@ for key in prompts:
 	# Loop until the user enters a valid value for the parameter
 	while True:
 		# Prompt the user for the parameter value
-		pInput = input(prompt["name"]+req+" ["+prompt["default"]+"]: ")
+		pInput = input(prompt['name']+req+" ["+prompt["default"]+"] : ")
 
 		# Allow user to enter ^ to exit script
 		if pInput == "^":
@@ -189,14 +188,14 @@ print("\n-----------------------------------------------------------------------
 permissions_boundary_conditional = ""
 permissions_boundary_cli = ""
 
-if parameters["permissions_boundary_arn"]:
+if parameters["PermissionsBoundaryARN"]:
 	permissions_boundary_conditional = """,
 			"Condition": {
 				"StringLike": {
 					"$PERMISSIONS_BOUNDARY_ARN$"
 				}
 			}"""
-	permissions_boundary_cli = " --permissions-boundary "+parameters["permissions_boundary_arn"]+" \\\n\t"
+	permissions_boundary_cli = " --permissions-boundary "+parameters["PermissionsBoundaryARN"]+" \\\n\t"
 
 # set json_contents to stringified json parameters
 json_contents = json.dumps(parameters)
@@ -209,11 +208,11 @@ if not os.path.isfile(".defaults.json"):
 		f.write(json_contents)
 		f.close()
 
-if not os.path.isfile(".defaults-"+parameters["prefix"]+".json"):
-	print("Creating .defaults-"+parameters["prefix"]+".json file...")
+if not os.path.isfile(".defaults-"+parameters["Prefix"]+".json"):
+	print("Creating .defaults-"+parameters["Prefix"]+".json file...")
 
 # Write the current values to the .defaults-PREFIX.json file in JSON format
-with open(".defaults-"+parameters["prefix"]+".json", "w") as f:
+with open(".defaults-"+parameters["Prefix"]+".json", "w") as f:
 	f.write(json_contents)
 	f.close()
 
@@ -235,25 +234,25 @@ with open(
 	# Read the contents of the file
 	contents = f.read()
 	# Replace the placeholders with the values from the command line
-	contents = contents.replace("$PREFIX$", parameters["prefix"])
-	contents = contents.replace("$PREFIX_UPPER$", parameters["prefix"].upper())
-	contents = contents.replace("$ROLE_PATH$", parameters["role_path"])
+	contents = contents.replace("$PREFIX$", parameters["Prefix"])
+	contents = contents.replace("$PREFIX_UPPER$", parameters["Prefix"].upper())
+	contents = contents.replace("$ROLE_PATH$", parameters["RolePath"])
 	contents = contents.replace("$AWS_ACCOUNT$", parameters["aws_account_id"])
 	contents = contents.replace("$AWS_REGION$", parameters["aws_region"])
 
 	# Replace permissions boundary placeholder which is complex:
 	contents = contents.replace(",\"Condition\": \"$PERMISSIONS_BOUNDARY_CONDITIONAL$\"", permissions_boundary_conditional)
-	contents = contents.replace("$PERMISSIONS_BOUNDARY_ARN$", parameters["permissions_boundary_arn"])
+	contents = contents.replace("$PERMISSIONS_BOUNDARY_ARN$", parameters["PermissionsBoundaryARN"])
 
 	# if s3_bucket_prefix is provided, replace the placeholder with the value from the command line followed by a hyphen, else replace with blank
-	if not parameters["s3_bucket_prefix"]:
+	if not parameters["S3BucketNameOrgPrefix"]:
 		contents = contents.replace("$S3_ORG_PREFIX$", "")
 		print("No S3 bucket prefix provided. Using blank string for s3_bucket_prefix.")
 	else:
-		contents = contents.replace("$S3_ORG_PREFIX$", parameters["s3_bucket_prefix"] + "-")
+		contents = contents.replace("$S3_ORG_PREFIX$", parameters["S3BucketNameOrgPrefix"] + "-")
 
 	# Write the updated contents to a new file in the generated directory
-	new_file_name = parameters["prefix"].upper()+"-CloudFormationServicePolicy.json"
+	new_file_name = parameters["Prefix"].upper()+"-CloudFormationServicePolicy.json"
 	with open(os.path.join(generated_dir, new_file_name), "w") as g:
 		g.write(contents)
 		g.close()
@@ -273,7 +272,7 @@ with open(
 
 		# Prepend {"Key": "Atlantis", "Value": "iam"} and {"Key": "atlantis:Prefix", "Value": prefix} to tags list
 		tags.insert(0, {"Key": "Atlantis", "Value": "iam"})
-		tags.insert(1, {"Key": "atlantis:Prefix", "Value": parameters["prefix"]})
+		tags.insert(1, {"Key": "atlantis:Prefix", "Value": parameters["Prefix"]})
 
 		tags_cli = "--tags "
 		for tag in tags:
@@ -289,21 +288,20 @@ with open(
 
 		# Generate the CLI command for create-role
 		create_role = []
-		create_role.append("aws iam create-role --path "+parameters["role_path"])
-		create_role.append("--role-name "+parameters["prefix"].upper()+"-CloudFormation-Service-Role")
-		create_role.append("--description 'Service Role for CloudFormation Service to create and manage pipelines under the '"+parameters["prefix"]+"' prefix'")
+		create_role.append("aws iam create-role --path "+parameters["RolePath"])
+		create_role.append("--role-name "+parameters["Prefix"].upper()+"-CloudFormation-Service-Role")
+		create_role.append("--description 'Service Role for CloudFormation Service to create and manage pipelines under the '"+parameters["Prefix"]+"' prefix'")
 		create_role.append("--assume-role-policy-document file://../Trust-Policy-for-Service-Role.json")
-		if parameters["permissions_boundary_arn"]:
-			create_role.append("--permissions-boundary "+parameters["permissions_boundary_arn"])
-		create_role.append("--tags '{\"Key\": \"Atlantis\", \"Value\": \"iam\"}' '{\"Key\": \"atlantis:Prefix\", \"Value\": \""+parameters["prefix"]+"\"}'")
+		if parameters["PermissionsBoundaryARN"]:
+			create_role.append("--permissions-boundary "+parameters["PermissionsBoundaryARN"])
 		create_role.append(tags_cli)
 
 		print(" \\\n\t".join(create_role))
 		print("")
 
 		put_policy = []
-		put_policy.append("aws iam put-role-policy --role-name "+parameters["prefix"].upper()+"-CloudFormation-Service-Role")
-		put_policy.append("--policy-name "+parameters["prefix"].upper()+"-CloudFormationServicePolicy")
+		put_policy.append("aws iam put-role-policy --role-name "+parameters["Prefix"].upper()+"-CloudFormation-Service-Role")
+		put_policy.append("--policy-name "+parameters["Prefix"].upper()+"-CloudFormationServicePolicy")
 		put_policy.append("--policy-document file://generated/"+new_file_name)
 		print(" \\\n\t".join(put_policy))
 		print("")
