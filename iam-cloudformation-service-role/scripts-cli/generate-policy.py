@@ -3,6 +3,17 @@ import json
 import sys
 import re
 
+print("")
+print("")
+print("|==============================================================================|")
+print("| CloudFormation Service Role and AWS CLI Command Generator for Atlantis CI/CD |")
+print("| v2024.01.28                                                                  |")
+print("|------------------------------------------------------------------------------|")
+print("| Chad Leigh Kluck                                                             |")
+print("| github                                                                       |")
+print("|==============================================================================|")
+print("")
+
 # Default values - Set any of these defaults to your own in the .defaults file
 defaults = {}
 defaults["Prefix"] = "atlantis"
@@ -11,6 +22,12 @@ defaults["aws_account_id"] = ""
 defaults["aws_region"] = "us-east-1"
 defaults["RolePath"] = "/"
 defaults["PermissionsBoundaryARN"] = ""
+
+# check if the .defaults.json file exists and if it does read in the defaults
+if os.path.isfile(".defaults.json"):
+	with open(".defaults.json", "r") as f:
+		defaults = json.load(f)
+		print("\nOffering default parameters from .defaults.json file...\n")
 
 # check if a parameter was passed to script
 if len(sys.argv) > 1:
@@ -23,22 +40,22 @@ if len(sys.argv) > 1:
 			defaults = json.load(f)
 			print("\nOffering default parameters from "+passed_prefix+" file...\n")
 	else:
-		print("Parameter file '"+passed_prefix+"' does not exist")
-		sys.exit(1)
-else:
-	# check if the .defaults.json file exists and if it does read in the defaults
-	if os.path.isfile(".defaults.json"):
-		with open(".defaults.json", "r") as f:
-			defaults = json.load(f)
-			print("\nOffering default parameters from .defaults.json file...\n")
+		print("Parameter file '"+passed_prefix+"' does not exist. We will create one from scratch.")
+		defaults["Prefix"] = passed_prefix
 
 # Get the prefix, s3 bucket prefix, aws account id, and aws region from the command line
-print("\n================================================================================")
-print("Enter parameter values to generate IAM Service Role and AWS CLI commands:")
-print("( Leave blank to accept default in square brackets [] or dash '-' to clear     )")
-print("( Enter exclamation point '!' for help.                                        )")
-print("( Enter carat '^' at any prompt to exit script                                 )")
-print("================================================================================\n")
+print("")
+print("!==== INSTRUCTIONS ============================================================!")
+print("! Enter parameter values to generate IAM Service Role and AWS CLI commands     !")
+print("!------------------------------------------------------------------------------!")
+print("! The script will then generate a policy and CLI commands to create the role   !")
+print("!------------------------------------------------------------------------------!")
+print("! Leave blank and press Enter/Return to accept default in square brackets []   !")
+print("! Enter a dash '-' to clear default and leave optional responses blank.        !")
+print("! Enter question mark '?' for help.                                            !")
+print("! Enter carat '^' at any prompt to exit script.                                !")
+print("!==============================================================================!")
+print("")
 
 prompts = {}
 prompts["Prefix"] = {
@@ -48,7 +65,7 @@ prompts["Prefix"] = {
 	"help": "2 to 8 characters. Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number.",
 	"description": "A prefix helps distinguish applications and assign permissions among teams, departments, and organizational units. For example, users with Finance Development roles may be restricted to resources named with the 'finc' prefix or resources tagged with the 'finc' prefix.",
 	"examples": "atlantis, finc, ops, dev-ops, b2b",
-	"default": defaults["Prefix"],
+	"default": defaults["Prefix"]
 }
 prompts["S3BucketNameOrgPrefix"] = {
 	"name": "S3 Bucket Name Org Prefix",
@@ -57,7 +74,7 @@ prompts["S3BucketNameOrgPrefix"] = {
 	"help": "S3 bucket prefix must be lowercase, start with a letter, and contain only letters, numbers, and dashes",
 	"description": "S3 bucket names must be unique across all AWS accounts. This prefix helps distinguish S3 buckets from each other and will be used in place of using account ID and region to establish uniqueness resulting in shorter bucket names.",
 	"examples": "xyzcompany, acme, b2b-solutions-inc",
-	"default": defaults["S3BucketNameOrgPrefix"],
+	"default": defaults["S3BucketNameOrgPrefix"]
 }
 prompts["RolePath"] = {
 	"name": "Role Path",
@@ -66,7 +83,7 @@ prompts["RolePath"] = {
 	"help": "Role Path must be a single slash OR start and end with a slash, contain alpha numeric characters, dashes, underscores, and slashes.",
 	"description": "Role Path is a string of characters that designates the path to the role. For example, the path to the role 'atlantis-admin' is '/atlantis-admin/'.",
 	"examples": "/, /atlantis-admin/, /atlantis-admin/dev/, /service-roles/, /application_roles/dev-ops/",
-	"default": defaults["RolePath"],
+	"default": defaults["RolePath"]
 }
 prompts["PermissionsBoundaryARN"] = {
 	"name": "Permissions Boundary ARN",
@@ -75,7 +92,7 @@ prompts["PermissionsBoundaryARN"] = {
 	"help": "Permissions Boundary ARN must be in the format: arn:aws:iam::{account_id}:policy/{policy_name}",
 	"description": "Permissions Boundary is a policy that is attached to the role and can be used to further restrict the permissions of the role. Your organization may or may not require boundaries.",
 	"examples": "arn:aws:iam::123456789012:policy/xyz-org-boundary-policy",
-	"default": defaults["PermissionsBoundaryARN"],
+	"default": defaults["PermissionsBoundaryARN"]
 }
 prompts["aws_account_id"] = {
 	"name": "AWS Account ID",
@@ -84,7 +101,7 @@ prompts["aws_account_id"] = {
 	"help": "AWS Account ID must be 12 digits",
 	"description": "AWS Account ID is a 12 digit number that identifies the AWS account.",
 	"examples": "123456789012, 123456789013, 123456789014",
-	"default": defaults["aws_account_id"],
+	"default": defaults["aws_account_id"]
 }
 prompts["aws_region"] = {
 	"name": "AWS Region",
@@ -93,7 +110,7 @@ prompts["aws_region"] = {
 	"help": "AWS Region must be lowercase and in the format: us-east-1",
 	"description": "AWS Region is a string that identifies the AWS region. For example, the region 'us-east-1' is located in the United States.",
 	"examples": "us-east-1, us-west-1, us-west-2, eu-west-1, ap-southeast-1",
-	"default": defaults["aws_region"],
+	"default": defaults["aws_region"]
 }
 
 def indent(spaces=4, prepend=''):
@@ -127,7 +144,7 @@ def display_help(prompt, error):
 
 	spaces = 5
 
-	prepend = "!!! "
+	prepend = "??? "
 	label = "INFO"
 	message = prompt["name"]
 
@@ -164,7 +181,7 @@ for key in prompts:
 			sys.exit(0)
 
 		# Allow user to enter ! for help and then go back to start of loop
-		if pInput == "!":
+		if pInput == "?":
 			display_help(prompt, False)
 			continue
 
@@ -192,7 +209,7 @@ if parameters["PermissionsBoundaryARN"]:
 	permissions_boundary_conditional = """,
 			"Condition": {
 				"StringLike": {
-					"$PERMISSIONS_BOUNDARY_ARN$"
+					"iam:PermissionsBoundary": "$PERMISSIONS_BOUNDARY_ARN$"
 				}
 			}"""
 	permissions_boundary_cli = " --permissions-boundary "+parameters["PermissionsBoundaryARN"]+" \\\n\t"
@@ -280,11 +297,34 @@ with open(
 
 		tags_cli = tags_cli.rstrip()
 
-		print("\n==============================================================================")
-		print("================================= COMPLETE! ==================================\n")
+		print("")
+		print("===============================================================================")
+		print("================================= COMPLETE! ===================================")
+		print("===============================================================================")
+		print("")
+		print("")
+		print("!==== CREATE ROLE INSTRUCTIONS ================================================!")
+		print("! Execute the following AWS CLI commands in order to create the role.          !")
+		print("!------------------------------------------------------------------------------!")
+		print("! (Make sure you are logged into AWS CLI with a user role holding permissions  !")
+		print("! to create the service role!)                                                 !")
+		print("!------------------------------------------------------------------------------!")
+		print("! Alternately, you can create the role manually via the AWS Web Console using  !")
+		print("! the CloudFormationServicePolicy found in generated/                          !")
+		print("!==============================================================================!")
+		print("")
+
+		# detect if user is on windows and print a message to export MSYS_NO_PATHCONV variable
+		if os.name == "nt":
+			msgForWinCLI_1 = "# NOTE FOR BASH ON WINDOWS USERS: When using Bash on Windows you may need to execute the following export command first if you receive the following error:"
+			msgForWinCLI_2 = "# ValidationError when calling the CreateRole operation: The specified value for path is invalid."
+			print(break_lines(msgForWinCLI_1, indent(4, '#')))
+			print(break_lines(msgForWinCLI_2, indent(4, '#')))
+			print("")
+			print("export MSYS_NO_PATHCONV=1")
+			print("")
 
 		# Print a message indicating the aws iam cli commands to create the role and policy and attach it to the role
-		print("To create the role attach the permissions policy, execute the following AWS CLI commands (Make sure you are logged into AWS CLI with a user role holding permissions to create the service role!):\n")
 
 		# Generate the CLI command for create-role
 		create_role = []
@@ -297,6 +337,7 @@ with open(
 		create_role.append(tags_cli)
 
 		print(" \\\n\t".join(create_role))
+
 		print("")
 
 		put_policy = []
@@ -304,6 +345,7 @@ with open(
 		put_policy.append("--policy-name "+parameters["Prefix"].upper()+"-CloudFormationServicePolicy")
 		put_policy.append("--policy-document file://generated/"+new_file_name)
 		print(" \\\n\t".join(put_policy))
+
 		print("")
 
 		print("==============================================================================\n")

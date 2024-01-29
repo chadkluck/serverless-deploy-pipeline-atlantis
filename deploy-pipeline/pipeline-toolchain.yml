@@ -332,9 +332,9 @@ Resources:
   CodeDeployServiceRole:
     Type: AWS::IAM::Role
     Properties:
-      Path:Path: !Ref RolePath
-      RoleName: !Sub "${Prefix}-Worker-${ProjectId}-${StageId}-CodeDeploy"
-      Description: "Service Role to access resources during the application infrastructure deploy phase of AWS CodePipeline"
+      Path: !Ref RolePath
+      RoleName: !Sub "${Prefix}-Worker-${ProjectId}-${StageId}-CodeDeployServiceRole"
+      Description: "Service Role passed to infrastructure to deploy a Lambda function"
       PermissionsBoundary: !If [HasPermissionsBoundaryARN, !Ref PermissionsBoundaryARN, !Ref 'AWS::NoValue' ]
       AssumeRolePolicyDocument:
         Statement:
@@ -593,7 +593,7 @@ Resources:
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
     DependsOn:
-    - CodeBuildPolicy
+    - CodeBuildServiceRole
     Condition: IsNotDevelopment
     Properties:
       Name: !Sub '${Prefix}-${ProjectId}-${StageId}-Build'
@@ -855,7 +855,7 @@ Resources:
               "RolePath": "${RolePath}",
               "DeployEnvironment": "${DeployEnvironment}",
               "ParameterStoreHierarchy": "${ParameterStoreHierarchy}${DeployEnvironment}/${Prefix}-${ProjectId}-${StageId}/",
-              "DeployRole": "${CodeDeployTrustRole.Arn}",
+              "DeployRole": "${CodeDeployServiceRole.Arn}",
               "AlarmNotificationEmail": "${AlarmNotificationEmail}",
               "PermissionsBoundaryARN": "${PermissionsBoundaryARN}"
             }'

@@ -81,7 +81,7 @@
 			],
 			"Effect": "Allow",
 			"Resource": [
-				"arn:aws:iam::$AWS_ACCOUNT$:role$ROLE_PATH$*",
+				"arn:aws:iam::$AWS_ACCOUNT$:role/*",
 				"arn:aws:iam::$AWS_ACCOUNT$:policy/*"
 			]
 		},
