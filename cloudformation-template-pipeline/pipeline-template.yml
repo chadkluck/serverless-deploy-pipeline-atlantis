@@ -597,8 +597,8 @@ Resources:
     Condition: IsNotDevelopment
     Properties:
       Name: !Sub '${Prefix}-${ProjectId}-${StageId}-Build'
-      Description: !Sub "CodeBuild Project for ${ProjectId}-${StageId}"
-      ServiceRole: !Ref 'CodeBuildServiceRole'
+      Description: !Sub "CodeBuild Project for ${Prefix}-${ProjectId}-${StageId}"
+      ServiceRole: !GetAtt 'CodeBuildServiceRole.Arn'
       Artifacts:
         Packaging: zip
         Type: codepipeline
