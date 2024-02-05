@@ -64,7 +64,7 @@ Parameters:
     Type: String
     Description: "Prefix to assign to resources. This can be thought of as a Name Space and will be pre-pended to all resources. Use it to identify ownership/access for teams, departments, etc. Must have a corresponding CloudFormation Service Role. Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'."
     Default: "atlantis" 
-    AllowedPattern: "^[a-z][a-z0-9-]*[a-z0-9]$"
+    AllowedPattern: "^[a-z][a-z0-9-]{0,6}[a-z0-9]$"
     MinLength: 2
     MaxLength: 8
     ConstraintDescription: "2 to 8 characters. Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number."
@@ -122,7 +122,7 @@ Parameters:
     Type: String
     Description: "ARN of the developer permissions boundary. This will be used to limit the permissions of the created IAM role. If left empty, no permissions boundary will be used."
     Default: ""
-    AllowedPattern: "^$|^arn:(aws[a-zA-Z0-9-]*)?:iam::\\d{12}:policy/.+"
+    AllowedPattern: "^$|^arn:aws:iam::\\d{12}:policy\\/[\\w+=,.@\\-\\/]*[\\w+=,.@\\-]+$"
     ConstraintDescription: "Must be empty or a valid IAM Policy ARN"
 
   # ---------------------------------------------------------------------------
@@ -292,8 +292,14 @@ Resources:
         PolicyDocument:
           Version: "2012-10-17"
           Statement:
-      
-          - Sid: "AllowCodeBuildToManageArtifacts" # TODO: Scope Down Actions
+
+          - Sid: "AllowCodeBuildToManageItsLogs" # TODO: Scope Down
+            Effect: Allow
+            Action:
+            - logs:*
+            Resource: "*"      
+
+          - Sid: "AllowCodeBuildToManageItsArtifacts" # TODO: Scope Down Actions
             Effect: Allow
             Action:
             - s3:*
@@ -301,13 +307,7 @@ Resources:
             - !GetAtt S3DeployBucket.Arn
             - !Join [ '', [ !GetAtt S3DeployBucket.Arn, '/*' ] ]
 
-          - Sid: "CodeBuildLogs" # TODO: Scope Down
-            Effect: Allow
-            Action:
-            - logs:*
-            Resource: "*"
-
-          - Sid: "KMSAccessForEncryptingArtifacts" # TODO: Scope Down
+          - Sid: "AllowCodeBuildToManageItsKeys" # TODO: Scope Down
             Effect: Allow
             Action:
             - kms:GenerateDataKey*

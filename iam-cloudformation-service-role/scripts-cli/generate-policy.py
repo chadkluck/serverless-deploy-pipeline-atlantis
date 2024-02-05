@@ -61,7 +61,7 @@ prompts = {}
 prompts["Prefix"] = {
 	"name": "Prefix",
 	"required": True,
-	"regex": "^[a-z][a-z0-9-]{0,12}[a-z0-9]$",
+	"regex": "^[a-z][a-z0-9-]{0,6}[a-z0-9]$",
 	"help": "2 to 8 characters. Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number.",
 	"description": "A prefix helps distinguish applications and assign permissions among teams, departments, and organizational units. For example, users with Finance Development roles may be restricted to resources named with the 'finc' prefix or resources tagged with the 'finc' prefix.",
 	"examples": "atlantis, finc, ops, dev-ops, b2b",
@@ -79,7 +79,7 @@ prompts["S3BucketNameOrgPrefix"] = {
 prompts["RolePath"] = {
 	"name": "Role Path",
 	"required": False,
-	"regex": "^\/[a-zA-Z0-9\/_-]+\/$|^\/$",
+	"regex": "^\/([a-zA-Z0-9-_]+[\/])+$|^\/$",
 	"help": "Role Path must be a single slash OR start and end with a slash, contain alpha numeric characters, dashes, underscores, and slashes.",
 	"description": "Role Path is a string of characters that designates the path to the role. For example, the path to the role 'atlantis-admin' is '/atlantis-admin/'.",
 	"examples": "/, /atlantis-admin/, /atlantis-admin/dev/, /service-roles/, /application_roles/dev-ops/",
@@ -88,7 +88,7 @@ prompts["RolePath"] = {
 prompts["PermissionsBoundaryARN"] = {
 	"name": "Permissions Boundary ARN",
 	"required": False,
-	"regex": "^$|^arn:aws:iam::[0-9]{12}:policy\/[a-zA-Z0-9\/_-]+$",
+	"regex": "^$|^arn:aws:iam::\d{12}:policy\/[\w+=,.@\-\/]*[\w+=,.@\-]+$",
 	"help": "Permissions Boundary ARN must be in the format: arn:aws:iam::{account_id}:policy/{policy_name}",
 	"description": "Permissions Boundary is a policy that is attached to the role and can be used to further restrict the permissions of the role. Your organization may or may not require boundaries.",
 	"examples": "arn:aws:iam::123456789012:policy/xyz-org-boundary-policy",

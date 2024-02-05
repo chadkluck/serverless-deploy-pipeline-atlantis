@@ -76,7 +76,7 @@ Parameters:
     Type: String
     Description: "Prefix to assign to resources. This can be thought of as a Name Space and will be pre-pended to all resources. Use it to identify ownership/access for teams, departments, etc. Must have a corresponding CloudFormation Service Role. Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'."
     Default: "atlantis" 
-    AllowedPattern: "^[a-z][a-z0-9-]*[a-z0-9]$"
+    AllowedPattern: "^[a-z][a-z0-9-]{0,6}[a-z0-9]$"
     MinLength: 2
     MaxLength: 8
     ConstraintDescription: "2 to 8 characters. Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number."
@@ -99,6 +99,12 @@ Parameters:
     Default: ""
     AllowedPattern: "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^$"
     ConstraintDescription: "May be empty or at least 2 characters long. Must start with a alphanumeric character, may contain lowercase letters, numbers, and hyphens."
+  RolePath:
+    Type: String
+    Description: "Path to use for IAM Roles and Policies. If you are deploying multiple applications, you may want to create a separate path for each application. Paths may also be used by permission boundaries. Ex: /ws-hello-world-test/"
+    Default: "/"
+    AllowedPattern: "^\\/([a-zA-Z0-9-_]+[\\/])+$|^\\/$"
+    ConstraintDescription: "May only contain alphanumeric characters, forward slashes, underscores, and dashes. Must begin and end with a slash."
 
   # ---------------------------------------------------------------------------
   # Deployment Environment
@@ -141,6 +147,12 @@ Parameters:
     Description: "Email address to send a notification to when Lambda function goes into alarm. Be sure to check the inbox for this email address as you will need to confirm the subscription."
     AllowedPattern: '^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$'
     ConstraintDescription: "A valid email must be used to receive alarm notifications"
+  PermissionsBoundaryARN:
+    Type: String
+    Description: "ARN of the developer permissions boundary. This will be used to limit the permissions of the created IAM role. If left empty, no permissions boundary will be used."
+    Default: ""
+    AllowedPattern: "^$|^arn:aws:iam::\\d{12}:policy\\/[\\w+=,.@\\-\\/]*[\\w+=,.@\\-]+$"
+    ConstraintDescription: "Must be empty or a valid IAM Policy ARN"
 
   # ---------------------------------------------------------------------------
   # Lambda Function Settings
