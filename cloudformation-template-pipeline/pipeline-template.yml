@@ -533,6 +533,8 @@ Resources:
             - logs:UntagLogGroup # AWS is phasing out, replacing with UntagResource
             - logs:TagResource
             - logs:UntagResource
+            - logs:ListTagsForResource
+            - logs:DescribeLogGroups
             Effect: Allow
             Resource:
             - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${Prefix}-${ProjectId}-${StageId}-*'
