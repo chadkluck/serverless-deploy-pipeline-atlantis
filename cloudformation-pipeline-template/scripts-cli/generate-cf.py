@@ -3,17 +3,6 @@ import json
 import sys
 import re
 
-
-constraint = {}
-constraint["maxLenPrefixProjId"] = 28
-constraint["maxLenStage"] = 6
-
-prefixDefaultDir = "../../iam-cloudformation-service-role/scripts-cli/"
-
-argPrefix = "atlantis"
-argProjectId = "myproject"
-argStage = "test"
-
 print("")
 print("")
 print("|==============================================================================|")
@@ -25,24 +14,80 @@ print("| github                                                                 
 print("|==============================================================================|")
 print("")
 
+constraint = {
+    "maxLenPrefixProjId": 28,
+    "maxLenStage": 6
+}
+
+prefixDefaultDir = "../../iam-cloudformation-service-role/scripts-cli/"
+
+argPrefix = "atlantis"
+argProjectId = "myproject"
+argStage = "test"
+
+defaultsFromIam = [
+    {
+        "key": "Prefix",
+        "mapToSection": "stack_parameters",
+    },
+    {
+        "key": "S3BucketNameOrgPrefix",
+        "mapToSection": "stack_parameters",
+    },
+    {
+        "key": "RolePath",
+        "mapToSection": "stack_parameters",
+    },
+    {
+        "key": "PermissionsBoundaryARN",
+        "mapToSection": "stack_parameters",
+    },
+    {
+        "key": "aws_account_id",
+        "mapToSection": "application",
+    },
+    {
+        "key": "aws_region",
+        "mapToSection": "application",
+    }
+]
+
+defaultsFromIamArray = []
+defaultsFromIamIndex = {}
+# put each key from defaultsFromIam into an array
+for item in defaultsFromIam:
+    defaultsFromIamArray.append(item["key"])
+    defaultsFromIamIndex[item["key"]] = item["mapToSection"]
+
 # Default values - Set any of these defaults to your own in the .defaults file
-defaults = {}
-defaults["toolchain_template_location"]["BucketName"] = "63klabs"
-defaults["toolchain_template_location"]["BucketKey"] = "atlantis/v2"
-defaults["toolchain_template_location"]["FileName"] = "pipeline-toolchain.yml"
-
-defaults["application"]["aws_account_id"] = "123456789012"
-defaults["application"]["aws_region"] = "us-east-1"
-
-defaults["stack_parameters"]["Prefix"] = argPrefix
-defaults["stack_parameters"]["S3BucketNameOrgPrefix"] = ""
-defaults["stack_parameters"]["ParameterStoreHierarchy"] = ""
-defaults["stack_parameters"]["S3BucketNameOrgPrefix"] = ""
-defaults["stack_parameters"]["RolePath"] = ""
-defaults["stack_parameters"]["PermissionsBoundaryARN"] = ""
+defaults = {
+    "toolchain_template_location": {
+        "BucketName": "63klabs",
+        "BucketKey": "/atlantis/v2/",
+        "FileName": "pipeline-template.yml"
+    },
+    "application": {
+        "aws_account_id": "XXXXXXXXXXXX",
+        "aws_region": "us-east-1",
+        "name": argPrefix+"-"+argProjectId
+    },
+    "stack_parameters": {
+        "Prefix": argPrefix,
+        "ProjectId": argProjectId,
+        "StageId": argStage,
+        "S3BucketNameOrgPrefix": "",
+        "RolePath": "/",
+        "DeployEnvironment": "TEST",
+        "ParameterStoreHierarchy": "/",
+        "AlarmNotificationEmail": "",
+        "PermissionsBoundaryARN": "",
+        "CodeCommitRepository": "",
+        "CodeCommitBranch": "test"
+    }
+}
 
 # Check to make sure there are three arguments. If there are not 3 arguments then display message and exit. If there are 3 arguments set Prefix, ProjectId, and Stage
-if len(sys.argv) == 3:
+if len(sys.argv) == 4:
     argPrefix = sys.argv[1]
     argProjectId = sys.argv[2]
     argStage = sys.argv[3]
@@ -62,7 +107,23 @@ if len(argPrefix+argProjectId+argStage) > constraint["maxLenStage"] + constraint
     print("Because some resources have a maximum length of 63 and require additional descriptors in their name, Prefix + ProjectId + Stage is restricted to "+str(constraint["maxLenStage"] + constraint["maxLenPrefixProjId"])+" characters.\n\n")
     sys.exit()
 
-# Create a file location array
+# if stage begins with dev then set DeployEnvironment to DEV, test to TEST, and prod, beta, stage to PROD
+if re.match("^dev", argStage):
+    defaults["stack_parameters"]["DeployEnvironment"] = "DEV"
+
+if re.match("^test", argStage):
+    defaults["stack_parameters"]["DeployEnvironment"] = "TEST"
+
+if re.match("^prod|^beta|^stage", argStage):
+    defaults["stack_parameters"]["DeployEnvironment"] = "PROD"
+
+# if stage begins with prod then set CodeCommitBranch to main, otherwise set CodeCommitBranch to the stageId
+if re.match("^prod", argStage):
+    defaults["stack_parameters"]["CodeCommitBranch"] = "main"
+else:
+    defaults["stack_parameters"]["CodeCommitBranch"] = argStage
+
+# Create a file location array - this is the hierarchy of files we will gather defaults from. The most recent file will overwrite previous values
 fileLoc = []
 fileLoc.append(prefixDefaultDir +".defaults.json")
 fileLoc.append(prefixDefaultDir +".defaults-"+argPrefix+".json")
@@ -71,16 +132,27 @@ fileLoc.append("./.defaults-"+argPrefix+".json")
 fileLoc.append("./.defaults-"+argPrefix+"-"+argProjectId+".json")
 fileLoc.append("./.defaults-"+argPrefix+"-"+argProjectId+"-"+argStage+".json")
 
+# iam defaults don't have keysections
+
 for i in range(len(fileLoc)):
     if os.path.isfile(fileLoc[i]):
         with open(fileLoc[i], "r") as f:
             temp = json.load(f)
+            # -- TODO figure out if it is a string or object.
             for keySection in temp.keys():
-                for key in keySection.keys():
-                    defaults[keySection][key] = keySection[key]
-            print("\nFound "+fileLoc[i] +" file...\n")
+                # if keySection is a string and in defaultFromIamIndex then map (it came from IAM)
+                if type(keySection) is str and keySection in defaultsFromIamIndex:
+                    defaults[defaultsFromIamIndex[keySection]][keySection] = temp[keySection]
+                else:
+                    # otherwise loop through
+                    for key in keySection.keys():
+                        defaults[keySection][key] = keySection[key]
+            print("Found "+fileLoc[i] +" file...")
     else:
-        print("\nDid not find "+fileLoc[i] +"...\n")
+        print("Did not find "+fileLoc[i] +"...")
+
+# print the defaults
+print(defaults)
 
 # Get the prefix, s3 bucket prefix, aws account id, and aws region from the command line
 print("")
@@ -108,18 +180,15 @@ promptSections = [
     {
         "key": "stack_parameters",
         "name": "Stack Parameters"
-    },
-    {
-        "key": "custom_parameters",
-        "name": "Custom Parameters"
-    },
-    {
-        "key": "custom_tags",
-        "name": "Stack Tags"
     }
 ]
 
 prompts = {}
+parameters = {}
+for item in promptSections:
+    prompts[item["key"]] = {}
+    parameters[item["key"]] = {}
+
 prompts["toolchain_template_location"]["BucketName"] = {
     "name": "S3 Bucket Name for Pipeline Template",
     "required": True,
@@ -132,20 +201,48 @@ prompts["toolchain_template_location"]["BucketName"] = {
 prompts["toolchain_template_location"]["BucketKey"] = {
     "name": "S3 Bucket Key for Pipeline Template",
     "required": True,
-    "regex": "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^$",
-    "help": "S3 bucket key must be lowercase, start with a letter, and contain only letters, numbers, and dashes",
+    "regex": "^\/[a-zA-Z0-9\/_-]+\/$|^\/$",
+    "help": "S3 bucket key must be lowercase, start and end with a slash and contain only letters, numbers, dashes and underscores",
     "description": "Where is the pipeline template stored?",
-    "examples": "atlantis/v2, atlantis/v3",
+    "examples": "/atlantis/v2/, /atlantis/v3/",
     "default": defaults["toolchain_template_location"]["BucketKey"]
 }
 prompts["toolchain_template_location"]["FileName"] = {
     "name": "Pipeline Template File Name",
     "required": True,
-    "regex": "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^$",
+    "regex": "^[a-zA-Z0-9][a-zA-Z0-9-_]*[a-zA-Z0-9]\.(yml|yaml|json)$",
     "help": "File name must be lowercase, start with a letter, and contain only letters, numbers, and dashes",
     "description": "What is the pipeline template file name?",
-    "examples": "pipeline-toolchain.yml, pipeline-toolchain.yaml",
+    "examples": "pipeline-template.yml, pipeline-toolchain.yaml",
     "default": defaults["toolchain_template_location"]["FileName"]
+}
+
+prompts["application"]["aws_account_id"] = {
+	"name": "AWS Account ID",
+	"required": True,
+	"regex": "^[0-9]{12}$",
+	"help": "AWS Account ID must be 12 digits",
+	"description": "AWS Account ID is a 12 digit number that identifies the AWS account.",
+	"examples": "123456789012, 123456789013, 123456789014",
+	"default": defaults["application"]["aws_account_id"]
+}
+prompts["application"]["aws_region"] = {
+	"name": "AWS Region",
+	"required": True,
+	"regex": "^[a-z]{2}-[a-z]+-[0-9]$",
+	"help": "AWS Region must be lowercase and in the format: us-east-1",
+	"description": "AWS Region is a string that identifies the AWS region. For example, the region 'us-east-1' is located in the United States.",
+	"examples": "us-east-1, us-west-1, us-west-2, eu-west-1, ap-southeast-1",
+	"default": defaults["application"]["aws_region"]
+}
+prompts["application"]["name"] = {
+    "name": "Application Name",
+    "required": True,
+    "regex": "^[a-zA-Z0-9][a-zA-Z0-9_\-\/\s]{0,62}[a-zA-Z0-9]$",
+    "help": "2 to 64 characters. Alphanumeric, dashes, underscores, and spaces. Must start and end with a letter or number.",
+    "description": "Application name is a string that identifies the main application irregardless of the stage or branch.",
+    "examples": "Financial Transaction Processing, Financial Transaction Audit, atlantis-finance-app",
+    "default": defaults["application"]["name"]
 }
 
 prompts["stack_parameters"]["Prefix"] = {
@@ -155,7 +252,25 @@ prompts["stack_parameters"]["Prefix"] = {
 	"help": "2 to 8 characters. Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number.",
 	"description": "A prefix helps distinguish applications and assign permissions among teams, departments, and organizational units. For example, users with Finance Development roles may be restricted to resources named with the 'finc' prefix or resources tagged with the 'finc' prefix.",
 	"examples": "atlantis, finc, ops, dev-ops, b2b",
-	"default": defaults["Prefix"]
+	"default": defaults["stack_parameters"]["Prefix"]
+}
+prompts["stack_parameters"]["ProjectId"] = {
+    "name": "Project Id",
+    "required": True,
+    "regex": "^[a-z][a-z0-9-]*[a-z0-9]$",
+    "help": "2 to 64 characters. Alphanumeric lowercase, dashes, and underscores. Must start and end with a letter or number.",
+    "description": "Do NOT include <Prefix> or <StageId>. This is the Project ID for the application. (Minimum 2 characters, suggested maximum of 20) Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'. If you get 'S3 bucket name too long' errors then you must shorten the Project ID or use an S3 Org Prefix. Long Project IDs may also be truncated when naming resources.",
+    "examples": "hello-world, finance-app, finance-audit",
+    "default": defaults["stack_parameters"]["ProjectId"]
+}
+prompts["stack_parameters"]["StageId"] = {
+    "name": "Stage Id",
+    "required": True,
+    "regex": "^[a-z][a-z0-9-]{2,"+str(constraint["maxLenStage"])+"}[a-z0-9]$",
+    "help": "2 to "+str(constraint["maxLenStage"])+" characters. Alphanumeric lowercase, dashes, and underscores. Must start and end with a letter or number.",
+    "description": "Do NOT include <Prefix> or <ProjectId>. <StageId> does not need to match <DeployEnvironment> or <CodeCommitBranch>. You can have multiple stages in the TEST environment (e.g. test, john-test), and multiple stages in PROD (e.g. stage, beta, prod). Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'.",
+    "examples": "test, stage, beta, test-joe, prod",
+    "default": defaults["stack_parameters"]["StageId"]
 }
 prompts["stack_parameters"]["S3BucketNameOrgPrefix"] = {
 	"name": "S3 Bucket Name Org Prefix",
@@ -164,16 +279,43 @@ prompts["stack_parameters"]["S3BucketNameOrgPrefix"] = {
 	"help": "S3 bucket prefix must be lowercase, start with a letter, and contain only letters, numbers, and dashes",
 	"description": "S3 bucket names must be unique across all AWS accounts. This prefix helps distinguish S3 buckets from each other and will be used in place of using account ID and region to establish uniqueness resulting in shorter bucket names.",
 	"examples": "xyzcompany, acme, b2b-solutions-inc",
-	"default": defaults["S3BucketNameOrgPrefix"]
+	"default": defaults["stack_parameters"]["S3BucketNameOrgPrefix"]
 }
 prompts["stack_parameters"]["RolePath"] = {
 	"name": "Role Path",
-	"required": False,
+	"required": True,
 	"regex": "^\/[a-zA-Z0-9\/_-]+\/$|^\/$",
 	"help": "Role Path must be a single slash OR start and end with a slash, contain alpha numeric characters, dashes, underscores, and slashes.",
 	"description": "Role Path is a string of characters that designates the path to the role. For example, the path to the role 'atlantis-admin' is '/atlantis-admin/'.",
 	"examples": "/, /atlantis-admin/, /atlantis-admin/dev/, /service-roles/, /application_roles/dev-ops/",
-	"default": defaults["RolePath"]
+	"default": defaults["stack_parameters"]["RolePath"]
+}
+prompts["stack_parameters"]["DeployEnvironment"] = {
+    "name": "Deploy Environment",
+    "required": True,
+    "regex": "^(DEV|TEST|PROD)$",
+    "help": "Deploy Environment must be DEV, TEST, or PROD",
+    "description": "What deploy/testing environment will this run under? An environment can contain multiple stages and in coordination with run different tests. Utilize this environment variable to determine your tests and app logging levels during deploy. This can be used for conditionals in the template. For example, PROD will use gradual deployment while DEV and TEST is AllAtOnce. Other resources, such as dashboards are created in PROD and not DEV or TEST. Suggested use: DEV for local SAM deployment, TEST for cloud deployment, PROD for stage, beta, and main/prod deployment.",
+    "examples": "DEV, TEST, PROD",
+    "default": defaults["stack_parameters"]["DeployEnvironment"]
+}
+prompts["stack_parameters"]["ParameterStoreHierarchy"] = {
+    "name": "Parameter Store Hierarchy",
+    "required": True,
+    "regex": "^\/([a-zA-Z0-9_.-]*[\/])+$|^\/$",
+    "help": "Must either be a single slash OR start and end with a slash, contain alpha numeric characters, dashes, underscores, and slashes.",
+    "description": "Parameters may be organized within a hierarchy based on your organizational or operations structure. The application will create its parameters within this hierarchy. For example, /Finance/ops/ for this value would then generate /Finance/ops/<env>/<prefix>-<project_id>-<stage>/<parameterName>. Must either be a single '/' or begin and end with a '/'.",
+    "examples": "/, /Finance/, /Finance/ops/, /Finance/ops/dev/",
+    "default": defaults["stack_parameters"]["ParameterStoreHierarchy"]
+}
+prompts["stack_parameters"]["AlarmNotificationEmail"] = {
+    "name": "Alarm Notification Email",
+	"required": True,
+	"regex": "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$",
+	"help": "Alarm Notification Email must be in the format: user@example.com",
+	"description": "Alarm Notification Email is the email address that will receive CloudWatch alarms.",
+	"examples": "user@example.com, finance@example.com, xyzcompany@example.com",
+	"default": defaults["stack_parameters"]["AlarmNotificationEmail"]
 }
 prompts["stack_parameters"]["PermissionsBoundaryARN"] = {
 	"name": "Permissions Boundary ARN",
@@ -182,31 +324,25 @@ prompts["stack_parameters"]["PermissionsBoundaryARN"] = {
 	"help": "Permissions Boundary ARN must be in the format: arn:aws:iam::{account_id}:policy/{policy_name}",
 	"description": "Permissions Boundary is a policy that is attached to the role and can be used to further restrict the permissions of the role. Your organization may or may not require boundaries.",
 	"examples": "arn:aws:iam::123456789012:policy/xyz-org-boundary-policy",
-	"default": defaults["PermissionsBoundaryARN"]
+	"default": defaults["stack_parameters"]["PermissionsBoundaryARN"]
 }
-prompts["application"]["aws_account_id"] = {
-	"name": "AWS Account ID",
-	"required": True,
-	"regex": "^[0-9]{12}$",
-	"help": "AWS Account ID must be 12 digits",
-	"description": "AWS Account ID is a 12 digit number that identifies the AWS account.",
-	"examples": "123456789012, 123456789013, 123456789014",
-	"default": defaults["aws_account_id"]
-}
-prompts["application"]["aws_region"] = {
-	"name": "AWS Region",
-	"required": True,
-	"regex": "^[a-z]{2}-[a-z]+-[0-9]$",
-	"help": "AWS Region must be lowercase and in the format: us-east-1",
-	"description": "AWS Region is a string that identifies the AWS region. For example, the region 'us-east-1' is located in the United States.",
-	"examples": "us-east-1, us-west-1, us-west-2, eu-west-1, ap-southeast-1",
-	"default": defaults["aws_region"]
-}
-prompts["application"]["name"] = {
-    "name": "Application Name",
+prompts["stack_parameters"]["CodeCommitRepository"] = {
+    "name": "CodeCommit Repository",
     "required": True,
-    "regex": "^[a-zA-Z0-9]{1,64}$",
-    "help": "2 to 64 characters. Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number.",
+    "regex": "^[a-zA-Z0-9][a-zA-Z0-9_\-]{0,62}[a-zA-Z0-9]$",
+    "help": "2 to 64 characters. Alphanumeric, dashes, underscores, and spaces. Must start and end with a letter or number.",
+    "description": "Identifies the CodeCommit repository which contains the source code to deploy.",
+    "examples": "atlantis-financial-application, atlantis-financial-api, atlantis_ui",
+    "default": defaults["stack_parameters"]["CodeCommitRepository"]
+}
+prompts["stack_parameters"]["CodeCommitBranch"] = {
+    "name": "CodeCommit Branch",
+    "required": True,
+    "regex": "^[a-zA-Z0-9][a-zA-Z0-9_\-\/]{0,14}[a-zA-Z0-9]$",
+    "help": "2 to 16 characters. Alphanumeric, dashes and underscores. Must start and end with a letter or number.",
+    "description": "Identifies the CodeCommit branch which contains the source code to deploy.",
+    "examples": "main, dev, feature/atlantis-ui",
+    "default": defaults["stack_parameters"]["CodeCommitBranch"]
 }
 
 def indent(spaces=4, prepend=''):
@@ -258,47 +394,49 @@ def display_help(prompt, error):
 	print(break_lines(prepend+"EXAMPLE(S): "+prompt["examples"], indentStr))
 	print("")
 
-parameters = {}
+#iterate through prompt sections
+for section in promptSections:
+    sectionKey = section["key"]
+    # loop through each parameter and prompt the user for it, then validate input based on requirement and regex
+    for key in prompts[sectionKey]:
+        prompt = prompts[sectionKey][key]
+        req = " "
+        if prompt["required"]:
+            req = " (required)"
+        
+        # Loop until the user enters a valid value for the parameter
+        while True:
+            # Prompt the user for the parameter value
+            pInput = input(prompt['name']+req+" ["+prompt["default"]+"] : ")
 
-# loop through each parameter and prompt the user for it, then validate input based on requirement and regex
-for key in prompts:
-	prompt = prompts[key]
-	req = " "
-	if prompt["required"]:
-		req = " (required)"
-	
-	# Loop until the user enters a valid value for the parameter
-	while True:
-		# Prompt the user for the parameter value
-		pInput = input(prompt['name']+req+" ["+prompt["default"]+"] : ")
+            # Allow user to enter ^ to exit script
+            if pInput == "^":
+                sys.exit(0)
 
-		# Allow user to enter ^ to exit script
-		if pInput == "^":
-			sys.exit(0)
+            # Allow user to enter ! for help and then go back to start of loop
+            if pInput == "?":
+                display_help(prompt, False)
+                continue
 
-		# Allow user to enter ! for help and then go back to start of loop
-		if pInput == "?":
-			display_help(prompt, False)
-			continue
+            # If the user left blank, use the default value, otherwise, If the user entered a dash, clear the parameter value
+            if pInput == "":
+                pInput = prompt["default"]
+            elif pInput == "-":
+                pInput = ""
 
-		# If the user left blank, use the default value, otherwise, If the user entered a dash, clear the parameter value
-		if pInput == "":
-			pInput = prompt["default"]
-		elif pInput == "-":
-			pInput = ""
+            # Validate the input based on regex and re-prompt if invalid
+            if prompt["regex"] != "":
+                if not re.match(prompt["regex"], pInput):
+                    display_help(prompt, True)
+                    continue
+            break
 
-		# Validate the input based on regex and re-prompt if invalid
-		if prompt["regex"] != "":
-			if not re.match(prompt["regex"], pInput):
-				display_help(prompt, True)
-				continue
-		break
-
-	parameters[key] = pInput
+        parameters[sectionKey][key] = pInput
 
 print("\n------------------------------------------------------------------------------\n")
 
-
+# exit script
+sys.exit(0)
 
 configStackJson = "config-deploy-stack.json"
 saveToDir = "" # ex: "custom/" or "" (same dir)
