@@ -23,6 +23,11 @@
             "UsePreviousValue": true
         },
         {
+            "ParameterKey": "RoleName",
+            "ParameterValue": "$ROLE_PATH$",
+            "UsePreviousValue": true
+        },
+        {
             "ParameterKey": "DeployEnvironment",
             "ParameterValue": "$DEPLOY_ENVIRONMENT$",
             "UsePreviousValue": true
@@ -35,6 +40,11 @@
         {
             "ParameterKey": "AlarmNotificationEmail",
             "ParameterValue": "$ALARM_NOTIFICATION_EMAIL$",
+            "UsePreviousValue": true
+        },
+        {
+            "ParameterKey": "PermissionsBoundaryARN",
+            "ParameterValue": "$PERMISSIONS_BOUNDARY_ARN$",
             "UsePreviousValue": true
         },
         {
@@ -51,16 +61,12 @@
     "Capabilities": [
         "CAPABILITY_NAMED_IAM"
     ],
-    "RoleARN": "arn:aws:iam::$AWS_ACCOUNT$:role/$PREFIX_UPPER$-CloudFormation-Service-Role",
+    "RoleARN": "$SERVICE_ROLE_ARN$",
     "OnFailure": "ROLLBACK",
     "Tags": [
         {
             "Key": "Name",
             "Value": "$NAME$"
-        },
-        {
-            "Key": "Department",
-            "Value": "Web Services"
         },
         {
             "Key": "Provisioner",

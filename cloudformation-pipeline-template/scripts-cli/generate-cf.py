@@ -91,6 +91,7 @@ defaults = {
     "application": {
         "aws_account_id": "XXXXXXXXXXXX",
         "aws_region": "us-east-1",
+        "service_role_arn": "",
         "name": argPrefix+"-"+argProjectId
     },
     "stack_parameters": {
@@ -124,6 +125,10 @@ if re.match("^prod", argStageId):
 else:
     defaults["stack_parameters"]["CodeCommitBranch"] = argStageId
 
+# Read in defaults
+    
+print("Loading .default files...")
+
 # Create a file location array - this is the hierarchy of files we will gather defaults from. The most recent file will overwrite previous values
 fileLoc = []
 fileLoc.append(iamcliInputsDir +".defaults.json")
@@ -152,9 +157,12 @@ for i in range(len(fileLoc)):
         print("Did not find "+fileLoc[i] +"...")
 
 # print the defaults
-print(defaults)
+# print(defaults)
 
 # Read in tags
+        
+print("Loading .tags files...")
+
 tagFileLoc = []
 tagFileLoc.append(cfcliInputsDir +".tags.json")
 tagFileLoc.append(cfcliInputsDir +".tags-"+argPrefix+".json")
@@ -188,7 +196,7 @@ for i in range(len(tagFileLoc)):
         print("Did not find "+tagFileLoc[i] +"...")
 
 # print the tags
-print(tags)
+# print(tags)
 
 # Get the prefix, s3 bucket prefix, aws account id, and aws region from the command line
 print("")
@@ -538,8 +546,6 @@ for i in range(numFiles):
         f.write(d)
         f.close()
 
-# exit script
-sys.exit(0)
         
 def deleteEmptyValues(data, listtype, valuekey):
 
@@ -578,28 +584,32 @@ def deleteEmptyValues(data, listtype, valuekey):
     return data
 
 
-def inputFile(template, filetype):
+def inputFile(template):
 
     string = json.dumps(template, indent=4)
 
-    string = string.replace("$TOOLCHAIN_BUCKETNAME$", toolchain_BucketName)
-    string = string.replace("$TOOLCHAIN_BUCKETKEY$", toolchain_BucketKey)
-    string = string.replace("$TOOLCHAIN_FILENAME$", toolchain_FileName)
+    string = string.replace("$TOOLCHAIN_BUCKETNAME$", parameters["toolchain_template_location"]["BucketName"])
+    string = string.replace("$TOOLCHAIN_BUCKETKEY$", parameters["toolchain_template_location"]["BucketKey"])
+    string = string.replace("$TOOLCHAIN_FILENAME$", parameters["toolchain_template_location"]["FileName"])
 
-    string = string.replace("$AWS_ACCOUNT$", app_aws_account_id)
-    string = string.replace("$AWS_REGION$", app_aws_region)
-    string = string.replace("$NAME$", app_name)
+    string = string.replace("$AWS_ACCOUNT$", parameters["application"]["aws_account_id"]) # not used in sample-input-create-stack
+    string = string.replace("$AWS_REGION$", parameters["application"]["aws_region"])
+    string = string.replace("$SERVICE_ROLE_ARN$", parameters["application"]["service_role_arn"])
+    string = string.replace("$NAME$", parameters["application"]["name"])
 
-    string = string.replace("$PREFIX_UPPER$", stack_param_Prefix.upper())
-    string = string.replace("$PREFIX$", stack_param_Prefix)
-    string = string.replace("$PROJECT_ID$", stack_param_ProjectId)
-    string = string.replace("$STAGE_ID$", stack_param_StageId)
-    string = string.replace("$S3_ORG_PREFIX$", stack_param_S3BucketNameOrgPrefix)
-    string = string.replace("$DEPLOY_ENVIRONMENT$", stack_param_DeployEnvironment)
-    string = string.replace("$PARAM_STORE_HIERARCHY$", stack_param_ParameterStoreHierarchy)
-    string = string.replace("$ALARM_NOTIFICATION_EMAIL$", stack_param_AlarmNotificationEmail)
-    string = string.replace("$REPOSITORY$", stack_param_CodeCommitRepository)
-    string = string.replace("$REPOSITORY_BRANCH$", stack_param_CodeCommitBranch)
+    string = string.replace("$PREFIX_UPPER$", parameters["stack_parameters"]["Prefix"].upper())
+    string = string.replace("$PREFIX$", parameters["stack_parameters"]["Prefix"])
+    string = string.replace("$PROJECT_ID$", parameters["stack_parameters"]["ProjectId"])
+    string = string.replace("$STAGE_ID$", parameters["stack_parameters"]["StageId"])
+    string = string.replace("$S3_ORG_PREFIX$", parameters["stack_parameters"]["S3BucketNameOrgPrefix"])
+    string = string.replace("$ROLE_PATH$", parameters["stack_parameters"]["RolePath"])
+    string = string.replace("$DEPLOY_ENVIRONMENT$", parameters["stack_parameters"]["DeployEnvironment"])
+    string = string.replace("$PARAM_STORE_HIERARCHY$", parameters["stack_parameters"]["ParameterStoreHierarchy"])
+    string = string.replace("$ALARM_NOTIFICATION_EMAIL$", parameters["stack_parameters"]["AlarmNotificationEmail"])
+    string = string.replace("$PERMISSIONS_BOUNDARY_ARN$", parameters["stack_parameters"]["PermissionsBoundaryARN"])
+    string = string.replace("$REPOSITORY$", parameters["stack_parameters"]["CodeCommitRepository"])
+    string = string.replace("$REPOSITORY_BRANCH$", parameters["stack_parameters"]["CodeCommitBranch"])
+
 
     if filetype == "cloudformation":
         # convert back to array
@@ -636,6 +646,9 @@ def inputFile(template, filetype):
 # Bring in the template files
 with open('./input-templates/input-template-cloudformation.json') as templateCF_file:
     templateCF = json.load(templateCF_file)
+
+# exit script
+sys.exit(0)
 
 # TODO if no config file as param, then check to see if config-project exists. 
 # TODO if not, then copy the config-project template and instruct user to fill it out
