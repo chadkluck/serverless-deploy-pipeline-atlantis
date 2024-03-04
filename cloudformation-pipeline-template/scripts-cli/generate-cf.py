@@ -19,11 +19,33 @@ constraint = {
     "maxLenStage": 6
 }
 
-prefixDefaultDir = "../../iam-cloudformation-service-role/scripts-cli/"
+iamcliInputsDir = "../../iam-cloudformation-service-role/scripts-cli/"
+cfcliInputsDir = "./inputs/"
 
 argPrefix = "atlantis"
 argProjectId = "myproject"
-argStage = "test"
+argStageId = "test"
+
+# Check to make sure there are three arguments. If there are not 3 arguments then display message and exit. If there are 3 arguments set Prefix, ProjectId, and Stage
+if len(sys.argv) == 4:
+    argPrefix = sys.argv[1]
+    argProjectId = sys.argv[2]
+    argStageId = sys.argv[3]
+else:
+    print("\n\nUsage: python generate-cf.py <Prefix> <ProjectId> <StageId>\n\n")
+    sys.exit()
+
+# Check to make sure Prefix + ProjectId is less than or equal to maxLenPrefixProjId
+if len(argPrefix+argProjectId) > constraint["maxLenPrefixProjId"]:
+    print("\n\nError: Prefix + ProjectId is greater than "+str(constraint["maxLenPrefixProjId"])+" characters.")
+    print("Because some resources have a maximum length of 63 and require additional descriptors in their name, Prefix + ProjectId is restricted to "+str(constraint["maxLenPrefixProjId"])+" characters.\n\n")
+    sys.exit()
+
+# Check to make sure Prefix + ProjectId + Stage is less than or equal to maxLenStage + maxLenPrefixProjId
+if len(argPrefix+argProjectId+argStageId) > constraint["maxLenStage"] + constraint["maxLenPrefixProjId"]:
+    print("\n\nError: Prefix + ProjectId + Stage is greater than "+str(constraint["maxLenStage"] + constraint["maxLenPrefixProjId"])+" characters.")
+    print("Because some resources have a maximum length of 63 and require additional descriptors in their name, Prefix + ProjectId + Stage is restricted to "+str(constraint["maxLenStage"] + constraint["maxLenPrefixProjId"])+" characters.\n\n")
+    sys.exit()
 
 defaultsFromIam = [
     {
@@ -74,7 +96,7 @@ defaults = {
     "stack_parameters": {
         "Prefix": argPrefix,
         "ProjectId": argProjectId,
-        "StageId": argStage,
+        "StageId": argStageId,
         "S3BucketNameOrgPrefix": "",
         "RolePath": "/",
         "DeployEnvironment": "TEST",
@@ -86,51 +108,30 @@ defaults = {
     }
 }
 
-# Check to make sure there are three arguments. If there are not 3 arguments then display message and exit. If there are 3 arguments set Prefix, ProjectId, and Stage
-if len(sys.argv) == 4:
-    argPrefix = sys.argv[1]
-    argProjectId = sys.argv[2]
-    argStage = sys.argv[3]
-else:
-    print("\n\nUsage: python generate-cf.py <prefix> <project-id> <stage>\n\n")
-    sys.exit()
-
-# Check to make sure Prefix + ProjectId is less than or equal to maxLenPrefixProjId
-if len(argPrefix+argProjectId) > constraint["maxLenPrefixProjId"]:
-    print("\n\nError: Prefix + ProjectId is greater than "+str(constraint["maxLenPrefixProjId"])+" characters.")
-    print("Because some resources have a maximum length of 63 and require additional descriptors in their name, Prefix + ProjectId is restricted to "+str(constraint["maxLenPrefixProjId"])+" characters.\n\n")
-    sys.exit()
-
-# Check to make sure Prefix + ProjectId + Stage is less than or equal to maxLenStage + maxLenPrefixProjId
-if len(argPrefix+argProjectId+argStage) > constraint["maxLenStage"] + constraint["maxLenPrefixProjId"]:
-    print("\n\nError: Prefix + ProjectId + Stage is greater than "+str(constraint["maxLenStage"] + constraint["maxLenPrefixProjId"])+" characters.")
-    print("Because some resources have a maximum length of 63 and require additional descriptors in their name, Prefix + ProjectId + Stage is restricted to "+str(constraint["maxLenStage"] + constraint["maxLenPrefixProjId"])+" characters.\n\n")
-    sys.exit()
-
 # if stage begins with dev then set DeployEnvironment to DEV, test to TEST, and prod, beta, stage to PROD
-if re.match("^dev", argStage):
+if re.match("^dev", argStageId):
     defaults["stack_parameters"]["DeployEnvironment"] = "DEV"
 
-if re.match("^test", argStage):
+if re.match("^test", argStageId):
     defaults["stack_parameters"]["DeployEnvironment"] = "TEST"
 
-if re.match("^prod|^beta|^stage", argStage):
+if re.match("^prod|^beta|^stage", argStageId):
     defaults["stack_parameters"]["DeployEnvironment"] = "PROD"
 
 # if stage begins with prod then set CodeCommitBranch to main, otherwise set CodeCommitBranch to the stageId
-if re.match("^prod", argStage):
+if re.match("^prod", argStageId):
     defaults["stack_parameters"]["CodeCommitBranch"] = "main"
 else:
-    defaults["stack_parameters"]["CodeCommitBranch"] = argStage
+    defaults["stack_parameters"]["CodeCommitBranch"] = argStageId
 
 # Create a file location array - this is the hierarchy of files we will gather defaults from. The most recent file will overwrite previous values
 fileLoc = []
-fileLoc.append(prefixDefaultDir +".defaults.json")
-fileLoc.append(prefixDefaultDir +".defaults-"+argPrefix+".json")
-fileLoc.append("./.defaults.json")
-fileLoc.append("./.defaults-"+argPrefix+".json")
-fileLoc.append("./.defaults-"+argPrefix+"-"+argProjectId+".json")
-fileLoc.append("./.defaults-"+argPrefix+"-"+argProjectId+"-"+argStage+".json")
+fileLoc.append(iamcliInputsDir +".defaults.json")
+fileLoc.append(iamcliInputsDir +".defaults-"+argPrefix+".json")
+fileLoc.append(cfcliInputsDir +".defaults.json")
+fileLoc.append(cfcliInputsDir +".defaults-"+argPrefix+".json")
+fileLoc.append(cfcliInputsDir +".defaults-"+argPrefix+"-"+argProjectId+".json")
+fileLoc.append(cfcliInputsDir +".defaults-"+argPrefix+"-"+argProjectId+"-"+argStageId+".json")
 
 # iam defaults don't have keysections
 
@@ -138,12 +139,11 @@ for i in range(len(fileLoc)):
     if os.path.isfile(fileLoc[i]):
         with open(fileLoc[i], "r") as f:
             temp = json.load(f)
-            # -- TODO figure out if it is a string or object.
             for keySection in temp.keys():
                 # if keySection is a string and in defaultFromIamIndex then map (it came from IAM)
                 if type(keySection) is str and keySection in defaultsFromIamIndex:
                     defaults[defaultsFromIamIndex[keySection]][keySection] = temp[keySection]
-                else:
+                elif type(keySection) is dict:
                     # otherwise loop through
                     for key in keySection.keys():
                         defaults[keySection][key] = keySection[key]
@@ -153,6 +153,42 @@ for i in range(len(fileLoc)):
 
 # print the defaults
 print(defaults)
+
+# Read in tags
+tagFileLoc = []
+tagFileLoc.append(cfcliInputsDir +".tags.json")
+tagFileLoc.append(cfcliInputsDir +".tags-"+argPrefix+".json")
+tagFileLoc.append(cfcliInputsDir +".tags-"+argPrefix+"-"+argProjectId+".json")
+tagFileLoc.append(cfcliInputsDir +".tags-"+argPrefix+"-"+argProjectId+"-"+argStageId+".json")
+
+# If .tags.json exists, read it in
+tags = []
+
+for i in range(len(tagFileLoc)):
+    if os.path.isfile(tagFileLoc[i]):
+        with open(tagFileLoc[i], "r") as f:
+            tagData = json.load(f)
+            # Both tags and tagData are arrays with {Key: string, Value: string} elements
+            # Loop through the elements in tagData
+            #   1. Search tags array for an element with Key == tagData[i].Key
+            #   2. If it exists, replace it. Else, append
+            for i in range(len(tagData)):
+                found = False
+                for j in range(len(tags)):
+                    if tags[j]["Key"] == tagData[i]["Key"]:
+                        tags[j]["Value"] = tagData[i]["Value"]
+                        found = True
+                        break
+                if not found:
+                    tags.append(tagData[i])
+            
+
+            print("Found "+tagFileLoc[i] +" file...")
+    else:
+        print("Did not find "+tagFileLoc[i] +"...")
+
+# print the tags
+print(tags)
 
 # Get the prefix, s3 bucket prefix, aws account id, and aws region from the command line
 print("")
@@ -434,13 +470,77 @@ for section in promptSections:
         parameters[sectionKey][key] = pInput
 
 print("\n------------------------------------------------------------------------------\n")
+                    
+configStackJson = "config-deploy-stack.json"
+tf = {
+    "Prefix": parameters["stack_parameters"]["Prefix"],
+    "ProjectId": parameters["stack_parameters"]["ProjectId"],
+    "StageId": parameters["stack_parameters"]["StageId"],
+}
+# we list the files in reverse as we work up the normal read-in chain
+cliInputsFiles = [
+    cfcliInputsDir+".defaults-"+tf["Prefix"]+"-"+tf["ProjectId"]+"-"+tf["StageId"]+".json",
+    cfcliInputsDir+".defaults-"+tf["Prefix"]+"-"+tf["ProjectId"]+".json",
+    cfcliInputsDir+".defaults-"+tf["Prefix"]+".json",
+    cfcliInputsDir+".defaults.json"
+]
+
+# we will progressively remove data as we save up the chain of files
+# to do this we will list the data to remove in reverse order
+removals = [
+    {
+        "stack_parameters": [
+            "StageId", "CodeCommitBranch", "DeployEnvironment"
+        ]
+    },
+    {
+        "stack_parameters": [
+            "ProjectId", "CodeCommitRepository"
+        ],
+        "application": [
+            "name"
+        ]
+    },
+    {
+        "stack_parameters": [
+            "Prefix"
+        ]
+    }
+]
+
+if not os.path.isdir("inputs"):
+	print("Creating inputs/ directory...")
+	os.mkdir("inputs")
+	print("Created inputs/ directory.")
+
+data = []
+data.append(json.dumps(parameters, indent=4))
+limitedParam = json.dumps(parameters)
+
+# loop through the removals array and remove the keys from the limitedParam array before appending to data
+for removal in removals:
+    d = json.loads(limitedParam)
+    for key in removal.keys():
+        for item in removal[key]:
+            d[key].pop(item)
+    limitedParam = json.dumps(d, indent=4)
+    data.append(limitedParam)
+
+# go through each index of the cliInputFiles array and write out the corresponding data element and add the corresponding element at index in data
+numFiles = len(cliInputsFiles)
+
+for i in range(numFiles):
+    file = cliInputsFiles[i]
+    d = data[i]
+    # create or overwrite file with d
+    print("Saving "+file+"...")
+    with open(file, "w") as f:
+        f.write(d)
+        f.close()
 
 # exit script
 sys.exit(0)
-
-configStackJson = "config-deploy-stack.json"
-saveToDir = "" # ex: "custom/" or "" (same dir)
-
+        
 def deleteEmptyValues(data, listtype, valuekey):
 
     if listtype == "indexed":
