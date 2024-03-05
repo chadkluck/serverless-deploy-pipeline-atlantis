@@ -18,10 +18,11 @@ print("")
 defaults = {}
 defaults["Prefix"] = "atlantis"
 defaults["S3BucketNameOrgPrefix"] = ""
-defaults["aws_account_id"] = ""
-defaults["aws_region"] = "us-east-1"
+defaults["AwsAccountId"] = ""
+defaults["AwsRegion"] = "us-east-1"
 defaults["RolePath"] = "/"
 defaults["PermissionsBoundaryARN"] = ""
+defaults["ServiceRoleARN"] = ""
 
 # check if the .defaults.json file exists and if it does read in the defaults
 if os.path.isfile(".defaults.json"):
@@ -94,30 +95,30 @@ prompts["PermissionsBoundaryARN"] = {
 	"examples": "arn:aws:iam::123456789012:policy/xyz-org-boundary-policy",
 	"default": defaults["PermissionsBoundaryARN"]
 }
-prompts["aws_account_id"] = {
+prompts["AwsAccountId"] = {
 	"name": "AWS Account ID",
 	"required": True,
 	"regex": "^[0-9]{12}$",
 	"help": "AWS Account ID must be 12 digits",
 	"description": "AWS Account ID is a 12 digit number that identifies the AWS account.",
 	"examples": "123456789012, 123456789013, 123456789014",
-	"default": defaults["aws_account_id"]
+	"default": defaults["AwsAccountId"]
 }
-prompts["aws_region"] = {
+prompts["AwsRegion"] = {
 	"name": "AWS Region",
 	"required": True,
 	"regex": "^[a-z]{2}-[a-z]+-[0-9]$",
 	"help": "AWS Region must be lowercase and in the format: us-east-1",
 	"description": "AWS Region is a string that identifies the AWS region. For example, the region 'us-east-1' is located in the United States.",
 	"examples": "us-east-1, us-west-1, us-west-2, eu-west-1, ap-southeast-1",
-	"default": defaults["aws_region"]
+	"default": defaults["AwsRegion"]
 }
 
 def indent(spaces=4, prepend=''):
 	return prepend + " " * spaces
 
 # A function that accepts a string and breaks it into lines that are no longer than 80 characters each, breaking only on a whitespace character
-def break_lines(string, indent):
+def breakLines(string, indent):
 	break_at = 80
 
 	lines = []
@@ -157,9 +158,9 @@ def display_help(prompt, error):
 
 	print("\n"+prepend+"------ "+label+" ------")
 	print(prepend+message)
-	print(break_lines(prepend+"REQUIREMENT: "+prompt["help"], indentStr))
-	print(break_lines(prepend+"DESCRIPTION: "+prompt["description"], indentStr))
-	print(break_lines(prepend+"EXAMPLE(S): "+prompt["examples"], indentStr))
+	print(breakLines(prepend+"REQUIREMENT: "+prompt["help"], indentStr))
+	print(breakLines(prepend+"DESCRIPTION: "+prompt["description"], indentStr))
+	print(breakLines(prepend+"EXAMPLE(S): "+prompt["examples"], indentStr))
 	print("")
 
 parameters = {}
@@ -201,6 +202,8 @@ for key in prompts:
 	parameters[key] = pInput
 
 print("\n------------------------------------------------------------------------------\n")
+
+parameters["ServiceRoleARN"] = "arn:aws:iam::"+parameters["AwsAccountId"]+":role"+parameters["RolePath"]+parameters["Prefix"].upper()+"-CloudFormation-Service-Role"
 
 permissions_boundary_conditional = ""
 permissions_boundary_cli = ""
@@ -254,8 +257,8 @@ with open(
 	contents = contents.replace("$PREFIX$", parameters["Prefix"])
 	contents = contents.replace("$PREFIX_UPPER$", parameters["Prefix"].upper())
 	contents = contents.replace("$ROLE_PATH$", parameters["RolePath"])
-	contents = contents.replace("$AWS_ACCOUNT$", parameters["aws_account_id"])
-	contents = contents.replace("$AWS_REGION$", parameters["aws_region"])
+	contents = contents.replace("$AWS_ACCOUNT$", parameters["AwsAccountId"])
+	contents = contents.replace("$AWS_REGION$", parameters["AwsRegion"])
 
 	# Replace permissions boundary placeholder which is complex:
 	contents = contents.replace(",\"Condition\": \"$PERMISSIONS_BOUNDARY_CONDITIONAL$\"", permissions_boundary_conditional)
@@ -318,8 +321,8 @@ with open(
 		if os.name == "nt":
 			msgForWinCLI_1 = "# NOTE FOR BASH ON WINDOWS USERS: When using Bash on Windows you may need to execute the following export command first if you receive the following error:"
 			msgForWinCLI_2 = "# ValidationError when calling the CreateRole operation: The specified value for path is invalid."
-			print(break_lines(msgForWinCLI_1, indent(4, '#')))
-			print(break_lines(msgForWinCLI_2, indent(4, '#')))
+			print(breakLines(msgForWinCLI_1, indent(4, '#')))
+			print(breakLines(msgForWinCLI_2, indent(4, '#')))
 			print("")
 			print("export MSYS_NO_PATHCONV=1")
 			print("")

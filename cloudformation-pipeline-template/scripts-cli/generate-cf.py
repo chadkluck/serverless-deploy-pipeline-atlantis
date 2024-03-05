@@ -3,15 +3,80 @@ import json
 import sys
 import re
 
+
+def indent(spaces=4, prepend=''):
+	return prepend + " " * spaces
+
+# A function that accepts a string and breaks it into lines that are no longer than 80 characters each, breaking only on a whitespace character
+def breakLines(string, indent):
+	break_at = 80
+
+	lines = []
+	line = ""
+
+	# Break the string into words and loop through each, creating a line that is no longer than 80 characters
+	words = string.split(" ")
+	for word in words:
+		if len(line) + len(word) >= break_at:
+			lines.append(line.rstrip())
+			line = indent
+		line += word + " "
+
+	# Add the last line to the list of lines
+	lines.append(line)
+
+	# Convert the list of lines to a string where each line has trailing whitespace removed ends with \n except for the last line
+	lines = "\n".join(lines)
+
+	return lines
+
+
+def charStr(char, num, **kwargs):
+    line = char*num
+
+    text = kwargs.get('text', None)
+    centered = kwargs.get('centered', None)
+    bookend = kwargs.get('bookend', None)
+    newline = kwargs.get('newline', None)
+    newlines = kwargs.get('newlines', None)
+
+    if text != None:
+        text = " "+text+" "
+        if centered == True:
+            line = text.center(num, char)
+        else:
+            n = 5
+            if char == " ":
+                n = 1
+            if bookend != None and len(bookend) > n:
+                n = len(bookend)
+            text = charStr(char, n) + text
+            line = text.ljust(num, char)
+    if bookend != None:
+        n = len(bookend)
+        # remove n characters from the beginning and end of the line
+        line = line[n:-n]
+        # reverse string bookend
+        line = bookend + line + bookend[::-1]
+
+    if newline == True:
+        line = line + "\n"
+
+    if newlines == True:
+        line = "\n" + line + "\n"
+
+    return line
+
+
+
 print("")
-print("")
-print("|==============================================================================|")
-print("| CloudFormation Template and AWS CLI Command Generator for Atlantis CI/CD     |")
-print("| v2024.02.29                                                                  |")
-print("|------------------------------------------------------------------------------|")
-print("| Chad Leigh Kluck                                                             |")
-print("| github                                                                       |")
-print("|==============================================================================|")
+print(charStr("=", 80, bookend="|"))
+print(charStr(" ", 80, bookend="|", text="CloudFormation Template and AWS CLI Command Generator for Atlantis CI/CD"))
+print(charStr(" ", 80, bookend="|", text="v2024.02.29"))
+print(charStr("-", 80, bookend="|"))
+print(charStr(" ", 80, bookend="|", text="Chad Leigh Kluck"))
+print(charStr(" ", 80, bookend="|", text="github"))
+print(charStr("=", 80, bookend="|"))
 print("")
 
 constraint = {
@@ -65,11 +130,15 @@ defaultsFromIam = [
         "mapToSection": "stack_parameters",
     },
     {
-        "key": "aws_account_id",
+        "key": "AwsAccountId",
         "mapToSection": "application",
     },
     {
-        "key": "aws_region",
+        "key": "AwsRegion",
+        "mapToSection": "application",
+    },
+    {
+        "key": "ServiceRoleARN",
         "mapToSection": "application",
     }
 ]
@@ -89,10 +158,10 @@ defaults = {
         "FileName": "pipeline-template.yml"
     },
     "application": {
-        "aws_account_id": "XXXXXXXXXXXX",
-        "aws_region": "us-east-1",
-        "service_role_arn": "",
-        "name": argPrefix+"-"+argProjectId
+        "AwsAccountId": "XXXXXXXXXXXX",
+        "AwsRegion": "us-east-1",
+        "ServiceRoleARN": "",
+        "Name": argPrefix+"-"+argProjectId
     },
     "stack_parameters": {
         "Prefix": argPrefix,
@@ -127,7 +196,7 @@ else:
 
 # Read in defaults
     
-print("Loading .default files...")
+print("[ Loading .default files... ]")
 
 # Create a file location array - this is the hierarchy of files we will gather defaults from. The most recent file will overwrite previous values
 fileLoc = []
@@ -144,24 +213,50 @@ for i in range(len(fileLoc)):
     if os.path.isfile(fileLoc[i]):
         with open(fileLoc[i], "r") as f:
             temp = json.load(f)
-            for keySection in temp.keys():
+            for sectionKey in temp.keys():
                 # if keySection is a string and in defaultFromIamIndex then map (it came from IAM)
-                if type(keySection) is str and keySection in defaultsFromIamIndex:
-                    defaults[defaultsFromIamIndex[keySection]][keySection] = temp[keySection]
-                elif type(keySection) is dict:
+                if type(temp[sectionKey]) is str and sectionKey in defaultsFromIamIndex:
+                    defaults[defaultsFromIamIndex[sectionKey]][sectionKey] = temp[sectionKey]
+                elif type(temp[sectionKey]) is dict:
                     # otherwise loop through
-                    for key in keySection.keys():
-                        defaults[keySection][key] = keySection[key]
-            print("Found "+fileLoc[i] +" file...")
+                    for key in temp[sectionKey].keys():
+                        defaults[sectionKey][key] = temp[sectionKey][key]
+            print(" + Found "+fileLoc[i])
     else:
-        print("Did not find "+fileLoc[i] +"...")
+        print(" - Did not find "+fileLoc[i])
 
 # print the defaults
 # print(defaults)
 
-# Read in tags
+# Read in Custom Parameters
         
-print("Loading .tags files...")
+print("\n[ Loading .custom files... ]")
+
+customStackParamsFileLoc = []
+customStackParamsFileLoc.append(cfcliInputsDir +".custom.json")
+customStackParamsFileLoc.append(cfcliInputsDir +".custom-"+argPrefix+".json")
+customStackParamsFileLoc.append(cfcliInputsDir +".custom-"+argPrefix+"-"+argProjectId+".json")
+customStackParamsFileLoc.append(cfcliInputsDir +".custom-"+argPrefix+"-"+argProjectId+"-"+argStageId+".json")
+
+# If .custom.json exists, read it in
+customStackParams = {}
+
+for i in range(len(customStackParamsFileLoc)):
+    if os.path.isfile(customStackParamsFileLoc[i]):
+        with open(customStackParamsFileLoc[i], "r") as f:
+            customData = json.load(f)
+            for key in customData.keys():
+                customStackParams[key] = customData[key]
+            print(" + Found "+customStackParamsFileLoc[i])
+    else:
+        print(" - Did not find "+customStackParamsFileLoc[i])
+
+# print the defaults
+# print(customStackParams)
+        
+# Read in Custom Stack Tags
+        
+print("\n[ Loading .tags files... ]")
 
 tagFileLoc = []
 tagFileLoc.append(cfcliInputsDir +".tags.json")
@@ -170,46 +265,49 @@ tagFileLoc.append(cfcliInputsDir +".tags-"+argPrefix+"-"+argProjectId+".json")
 tagFileLoc.append(cfcliInputsDir +".tags-"+argPrefix+"-"+argProjectId+"-"+argStageId+".json")
 
 # If .tags.json exists, read it in
-tags = []
+customStackTags = []
 
 for i in range(len(tagFileLoc)):
     if os.path.isfile(tagFileLoc[i]):
         with open(tagFileLoc[i], "r") as f:
             tagData = json.load(f)
-            # Both tags and tagData are arrays with {Key: string, Value: string} elements
+            # Both customStackTags and tagData are arrays with {Key: string, Value: string} elements
             # Loop through the elements in tagData
-            #   1. Search tags array for an element with Key == tagData[i].Key
+            #   1. Search customStackTags array for an element with Key == tagData[i].Key
             #   2. If it exists, replace it. Else, append
             for i in range(len(tagData)):
                 found = False
-                for j in range(len(tags)):
-                    if tags[j]["Key"] == tagData[i]["Key"]:
-                        tags[j]["Value"] = tagData[i]["Value"]
+                for j in range(len(customStackTags)):
+                    if customStackTags[j]["Key"] == tagData[i]["Key"]:
+                        customStackTags[j]["Value"] = tagData[i]["Value"]
                         found = True
                         break
                 if not found:
-                    tags.append(tagData[i])
+                    customStackTags.append(tagData[i])
             
 
-            print("Found "+tagFileLoc[i] +" file...")
+            print(" + Found "+tagFileLoc[i])
     else:
-        print("Did not find "+tagFileLoc[i] +"...")
+        print(" - Did not find "+tagFileLoc[i])
 
-# print the tags
-# print(tags)
+# print the customStackTags
+# print(customStackTags)
 
-# Get the prefix, s3 bucket prefix, aws account id, and aws region from the command line
+# =============================================================================
+# PROMPTS
+# =============================================================================
+
 print("")
-print("!==== INSTRUCTIONS ============================================================!")
-print("! Enter parameter values to generate CloudFormation Input and AWS CLI commands !")
-print("!------------------------------------------------------------------------------!")
-print("! The script will then generate an input file and CLI cmds to create the stack !")
-print("!------------------------------------------------------------------------------!")
-print("! Leave blank and press Enter/Return to accept default in square brackets []   !")
-print("! Enter a dash '-' to clear default and leave optional responses blank.        !")
-print("! Enter question mark '?' for help.                                            !")
-print("! Enter carat '^' at any prompt to exit script.                                !")
-print("!==============================================================================!")
+print(charStr("=", 80, bookend="!", text="INSTRUCTIONS"))
+print(charStr(" ", 80, bookend="!", text="Enter parameter values to generate CloudFormation Input and AWS CLI commands"))
+print(charStr("-", 80, bookend="!"))
+print(charStr(" ", 80, bookend="!", text="The script will then generate an input file and CLI cmds to create the stack"))
+print(charStr("-", 80, bookend="!"))
+print(charStr(" ", 80, bookend="!", text="Leave blank and press Enter/Return to accept default in square brackets []"))
+print(charStr(" ", 80, bookend="!", text="Enter a dash '-' to clear default and leave optional responses blank."))
+print(charStr(" ", 80, bookend="!", text="Enter question mark '?' for help."))
+print(charStr(" ", 80, bookend="!", text="Enter carat '^' at any prompt to exit script."))
+print(charStr("=", 80, bookend="!"))
 print("")
 
 promptSections = [
@@ -217,13 +315,14 @@ promptSections = [
         "key": "toolchain_template_location",
         "name": "Pipeline Template Location"
     },
-    {
-        "key": "application",
-        "name": "Application"
-    },
+
     {
         "key": "stack_parameters",
         "name": "Stack Parameters"
+    },
+    {
+        "key": "application",
+        "name": "Application"
     }
 ]
 
@@ -259,34 +358,6 @@ prompts["toolchain_template_location"]["FileName"] = {
     "description": "What is the pipeline template file name?",
     "examples": "pipeline-template.yml, pipeline-toolchain.yaml",
     "default": defaults["toolchain_template_location"]["FileName"]
-}
-
-prompts["application"]["aws_account_id"] = {
-	"name": "AWS Account ID",
-	"required": True,
-	"regex": "^[0-9]{12}$",
-	"help": "AWS Account ID must be 12 digits",
-	"description": "AWS Account ID is a 12 digit number that identifies the AWS account.",
-	"examples": "123456789012, 123456789013, 123456789014",
-	"default": defaults["application"]["aws_account_id"]
-}
-prompts["application"]["aws_region"] = {
-	"name": "AWS Region",
-	"required": True,
-	"regex": "^[a-z]{2}-[a-z]+-[0-9]$",
-	"help": "AWS Region must be lowercase and in the format: us-east-1",
-	"description": "AWS Region is a string that identifies the AWS region. For example, the region 'us-east-1' is located in the United States.",
-	"examples": "us-east-1, us-west-1, us-west-2, eu-west-1, ap-southeast-1",
-	"default": defaults["application"]["aws_region"]
-}
-prompts["application"]["name"] = {
-    "name": "Application Name",
-    "required": True,
-    "regex": "^[a-zA-Z0-9][a-zA-Z0-9_\-\/\s]{0,62}[a-zA-Z0-9]$",
-    "help": "2 to 64 characters. Alphanumeric, dashes, underscores, and spaces. Must start and end with a letter or number.",
-    "description": "Application name is a string that identifies the main application irregardless of the stage or branch.",
-    "examples": "Financial Transaction Processing, Financial Transaction Audit, atlantis-finance-app",
-    "default": defaults["application"]["name"]
 }
 
 prompts["stack_parameters"]["Prefix"] = {
@@ -389,31 +460,25 @@ prompts["stack_parameters"]["CodeCommitBranch"] = {
     "default": defaults["stack_parameters"]["CodeCommitBranch"]
 }
 
-def indent(spaces=4, prepend=''):
-	return prepend + " " * spaces
+prompts["application"]["Name"] = {
+    "name": "Application Name",
+    "required": True,
+    "regex": "^[a-zA-Z0-9][a-zA-Z0-9_\-\/\s]{0,62}[a-zA-Z0-9]$",
+    "help": "2 to 64 characters. Alphanumeric, dashes, underscores, and spaces. Must start and end with a letter or number.",
+    "description": "A descriptive name to identify the main application irregardless of the stage or branch. This is only used in the Tag Name and not visible anywhere else.",
+    "examples": "Financial Transaction Processing, Financial Transaction Audit, atlantis-finance-app",
+    "default": defaults["application"]["Name"]
+}
+prompts["application"]["ServiceRoleARN"] = {
+	"name": "Service Role ARN",
+	"required": False,
+	"regex": "^$|^arn:aws:iam::[0-9]{12}:role\/[a-zA-Z0-9\/_-]+$",
+	"help": "Service Role ARN must be in the format: arn:aws:iam::{account_id}:role/{policy_name}",
+	"description": "The Service Role gives CloudFormation permission to create, delete, and manage stacks on your behalf.",
+	"examples": "arn:aws:iam::123456789012:role/ATLANTIS-CloudFormation-Service-Role",
+	"default": defaults["application"]["ServiceRoleARN"]
+}
 
-# A function that accepts a string and breaks it into lines that are no longer than 80 characters each, breaking only on a whitespace character
-def break_lines(string, indent):
-	break_at = 80
-
-	lines = []
-	line = ""
-
-	# Break the string into words and loop through each, creating a line that is no longer than 80 characters
-	words = string.split(" ")
-	for word in words:
-		if len(line) + len(word) >= break_at:
-			lines.append(line.rstrip())
-			line = indent
-		line += word + " "
-
-	# Add the last line to the list of lines
-	lines.append(line)
-
-	# Convert the list of lines to a string where each line has trailing whitespace removed ends with \n except for the last line
-	lines = "\n".join(lines)
-
-	return lines
 
 # A function that accepts the prompt parameter, whether it is an error or info, and displays help, description, and examples
 def display_help(prompt, error):
@@ -433,14 +498,15 @@ def display_help(prompt, error):
 
 	print("\n"+prepend+"------ "+label+" ------")
 	print(prepend+message)
-	print(break_lines(prepend+"REQUIREMENT: "+prompt["help"], indentStr))
-	print(break_lines(prepend+"DESCRIPTION: "+prompt["description"], indentStr))
-	print(break_lines(prepend+"EXAMPLE(S): "+prompt["examples"], indentStr))
+	print(breakLines(prepend+"REQUIREMENT: "+prompt["help"], indentStr))
+	print(breakLines(prepend+"DESCRIPTION: "+prompt["description"], indentStr))
+	print(breakLines(prepend+"EXAMPLE(S): "+prompt["examples"], indentStr))
 	print("")
 
 #iterate through prompt sections
 for section in promptSections:
     sectionKey = section["key"]
+    print("\n--- "+section["name"]+": ---\n")
     # loop through each parameter and prompt the user for it, then validate input based on requirement and regex
     for key in prompts[sectionKey]:
         prompt = prompts[sectionKey][key]
@@ -477,14 +543,22 @@ for section in promptSections:
 
         parameters[sectionKey][key] = pInput
 
-print("\n------------------------------------------------------------------------------\n")
-                    
+print(charStr("-", 80, newlines=True))
+
+# =============================================================================
+# Save files
+# =============================================================================
+
+print("[ Saving .default files... ]")
+
 configStackJson = "config-deploy-stack.json"
+
 tf = {
     "Prefix": parameters["stack_parameters"]["Prefix"],
     "ProjectId": parameters["stack_parameters"]["ProjectId"],
     "StageId": parameters["stack_parameters"]["StageId"],
 }
+
 # we list the files in reverse as we work up the normal read-in chain
 cliInputsFiles = [
     cfcliInputsDir+".defaults-"+tf["Prefix"]+"-"+tf["ProjectId"]+"-"+tf["StageId"]+".json",
@@ -506,20 +580,23 @@ removals = [
             "ProjectId", "CodeCommitRepository"
         ],
         "application": [
-            "name"
+            "Name"
         ]
     },
     {
         "stack_parameters": [
             "Prefix"
+        ],
+        "application": [
+            "ServiceRoleARN"
         ]
     }
 ]
 
-if not os.path.isdir("inputs"):
-	print("Creating inputs/ directory...")
-	os.mkdir("inputs")
-	print("Created inputs/ directory.")
+if not os.path.isdir(cfcliInputsDir):
+	print("Creating "+cfcliInputsDir+" directory...")
+	os.mkdir(cfcliInputsDir)
+	print("Created "+cfcliInputsDir+" directory.")
 
 data = []
 data.append(json.dumps(parameters, indent=4))
@@ -541,12 +618,16 @@ for i in range(numFiles):
     file = cliInputsFiles[i]
     d = data[i]
     # create or overwrite file with d
-    print("Saving "+file+"...")
+    print(" * Saving "+file+"...")
     with open(file, "w") as f:
         f.write(d)
         f.close()
 
-        
+# =============================================================================
+# Generate
+# =============================================================================
+
+
 def deleteEmptyValues(data, listtype, valuekey):
 
     if listtype == "indexed":
@@ -583,19 +664,15 @@ def deleteEmptyValues(data, listtype, valuekey):
             
     return data
 
-
-def inputFile(template):
-
-    string = json.dumps(template, indent=4)
-
+def subPlaceholders(string):
     string = string.replace("$TOOLCHAIN_BUCKETNAME$", parameters["toolchain_template_location"]["BucketName"])
     string = string.replace("$TOOLCHAIN_BUCKETKEY$", parameters["toolchain_template_location"]["BucketKey"])
     string = string.replace("$TOOLCHAIN_FILENAME$", parameters["toolchain_template_location"]["FileName"])
 
-    string = string.replace("$AWS_ACCOUNT$", parameters["application"]["aws_account_id"]) # not used in sample-input-create-stack
-    string = string.replace("$AWS_REGION$", parameters["application"]["aws_region"])
-    string = string.replace("$SERVICE_ROLE_ARN$", parameters["application"]["service_role_arn"])
-    string = string.replace("$NAME$", parameters["application"]["name"])
+    string = string.replace("$AWS_ACCOUNT$", defaults["application"]["AwsAccountId"]) # not used in sample-input-create-stack
+    string = string.replace("$AWS_REGION$", defaults["application"]["AwsRegion"]) # not used in sample-input-create-stack
+    string = string.replace("$SERVICE_ROLE_ARN$", parameters["application"]["ServiceRoleARN"])
+    string = string.replace("$NAME$", parameters["application"]["Name"])
 
     string = string.replace("$PREFIX_UPPER$", parameters["stack_parameters"]["Prefix"].upper())
     string = string.replace("$PREFIX$", parameters["stack_parameters"]["Prefix"])
@@ -608,172 +685,138 @@ def inputFile(template):
     string = string.replace("$ALARM_NOTIFICATION_EMAIL$", parameters["stack_parameters"]["AlarmNotificationEmail"])
     string = string.replace("$PERMISSIONS_BOUNDARY_ARN$", parameters["stack_parameters"]["PermissionsBoundaryARN"])
     string = string.replace("$REPOSITORY$", parameters["stack_parameters"]["CodeCommitRepository"])
-    string = string.replace("$REPOSITORY_BRANCH$", parameters["stack_parameters"]["CodeCommitBranch"])
+    string = string.replace("$REPOSITORY_BRANCH$", parameters["stack_parameters"]["CodeCommitBranch"])   
 
+    return string 
 
-    if filetype == "cloudformation":
-        # convert back to array
-        # remove empty param: ['Parameters']
-        # remove empty tags
-        # will need conditionals for type
+def saveInputFile(template):
 
-        myData = json.loads(string)
+    string = json.dumps(template, indent=4)
 
-        myData['Parameters'] = deleteEmptyValues(myData['Parameters'], "indexed", "ParameterValue")
-        # if tags are empty, delete
-        if len(myData['Parameters']) == 0:
-            del myData['Parameters']
+    string = subPlaceholders(string)
 
-        myData['Tags'] = deleteEmptyValues(myData['Tags'], "indexed", "Value")
-        # if tags are empty, delete
-        if len(myData['Tags']) == 0:
-            del myData['Tags']
+    # convert back to array
+    # remove empty Parameters
+    # remove empty Tags
 
-        string = json.dumps(myData, indent=4)
+    myData = json.loads(string)
 
-    filename = saveToDir+"input-"+filetype+"-"+stack_param_Prefix+"-"+stack_param_ProjectId+"-"+stack_param_StageId+".json"
+    myData['Parameters'] = deleteEmptyValues(myData['Parameters'], "indexed", "ParameterValue")
+    # if Parameters are empty, delete
+    if len(myData['Parameters']) == 0:
+        del myData['Parameters']
+
+    myData['Tags'] = deleteEmptyValues(myData['Tags'], "indexed", "Value")
+    # if tags are empty, delete
+    if len(myData['Tags']) == 0:
+        del myData['Tags']
+
+    string = json.dumps(myData, indent=4)
+
+    filename = cfcliInputsDir+"input-create-stack-"+parameters["stack_parameters"]["Prefix"]+"-"+parameters["stack_parameters"]["ProjectId"]+"-"+parameters["stack_parameters"]["StageId"]+".json"
     myFile = open(filename, "w")
     n = myFile.write(string)
     myFile.close()
 
-    print("\n\n================== "+filename+" ==================\n\n")
+    print("")
+    print(charStr("-", 80, text=filename))
     print(string)
-    print("\n\n============= "+filename+" COMPLETE! =============\n\n")
+    print(charStr("-", 80))
 
     return filename
 
-
-# Bring in the template files
-with open('./input-templates/input-template-cloudformation.json') as templateCF_file:
+print ("\n[ Loading sample-input-create-stack.json... ]")
+# Bring in the input template file
+with open('./sample-input-create-stack.json') as templateCF_file:
     templateCF = json.load(templateCF_file)
 
-# exit script
-sys.exit(0)
+# check to see if customStackParams is empty
+if len(customStackParams) == 0:
+    print(" - No Custom Stack Parameters to add from .custom files")
+else:
+    # Add Custom Stack Parameters to input template. Not only are new parameters added, existing ones in the template can be overridden
+    print(" + Adding Custom Stack Parameters from .custom files...")
+    for key in customStackParams.keys():
+        customStackParam = { "ParameterKey": key, "ParameterValue": customStackParams[key], "UsePreviousValue": True }
+        found = False
+        for i in range(len(templateCF["Parameters"])):
+            if templateCF["Parameters"][i]["ParameterKey"] == key:
+                templateCF["Parameters"][i] = customStackParam
+                found = True
+                break
+        if not found:
+            templateCF["Parameters"].append(customStackParam)
 
-# TODO if no config file as param, then check to see if config-project exists. 
-# TODO if not, then copy the config-project template and instruct user to fill it out
-# Bring in the project config file
-with open('./'+configStackJson) as config_file:
-    config = json.load(config_file)
+# check to see if customStackTags is empty
+if len(customStackTags) == 0:
+    print(" - No Custom Stack Tags to add from .tags files")
+else:
+    print(" + Adding Custom Stack Tags from .tags files...")
+    # Add Custom Tags to the input template. Not only are new tags added, existing ones in the template can be overridden
+    for i in range(len(customStackTags)):
+        found = False
+        for j in range(len(templateCF["Tags"])):
+            if templateCF["Tags"][j]["Key"] == customStackTags[i]["Key"]:
+                templateCF["Tags"][j]["Value"] = customStackTags[i]["Value"]
+                found = True
+                break
+        if not found:
+            templateCF["Tags"].append(customStackTags[i])
 
-# Set the standard variables
-toolchain_BucketName = config['toolchain_template_location']['BucketName']
-toolchain_BucketKey = config['toolchain_template_location']['BucketKey']
-toolchain_FileName = config['toolchain_template_location']['FileName']
+print("")
+print(charStr("-", 80, text="Updated input template file"))
+print(json.dumps(templateCF, indent=4))
+print(charStr("-", 80))
 
-app_aws_account_id = config['application']['aws_account_id']
-app_aws_region = config['application']['aws_region']
-app_name = config['application']['name']
+inputCFFilename = saveInputFile(templateCF)
 
-stack_param_Prefix = config['stack_parameters']['Prefix']
-stack_param_ProjectId = config['stack_parameters']['ProjectId']
-stack_param_StageId = config['stack_parameters']['StageId']
-stack_param_S3BucketNameOrgPrefix = config['stack_parameters']['S3BucketNameOrgPrefix']
-stack_param_DeployEnvironment = config['stack_parameters']['DeployEnvironment']
-stack_param_ParameterStoreHierarchy = config['stack_parameters']['ParameterStoreHierarchy']
-stack_param_AlarmNotificationEmail = config['stack_parameters']['AlarmNotificationEmail'] 
-stack_param_CodeCommitRepository = config['stack_parameters']['CodeCommitRepository']
-stack_param_CodeCommitBranch = config['stack_parameters']['CodeCommitBranch']
-
-#------------------------------------------------------------------------------
-# Check for required fields
-#------------------------------------------------------------------------------
-
-if toolchain_BucketName == "":
-    sys.exit("ERROR: A bucket must be specified for toolchain location.")
-
-#------------------------------------------------------------------------------
-# Fill in Name and Description
-#------------------------------------------------------------------------------
-
-if app_name != "":
-    app_name = app_name + " " # add a space
-
-app_name = app_name + stack_param_Prefix + "-" + stack_param_ProjectId
-
-#------------------------------------------------------------------------------
-#  CUSTOM PARAMETERS
-#------------------------------------------------------------------------------
-
-stackParameters = {}
-stackParameters.update(config['custom_parameters'])
-
-#------------------------------------------------------------------------------
-# place parameters in the CF input
-
-if len(stackParameters) > 0:
-    for key in stackParameters.keys():
-        item = {"ParameterKey": key, "ParameterValue": stackParameters[key], "UsePreviousValue": False }
-        templateCF['Parameters'].append(item)
-
-#------------------------------------------------------------------------------
-#  CUSTOM TAGS
-#------------------------------------------------------------------------------
-
-stackTags = {}
-stackTags.update(config['custom_tags'])
-
-#------------------------------------------------------------------------------
-# place tags in the CF input
-
-if len(stackTags) > 0:
-    for key in stackTags.keys():
-        item = {"Key": key, "Value": stackTags[key] }
-        templateCF['Tags'].append(item)
-
-# =============================================================================
-# Export to input.json files
-
-inputCFFilename = inputFile(templateCF, "cloudformation")
-
-stringDone = """
-=========================================================================
---------------------------------- DONE! ---------------------------------
-=========================================================================
-
-The CloudFormation input JSON file for this project has been saved to 
-$INPUTCFFILENAME$
-and may now be used as the --cli-input-json parameter when creating or 
-updating the CloudFormation stack.
-
-"""
+print("")
+print(charStr("=", 80, bookend="!", text="CREATE STACK INSTRUCTIONS"))
+print(charStr(" ", 80, bookend="!", text="Execute the following AWS CLI commands in order to create the stack."))
+print(charStr(" ", 80, bookend="!", text="A copy of the commands have been saved to inputs/ for later use."))
+print(charStr("-", 80, bookend="!"))
+print(charStr(" ", 80, bookend="!", text="Make sure you are logged into AWS CLI with a user role holding permissions"))
+print(charStr(" ", 80, bookend="!", text="to create the CloudFormation Stack!"))
+print(charStr("-", 80, bookend="!"))
+print(charStr(" ", 80, bookend="!", text="Alternately, you can create the stack manually via the AWS Web Console using"))
+print(charStr(" ", 80, bookend="!", text="values from the CloudFormation input JSON file found in inputs/"))
+print(charStr("=", 80, bookend="!"))
+print("")
 
 stringS3Text = """
-=========================================================================
-IF YOU NEED TO UPLOAD pipeline-toolchain.yml to S3, run the following command:
--------------------------------------------------------------------------
-aws s3 cp ../$TOOLCHAIN_FILENAME$ s3://$TOOLCHAIN_BUCKETNAME$/$TOOLCHAIN_BUCKETKEY$/$TOOLCHAIN_FILENAME$
-=========================================================================
+
+# -----------------------------------------------------------------------------
+# IF YOU NEED TO UPLOAD $TOOLCHAIN_FILENAME$ to S3, run the following command from the directory containing your pipeline CloudFormation template:
+
+aws s3 cp $TOOLCHAIN_FILENAME$ s3://$TOOLCHAIN_BUCKETNAME$$TOOLCHAIN_BUCKETKEY$$TOOLCHAIN_FILENAME$
 
 """
 stringS3 = ""
-if toolchain_BucketName != "63klabs":
+if parameters["toolchain_template_location"]["BucketName"] != "63klabs":
     stringS3 = stringS3Text
 
 stringCF = """
-=========================================================================
-Run cloudformation create-stack command
--------------------------------------------------------------------------
-aws cloudformation create-stack --cli-input-json file://$INPUTCFFILENAME$
-=========================================================================
+# -----------------------------------------------------------------------------
+# Run cloudformation create-stack command
 
-=========================================================================
-Check progress:
--------------------------------------------------------------------------
+aws cloudformation create-stack --cli-input-json file://$INPUTCFFILENAME$
+
+# -----------------------------------------------------------------------------
+# Check progress:
+
 aws cloudformation describe-stacks --stack-name $PREFIX$-$PROJECT_ID$-$STAGE_ID$-deploy
-=========================================================================
+
 """
 
-string = stringDone + stringCF + stringS3
+cliCommands = stringCF + stringS3
 
-string = string.replace("$STAGE_ID$", stack_param_StageId)
-string = string.replace("$PROJECT_ID$", stack_param_ProjectId)
-string = string.replace("$PREFIX$", stack_param_Prefix)
+cliCommands = subPlaceholders(cliCommands)
 
-string = string.replace("$TOOLCHAIN_BUCKETNAME$", toolchain_BucketName)
-string = string.replace("$TOOLCHAIN_BUCKETKEY$", toolchain_BucketKey)
-string = string.replace("$TOOLCHAIN_FILENAME$", toolchain_FileName)
+cliCommands = cliCommands.replace("$INPUTCFFILENAME$", inputCFFilename)
 
-string = string.replace("$INPUTCFFILENAME$", inputCFFilename)
+# save cliCommands to cli-<Prefix>-<ProjectId>-<StageId>.txt
+cliCommandsFilename = cfcliInputsDir+"cli-"+parameters["stack_parameters"]["Prefix"]+"-"+parameters["stack_parameters"]["ProjectId"]+"-"+parameters["stack_parameters"]["StageId"]+".txt"
+myFile = open(cliCommandsFilename, "w")
+n = myFile.write(cliCommands)
 
-print(string)
+print(cliCommands)

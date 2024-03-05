@@ -1,6 +1,6 @@
 {
     "StackName": "$PREFIX$-$PROJECT_ID$-$STAGE_ID$-deploy",
-    "TemplateURL": "https://$TOOLCHAIN_BUCKETNAME$.s3.amazonaws.com/$TOOLCHAIN_BUCKETKEY$/$TOOLCHAIN_FILENAME$",
+    "TemplateURL": "https://$TOOLCHAIN_BUCKETNAME$.s3.amazonaws.com$TOOLCHAIN_BUCKETKEY$$TOOLCHAIN_FILENAME$",
     "Parameters": [
         {
             "ParameterKey": "Prefix",
