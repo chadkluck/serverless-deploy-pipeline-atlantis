@@ -1,0 +1,8 @@
+# Comment these lines out if you want to save your generated files in a repository
+
+cli/*
+settings/*
+
+!*/sample-*
+!*/sample.*
+!*/README.md
