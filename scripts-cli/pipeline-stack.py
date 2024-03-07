@@ -25,11 +25,11 @@ constraint = {
 
 settingsDir = "./settings/"
 settingsDirIam = settingsDir+"iam/"
-settingsDirCf = settingsDir+"cfn/"
+settingsDirCfn = settingsDir+"cfn/"
 
 cliDir = "./cli/"
 cliDirIam = cliDir+"iam/"
-cliDirCf = cliDir+"cfn/"
+cliDirCfn = cliDir+"cfn/"
 
 cfnTemplatePipelineDir = "../cloudformation-pipeline-template/"
 cfnTemplatePipelineFileName = "pipeline-template.yml"
@@ -49,11 +49,11 @@ dirsAndFiles = [
         "files": []
     },
     {
-        "dir": cliDirCf,
+        "dir": cliDirCfn,
         "files": []
     },
     {
-        "dir": settingsDirCf,
+        "dir": settingsDirCfn,
         "files": [
             "sample.tags.json",
             "sample.params.json"
@@ -207,10 +207,10 @@ print("[ Loading .default files... ]")
 fileLoc = []
 fileLoc.append(settingsDirIam+".defaults.json")
 fileLoc.append(settingsDirIam+".defaults-"+argPrefix+".json")
-fileLoc.append(settingsDirCf+".defaults.json")
-fileLoc.append(settingsDirCf+".defaults-"+argPrefix+".json")
-fileLoc.append(settingsDirCf+".defaults-"+argPrefix+"-"+argProjectId+".json")
-fileLoc.append(settingsDirCf+".defaults-"+argPrefix+"-"+argProjectId+"-"+argStageId+".json")
+fileLoc.append(settingsDirCfn+".defaults.json")
+fileLoc.append(settingsDirCfn+".defaults-"+argPrefix+".json")
+fileLoc.append(settingsDirCfn+".defaults-"+argPrefix+"-"+argProjectId+".json")
+fileLoc.append(settingsDirCfn+".defaults-"+argPrefix+"-"+argProjectId+"-"+argStageId+".json")
 
 # iam defaults don't have keysections
 
@@ -238,10 +238,10 @@ for i in range(len(fileLoc)):
 print("\n[ Loading .params files... ]")
 
 customStackParamsFileLoc = []
-customStackParamsFileLoc.append(settingsDirCf+".params.json")
-customStackParamsFileLoc.append(settingsDirCf+".params-"+argPrefix+".json")
-customStackParamsFileLoc.append(settingsDirCf+".params-"+argPrefix+"-"+argProjectId+".json")
-customStackParamsFileLoc.append(settingsDirCf+".params-"+argPrefix+"-"+argProjectId+"-"+argStageId+".json")
+customStackParamsFileLoc.append(settingsDirCfn+".params.json")
+customStackParamsFileLoc.append(settingsDirCfn+".params-"+argPrefix+".json")
+customStackParamsFileLoc.append(settingsDirCfn+".params-"+argPrefix+"-"+argProjectId+".json")
+customStackParamsFileLoc.append(settingsDirCfn+".params-"+argPrefix+"-"+argProjectId+"-"+argStageId+".json")
 
 # If .params.json exists, read it in
 customStackParams = {}
@@ -264,10 +264,10 @@ for i in range(len(customStackParamsFileLoc)):
 print("\n[ Loading .tags files... ]")
 
 tagFileLoc = []
-tagFileLoc.append(settingsDirCf+".tags.json")
-tagFileLoc.append(settingsDirCf+".tags-"+argPrefix+".json")
-tagFileLoc.append(settingsDirCf+".tags-"+argPrefix+"-"+argProjectId+".json")
-tagFileLoc.append(settingsDirCf+".tags-"+argPrefix+"-"+argProjectId+"-"+argStageId+".json")
+tagFileLoc.append(settingsDirCfn+".tags.json")
+tagFileLoc.append(settingsDirCfn+".tags-"+argPrefix+".json")
+tagFileLoc.append(settingsDirCfn+".tags-"+argPrefix+"-"+argProjectId+".json")
+tagFileLoc.append(settingsDirCfn+".tags-"+argPrefix+"-"+argProjectId+"-"+argStageId+".json")
 
 # If .tags.json exists, read it in
 customStackTags = []
@@ -445,10 +445,10 @@ tf = {
 
 # we list the files in reverse as we work up the normal read-in chain
 cliInputsFiles = [
-    settingsDirCf+".defaults-"+tf["Prefix"]+"-"+tf["ProjectId"]+"-"+tf["StageId"]+".json",
-    settingsDirCf+".defaults-"+tf["Prefix"]+"-"+tf["ProjectId"]+".json",
-    settingsDirCf+".defaults-"+tf["Prefix"]+".json",
-    settingsDirCf+".defaults.json"
+    settingsDirCfn+".defaults-"+tf["Prefix"]+"-"+tf["ProjectId"]+"-"+tf["StageId"]+".json",
+    settingsDirCfn+".defaults-"+tf["Prefix"]+"-"+tf["ProjectId"]+".json",
+    settingsDirCfn+".defaults-"+tf["Prefix"]+".json",
+    settingsDirCfn+".defaults.json"
 ]
 
 # we will progressively remove data as we save up the chain of files
@@ -592,7 +592,7 @@ def saveInputFile(template):
 
     string = json.dumps(myData, indent=4)
 
-    fileName = cliDirCf+"input-create-stack-"+parameters["stack_parameters"]["Prefix"]+"-"+parameters["stack_parameters"]["ProjectId"]+"-"+parameters["stack_parameters"]["StageId"]+".json"
+    fileName = cliDirCfn+"input-create-stack-"+parameters["stack_parameters"]["Prefix"]+"-"+parameters["stack_parameters"]["ProjectId"]+"-"+parameters["stack_parameters"]["StageId"]+".json"
     myFile = open(fileName, "w")
     n = myFile.write(string)
     myFile.close()
@@ -678,13 +678,9 @@ if parameters["toolchain_template_location"]["BucketName"] != "63klab":
 
 stringCFN = """
 # -----------------------------------------------------------------------------
-# Go into the scripts-cli/cli/cfn/ directory (adjust path as needed)
+# Run cloudformation create-stack command from the $ROOT_CLI_DIR_CFN$ directory (adjust path as needed)
 
 cd $CLI_DIR_CFN$
-
-# -----------------------------------------------------------------------------
-# Run cloudformation create-stack command
-
 aws cloudformation create-stack --cli-input-json file://$INPUTCFNFILENAME$
 
 # -----------------------------------------------------------------------------
@@ -698,12 +694,13 @@ cliCommands = stringS3 + stringCFN
 
 cliCommands = subPlaceholders(cliCommands)
 
-cliCommands = cliCommands.replace("$INPUTCFNFILENAME$", inputCFNFilename.replace(cliDirCf, ""))
-cliCommands = cliCommands.replace("$CLI_DIR_CFN$", cliDirCf)
+cliCommands = cliCommands.replace("$INPUTCFNFILENAME$", inputCFNFilename.replace(cliDirCfn, ""))
+cliCommands = cliCommands.replace("$CLI_DIR_CFN$", cliDirCfn)
 cliCommands = cliCommands.replace("$CLI_DIR_CFN_TOOLCHAIN$", cfnTemplatePipelineDir)
+cliCommands = cliCommands.replace("$ROOT_CLI_DIR_CFN$", cliDirCfn.replace("./", "/scripts-cli/"))
 
 # save cliCommands to cli-<Prefix>-<ProjectId>-<StageId>.txt
-cliCommandsFilename = cliDirCf+"cli-"+parameters["stack_parameters"]["Prefix"]+"-"+parameters["stack_parameters"]["ProjectId"]+"-"+parameters["stack_parameters"]["StageId"]+".txt"
+cliCommandsFilename = cliDirCfn+"cli-"+parameters["stack_parameters"]["Prefix"]+"-"+parameters["stack_parameters"]["ProjectId"]+"-"+parameters["stack_parameters"]["StageId"]+".txt"
 myFile = open(cliCommandsFilename, "w")
 n = myFile.write(cliCommands)
 
