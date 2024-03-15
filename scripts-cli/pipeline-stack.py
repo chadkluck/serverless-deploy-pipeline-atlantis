@@ -1,6 +1,5 @@
 import os
 import json
-import shutil
 import sys
 import re
 
@@ -22,73 +21,6 @@ constraint = {
     "maxLenPrefixProjId": 28,
     "maxLenStage": 6
 }
-
-settingsDir = "./settings/"
-settingsDirIam = settingsDir+"iam/"
-settingsDirCfn = settingsDir+"cfn/"
-
-cliDir = "./cli/"
-cliDirIam = cliDir+"iam/"
-cliDirCfn = cliDir+"cfn/"
-
-cfnTemplatePipelineDir = "../cloudformation-pipeline-template/"
-cfnTemplatePipelineFileName = "pipeline-template.yml"
-cfnTemplatePipelineSampleInputFileName = "sample-input-create-stack.json"
-cfnTemplatePipelineFileLocation = cfnTemplatePipelineDir+cfnTemplatePipelineFileName
-cfnTemplatePipelineSampleInputFileLocation = cfnTemplatePipelineDir+cfnTemplatePipelineSampleInputFileName
-
-iamTemplateServiceDir = "../iam-cloudformation-service-role/"
-iamTemplateServiceRoleFileName = "Trust-Policy-for-Service-Role.json"
-iamTemplateServicePolicyFileName = "SAMPLE-CloudFormationServicePolicy.json"
-iamTemplateServiceRoleFileLocation = iamTemplateServiceDir+iamTemplateServiceRoleFileName
-iamTemplateServicePolicyFileLocation = iamTemplateServiceDir+iamTemplateServicePolicyFileName
-
-dirsAndFiles = [
-    {
-        "dir": cliDirIam,
-        "files": []
-    },
-    {
-        "dir": cliDirCfn,
-        "files": []
-    },
-    {
-        "dir": settingsDirCfn,
-        "files": [
-            "sample.tags.json",
-            "sample.params.json"
-        ],
-    },
-    {
-        "dir": settingsDirIam,
-        "files": [
-            "sample.tags.json"
-        ]
-    },
-    {
-        "dir": cfnTemplatePipelineDir,
-        "files": [
-			cfnTemplatePipelineSampleInputFileName
-        ]
-    },
-    {
-        "dir": iamTemplateServiceDir,
-        "files": [
-            iamTemplateServiceRoleFileName,
-            iamTemplateServicePolicyFileName
-        ]
-    }
-]
-
-# loop through dirsAndFiles and check if each dir exists. If it doesn't, create it. 
-# Then loop through the files and make sure they exist. If they don't, copy them
-for dirAndFile in dirsAndFiles:
-    if not os.path.isdir(dirAndFile["dir"]):
-        os.makedirs(dirAndFile["dir"])
-
-    for file in dirAndFile["files"]:
-        if not os.path.isfile(dirAndFile["dir"]+file):
-            shutil.copyfile("./lib/templates/"+file, dirAndFile["dir"]+file)
 
 argPrefix = "atlantis"
 argProjectId = "myproject"
@@ -160,7 +92,7 @@ defaults = {
     "toolchain_template_location": {
         "BucketName": "63klabs",
         "BucketKey": "/atlantis/v2/",
-        "FileName": cfnTemplatePipelineFileName
+        "FileName": atlantis.files["cfnPipelineTemplate"]["name"]
     },
     "application": {
         "AwsAccountId": "XXXXXXXXXXXX",
@@ -203,14 +135,14 @@ else:
     
 print("[ Loading .default files... ]")
 
-# Create a file location array - this is the hierarchy of files we will gather defaults from. The most recent file will overwrite previous values
+# Create a file location array - this is the hierarchy of files we will gather defaults from. The most recent file appended (lower on list) will overwrite previous values
 fileLoc = []
-fileLoc.append(settingsDirIam+".defaults.json")
-fileLoc.append(settingsDirIam+".defaults-"+argPrefix+".json")
-fileLoc.append(settingsDirCfn+".defaults.json")
-fileLoc.append(settingsDirCfn+".defaults-"+argPrefix+".json")
-fileLoc.append(settingsDirCfn+".defaults-"+argPrefix+"-"+argProjectId+".json")
-fileLoc.append(settingsDirCfn+".defaults-"+argPrefix+"-"+argProjectId+"-"+argStageId+".json")
+fileLoc.append(atlantis.dirs["settings"]["Iam"]+".defaults.json")
+fileLoc.append(atlantis.dirs["settings"]["Iam"]+".defaults-"+argPrefix+".json")
+fileLoc.append(atlantis.dirs["settings"]["Cfn"]+".defaults.json")
+fileLoc.append(atlantis.dirs["settings"]["Cfn"]+".defaults-"+argPrefix+".json")
+fileLoc.append(atlantis.dirs["settings"]["Cfn"]+".defaults-"+argPrefix+"-"+argProjectId+".json")
+fileLoc.append(atlantis.dirs["settings"]["Cfn"]+".defaults-"+argPrefix+"-"+argProjectId+"-"+argStageId+".json")
 
 # iam defaults don't have keysections
 
@@ -238,10 +170,10 @@ for i in range(len(fileLoc)):
 print("\n[ Loading .params files... ]")
 
 customStackParamsFileLoc = []
-customStackParamsFileLoc.append(settingsDirCfn+".params.json")
-customStackParamsFileLoc.append(settingsDirCfn+".params-"+argPrefix+".json")
-customStackParamsFileLoc.append(settingsDirCfn+".params-"+argPrefix+"-"+argProjectId+".json")
-customStackParamsFileLoc.append(settingsDirCfn+".params-"+argPrefix+"-"+argProjectId+"-"+argStageId+".json")
+customStackParamsFileLoc.append(atlantis.dirs["settings"]["Cfn"]+".params.json")
+customStackParamsFileLoc.append(atlantis.dirs["settings"]["Cfn"]+".params-"+argPrefix+".json")
+customStackParamsFileLoc.append(atlantis.dirs["settings"]["Cfn"]+".params-"+argPrefix+"-"+argProjectId+".json")
+customStackParamsFileLoc.append(atlantis.dirs["settings"]["Cfn"]+".params-"+argPrefix+"-"+argProjectId+"-"+argStageId+".json")
 
 # If .params.json exists, read it in
 customStackParams = {}
@@ -264,10 +196,10 @@ for i in range(len(customStackParamsFileLoc)):
 print("\n[ Loading .tags files... ]")
 
 tagFileLoc = []
-tagFileLoc.append(settingsDirCfn+".tags.json")
-tagFileLoc.append(settingsDirCfn+".tags-"+argPrefix+".json")
-tagFileLoc.append(settingsDirCfn+".tags-"+argPrefix+"-"+argProjectId+".json")
-tagFileLoc.append(settingsDirCfn+".tags-"+argPrefix+"-"+argProjectId+"-"+argStageId+".json")
+tagFileLoc.append(atlantis.dirs["settings"]["Cfn"]+".tags.json")
+tagFileLoc.append(atlantis.dirs["settings"]["Cfn"]+".tags-"+argPrefix+".json")
+tagFileLoc.append(atlantis.dirs["settings"]["Cfn"]+".tags-"+argPrefix+"-"+argProjectId+".json")
+tagFileLoc.append(atlantis.dirs["settings"]["Cfn"]+".tags-"+argPrefix+"-"+argProjectId+"-"+argStageId+".json")
 
 # If .tags.json exists, read it in
 customStackTags = []
@@ -386,56 +318,14 @@ prompts["application"]["Name"]["default"] = defaults["application"]["Name"]
 prompts["application"]["ServiceRoleARN"] = atlantis.prompts["ServiceRoleARN"]
 prompts["application"]["ServiceRoleARN"]["default"] = defaults["application"]["ServiceRoleARN"]
 
+atlantis.getUserInput(prompts, parameters, promptSections)
 
-#iterate through prompt sections
-for section in promptSections:
-    sectionKey = section["key"]
-    print("\n--- "+section["name"]+": ---\n")
-    # loop through each parameter and prompt the user for it, then validate input based on requirement and regex
-    for key in prompts[sectionKey]:
-        prompt = prompts[sectionKey][key]
-        req = " "
-        if prompt["required"]:
-            req = " (required)"
-        
-        # Loop until the user enters a valid value for the parameter
-        while True:
-            # Prompt the user for the parameter value
-            pInput = input(prompt['name']+req+" ["+prompt["default"]+"] : ")
-
-            # Allow user to enter ^ to exit script
-            if pInput == "^":
-                sys.exit(0)
-
-            # Allow user to enter ! for help and then go back to start of loop
-            if pInput == "?":
-                tools.displayHelp(prompt, False)
-                continue
-
-            # If the user left blank, use the default value, otherwise, If the user entered a dash, clear the parameter value
-            if pInput == "":
-                pInput = prompt["default"]
-            elif pInput == "-":
-                pInput = ""
-
-            # Validate the input based on regex and re-prompt if invalid
-            if prompt["regex"] != "":
-                if not re.match(prompt["regex"], pInput):
-                    tools.displayHelp(prompt, True)
-                    continue
-            break
-
-        parameters[sectionKey][key] = pInput
-
-tools.printCharStr("-", 80, newlines=True)
 
 # =============================================================================
 # Save files
 # =============================================================================
 
 print("[ Saving .default files... ]")
-
-configStackJson = "config-deploy-stack.json"
 
 tf = {
     "Prefix": parameters["stack_parameters"]["Prefix"],
@@ -445,10 +335,10 @@ tf = {
 
 # we list the files in reverse as we work up the normal read-in chain
 cliInputsFiles = [
-    settingsDirCfn+".defaults-"+tf["Prefix"]+"-"+tf["ProjectId"]+"-"+tf["StageId"]+".json",
-    settingsDirCfn+".defaults-"+tf["Prefix"]+"-"+tf["ProjectId"]+".json",
-    settingsDirCfn+".defaults-"+tf["Prefix"]+".json",
-    settingsDirCfn+".defaults.json"
+    atlantis.dirs["settings"]["Cfn"]+".defaults-"+tf["Prefix"]+"-"+tf["ProjectId"]+"-"+tf["StageId"]+".json",
+    atlantis.dirs["settings"]["Cfn"]+".defaults-"+tf["Prefix"]+"-"+tf["ProjectId"]+".json",
+    atlantis.dirs["settings"]["Cfn"]+".defaults-"+tf["Prefix"]+".json",
+    atlantis.dirs["settings"]["Cfn"]+".defaults.json"
 ]
 
 # we will progressively remove data as we save up the chain of files
@@ -592,7 +482,7 @@ def saveInputFile(template):
 
     string = json.dumps(myData, indent=4)
 
-    fileName = cliDirCfn+"input-create-stack-"+parameters["stack_parameters"]["Prefix"]+"-"+parameters["stack_parameters"]["ProjectId"]+"-"+parameters["stack_parameters"]["StageId"]+".json"
+    fileName = atlantis.dirs["cli"]["Cfn"]+"input-create-stack-"+parameters["stack_parameters"]["Prefix"]+"-"+parameters["stack_parameters"]["ProjectId"]+"-"+parameters["stack_parameters"]["StageId"]+".json"
     myFile = open(fileName, "w")
     n = myFile.write(string)
     myFile.close()
@@ -606,7 +496,7 @@ def saveInputFile(template):
 
 print ("\n[ Loading sample-input-create-stack.json... ]")
 # Bring in the input template file
-with open(cfnTemplatePipelineSampleInputFileLocation) as templateCFN_file:
+with open(atlantis.files["cfnPipelineTemplateInput"]["path"]) as templateCFN_file:
     templateCFN = json.load(templateCFN_file)
 
 # check to see if customStackParams is empty
@@ -658,7 +548,7 @@ tools.printCharStr(" ", 80, bookend="!", text="Make sure you are logged into AWS
 tools.printCharStr(" ", 80, bookend="!", text="to create the CloudFormation Stack!")
 tools.printCharStr("-", 80, bookend="!")
 tools.printCharStr(" ", 80, bookend="!", text="Alternately, you can create the stack manually via the AWS Web Console using")
-tools.printCharStr(" ", 80, bookend="!", text="values from the CloudFormation input JSON file found in inputs/")
+tools.printCharStr(" ", 80, bookend="!", text="values from the CloudFormation input JSON file found in cli/cfn/")
 tools.printCharStr("=", 80, bookend="!")
 print("")
 
@@ -673,7 +563,7 @@ aws s3 cp $TOOLCHAIN_FILENAME$ s3://$TOOLCHAIN_BUCKETNAME$$TOOLCHAIN_BUCKETKEY$$
 
 """
 stringS3 = ""
-if parameters["toolchain_template_location"]["BucketName"] != "63klab":
+if parameters["toolchain_template_location"]["BucketName"] != "63klabs":
     stringS3 = stringS3Text
 
 stringCFN = """
@@ -694,13 +584,13 @@ cliCommands = stringS3 + stringCFN
 
 cliCommands = subPlaceholders(cliCommands)
 
-cliCommands = cliCommands.replace("$INPUTCFNFILENAME$", inputCFNFilename.replace(cliDirCfn, ""))
-cliCommands = cliCommands.replace("$CLI_DIR_CFN$", cliDirCfn)
-cliCommands = cliCommands.replace("$CLI_DIR_CFN_TOOLCHAIN$", cfnTemplatePipelineDir)
-cliCommands = cliCommands.replace("$ROOT_CLI_DIR_CFN$", cliDirCfn.replace("./", "/scripts-cli/"))
+cliCommands = cliCommands.replace("$INPUTCFNFILENAME$", inputCFNFilename.replace(atlantis.dirs["cli"]["Cfn"], ""))
+cliCommands = cliCommands.replace("$CLI_DIR_CFN$", atlantis.dirs["cli"]["Cfn"])
+cliCommands = cliCommands.replace("$CLI_DIR_CFN_TOOLCHAIN$", atlantis.dirs["cfnPipeline"])
+cliCommands = cliCommands.replace("$ROOT_CLI_DIR_CFN$", atlantis.dirs["cli"]["Cfn"].replace("./", "/scripts-cli/"))
 
 # save cliCommands to cli-<Prefix>-<ProjectId>-<StageId>.txt
-cliCommandsFilename = cliDirCfn+"cli-"+parameters["stack_parameters"]["Prefix"]+"-"+parameters["stack_parameters"]["ProjectId"]+"-"+parameters["stack_parameters"]["StageId"]+".txt"
+cliCommandsFilename = atlantis.dirs["cli"]["Cfn"]+"cli-"+parameters["stack_parameters"]["Prefix"]+"-"+parameters["stack_parameters"]["ProjectId"]+"-"+parameters["stack_parameters"]["StageId"]+".txt"
 myFile = open(cliCommandsFilename, "w")
 n = myFile.write(cliCommands)
 
