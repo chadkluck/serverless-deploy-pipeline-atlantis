@@ -104,14 +104,14 @@ defaults = {
         "Prefix": argPrefix,
         "ProjectId": argProjectId,
         "StageId": argStageId,
-        "S3BucketNameOrgPrefix": atlantis.prompts["S3BucketNameOrgPrefix"],
-        "RolePath": atlantis.prompts["RolePath"],
-        "DeployEnvironment": atlantis.prompts["DeployEnvironment"],
-        "ParameterStoreHierarchy": atlantis.prompts["ParameterStoreHierarchy"],
+        "S3BucketNameOrgPrefix": atlantis.prompts["S3BucketNameOrgPrefix"]["default"],
+        "RolePath": atlantis.prompts["RolePath"]["default"],
+        "DeployEnvironment": atlantis.prompts["DeployEnvironment"]["default"],
+        "ParameterStoreHierarchy": atlantis.prompts["ParameterStoreHierarchy"]["default"],
         "AlarmNotificationEmail": "",
         "PermissionsBoundaryARN": "",
         "CodeCommitRepository": "",
-        "CodeCommitBranch": atlantis.prompts["CodeCommitBranch"]
+        "CodeCommitBranch": atlantis.prompts["CodeCommitBranch"]["default"]
     }
 }
 
@@ -570,7 +570,7 @@ stringCFN = """
 # -----------------------------------------------------------------------------
 # Run cloudformation create-stack command from the $ROOT_CLI_DIR_CFN$ directory (adjust path as needed)
 
-cd $CLI_DIR_CFN$
+cd $ROOT_CLI_DIR_CFN$
 aws cloudformation create-stack --cli-input-json file://$INPUTCFNFILENAME$
 
 # -----------------------------------------------------------------------------
@@ -585,9 +585,8 @@ cliCommands = stringS3 + stringCFN
 cliCommands = subPlaceholders(cliCommands)
 
 cliCommands = cliCommands.replace("$INPUTCFNFILENAME$", inputCFNFilename.replace(atlantis.dirs["cli"]["Cfn"], ""))
-cliCommands = cliCommands.replace("$CLI_DIR_CFN$", atlantis.dirs["cli"]["Cfn"])
 cliCommands = cliCommands.replace("$CLI_DIR_CFN_TOOLCHAIN$", atlantis.dirs["cfnPipeline"])
-cliCommands = cliCommands.replace("$ROOT_CLI_DIR_CFN$", atlantis.dirs["cli"]["Cfn"].replace("./", "/scripts-cli/"))
+cliCommands = cliCommands.replace("$ROOT_CLI_DIR_CFN$", atlantis.dirs["cli"]["Cfn"].replace("./", "../scripts-cli/"))
 
 # save cliCommands to cli-<Prefix>-<ProjectId>-<StageId>.txt
 cliCommandsFilename = atlantis.dirs["cli"]["Cfn"]+"cli-"+parameters["stack_parameters"]["Prefix"]+"-"+parameters["stack_parameters"]["ProjectId"]+"-"+parameters["stack_parameters"]["StageId"]+".txt"

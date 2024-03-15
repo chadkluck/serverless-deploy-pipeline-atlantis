@@ -76,7 +76,7 @@ def displayHelp(prompt, error):
 	if error:
 		prepend = ">>> "
 		label = "ERROR"
-		message = "MESSAGE: The value for parameter "+prompt["name"]+" is invalid.\n"+indent(9,prepend)+"Please try again."
+		message = "MESSAGE: The value for parameter "+prompt["name"]+" is invalid.\n"+indent(spaces,prepend)+"Please try again."
 
 	indentStr = indent(spaces, prepend)
 

@@ -7,6 +7,9 @@ sys.path.append('./lib')
 import tools
 import atlantis
 
+# Get the current working directory
+cwd = os.getcwd()
+
 print("")
 tools.printCharStr("=", 80, bookend="|")
 tools.printCharStr(" ", 80, bookend="|", text="CloudFormation Service Role and AWS CLI Command Generator for Atlantis CI/CD")
@@ -25,18 +28,18 @@ scriptName = sys.argv[0]
 if len(sys.argv) > 1:
     argPrefix = sys.argv[1]
 else:
-    print("\n\nUsage: python "+scriptName+" <Prefix> <ProjectId> <StageId>\n\n")
+    print("\n\nUsage: python "+scriptName+" <Prefix>\n\n")
     sys.exit()
 
 # Default values - Set any of these defaults to your own in the .defaults file
 defaults = {
 	"general": {
-		"Prefix": "atlantis",
-		"S3BucketNameOrgPrefix": "",
-		"AwsAccountId": "",
-		"AwsRegion": "us-east-1",
-		"RolePath": "/",
-		"PermissionsBoundaryARN": "",
+		"Prefix": argPrefix,
+		"S3BucketNameOrgPrefix": atlantis.prompts["S3BucketNameOrgPrefix"]["default"],
+		"AwsAccountId": atlantis.prompts["AwsAccountId"]["default"],
+		"AwsRegion": atlantis.prompts["AwsRegion"]["default"],
+		"RolePath": atlantis.prompts["RolePath"]["default"],
+		"PermissionsBoundaryARN": atlantis.prompts["PermissionsBoundaryARN"]["default"],
 		"ServiceRoleARN": ""
 	}
 }
@@ -223,8 +226,6 @@ for i in range(numFiles):
 
 tools.printCharStr("-", 80)
 
-# Get the current working directory
-cwd = os.getcwd()
 # Get the path to the generated directory
 cli_output_dir = os.path.join(cwd, atlantis.dirs["cli"]["Iam"])
 # Open the sample-ATLANTIS-CloudFormationServicePolicy.json file
@@ -298,12 +299,18 @@ with open(
 		if os.name == "nt":
 			print(stringWinCmd)
 
+		ROOT_CLI_DIR_IAM = atlantis.dirs["cli"]["Iam"].replace("./", "../scripts-cli/")
+		IAM_TRUST_POLICY = "../../"+atlantis.files["iamTrustPolicy"]["path"]
+		IAM_SERVICE_POLICY = new_file_name
+        
 		# Print a message indicating the aws iam cli commands to create the role and policy and attach it to the role
 
 		create_role_comment = []
 		create_role_comment.append("# -----------------------------------------------------------------------------")
 		create_role_comment.append("# Run iam create-role command from the $ROOT_CLI_DIR_IAM$ directory (adjust path as needed)")
-            
+		create_role_comment.append("")
+		create_role_comment.append("cd $ROOT_CLI_DIR_IAM$")
+
 		stringCliRoleComment = "\n".join(create_role_comment)
             
 		# Generate the CLI command for create-role
@@ -311,7 +318,7 @@ with open(
 		create_role.append("aws iam create-role --path "+parameters["general"]["RolePath"])
 		create_role.append("--role-name "+parameters["general"]["Prefix"].upper()+"-CloudFormation-Service-Role")
 		create_role.append("--description 'Service Role for CloudFormation Service to create and manage pipelines under the '"+parameters["general"]["Prefix"]+"' prefix'")
-		create_role.append("--assume-role-policy-document file://../Trust-Policy-for-Service-Role.json")
+		create_role.append("--assume-role-policy-document file://$IAM_TRUST_POLICY$")
 		if parameters["general"]["PermissionsBoundaryARN"]:
 			create_role.append("--permissions-boundary "+parameters["general"]["PermissionsBoundaryARN"])
 		create_role.append(tags_cli)
@@ -327,11 +334,14 @@ with open(
 		put_policy = []
 		put_policy.append("aws iam put-role-policy --role-name "+parameters["general"]["Prefix"].upper()+"-CloudFormation-Service-Role")
 		put_policy.append("--policy-name "+parameters["general"]["Prefix"].upper()+"-CloudFormationServicePolicy")
-		put_policy.append("--policy-document file://generated/"+new_file_name)
+		put_policy.append("--policy-document file://$IAM_SERVICE_POLICY$")
 		
 		stringCliPolicy = " \\\n\t".join(put_policy)
         
 		cliCommands = stringCliRoleComment + "\n\n" + stringCliRole + "\n\n" + stringCliPolicyComment + "\n\n" + stringCliPolicy + "\n"
+		cliCommands = cliCommands.replace("$ROOT_CLI_DIR_IAM$", ROOT_CLI_DIR_IAM)
+		cliCommands = cliCommands.replace("$IAM_TRUST_POLICY$", IAM_TRUST_POLICY)
+		cliCommands = cliCommands.replace("$IAM_SERVICE_POLICY$", IAM_SERVICE_POLICY)
             
 		# save cliCommands to cli-<Prefix>.txt
 		cliCommandsFilename = atlantis.dirs["cli"]["Iam"]+"cli-"+parameters["general"]["Prefix"]+".txt"
