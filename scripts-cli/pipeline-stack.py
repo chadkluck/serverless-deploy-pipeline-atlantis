@@ -487,10 +487,10 @@ def saveInputFile(template):
     n = myFile.write(string)
     myFile.close()
 
-    print("")
-    tools.printCharStr("-", 80, text=fileName)
-    print(string)
-    tools.printCharStr("-", 80)
+    # print("")
+    # tools.printCharStr("-", 80, text=fileName)
+    # print(string)
+    # tools.printCharStr("-", 80)
 
     return fileName
 
@@ -532,10 +532,10 @@ else:
         if not found:
             templateCFN["Tags"].append(customStackTags[i])
 
-print("")
-tools.printCharStr("-", 80, text="Updated input template file")
-print(json.dumps(templateCFN, indent=4))
-tools.printCharStr("-", 80)
+# print("")
+# tools.printCharStr("-", 80, text="Updated input template file")
+# print(json.dumps(templateCFN, indent=4))
+# tools.printCharStr("-", 80)
 
 inputCFNFilename = saveInputFile(templateCFN)
 
