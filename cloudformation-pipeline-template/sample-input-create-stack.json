@@ -1,6 +1,6 @@
 {
-    "StackName": "$PREFIX$-$PROJECT_ID$-$STAGE_ID$-deploy",
-    "TemplateURL": "https://$TOOLCHAIN_BUCKETNAME$.s3.amazonaws.com$TOOLCHAIN_BUCKETKEY$$TOOLCHAIN_FILENAME$",
+    "StackName": "$PREFIX$-$PROJECT_ID$-$STAGE_ID$-pipeline",
+    "TemplateURL": "https://$PIPELINE_TEMPLATE_BUCKETNAME$.s3.amazonaws.com$PIPELINE_TEMPLATE_BUCKETKEY$$PIPELINE_TEMPLATE_FILENAME$",
     "Parameters": [
         {
             "ParameterKey": "Prefix",
@@ -77,7 +77,7 @@
             "Value": "deploy-pipeline"
         },
         {
-            "Key": "atlantis:ToolChainTemplate",
+            "Key": "atlantis:PipelineTemplate",
             "Value": "Atlantis.v2.0.0"
         },
         {

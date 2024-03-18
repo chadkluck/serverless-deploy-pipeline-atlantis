@@ -128,7 +128,7 @@ Parameters:
 
   # ---------------------------------------------------------------------------
   # Code Repository
-  # Used only by this pipeline-toolchain and not passed on to infrastructure stack except as tags
+  # Used only by this template-pipeline and not passed on to infrastructure stack except as tags
 
   CodeCommitRepository:
     Type: String
@@ -746,7 +746,7 @@ Resources:
       BucketName: !Join
         - "-"
         - - !If [UseS3BucketNameOrgPrefix, !Sub "${S3BucketNameOrgPrefix}-${Prefix}", !Sub "${Prefix}-${AWS::Region}-${AWS::AccountId}" ]
-          - !Sub "${ProjectId}-${StageId}-deploy"
+          - !Sub "${ProjectId}-${StageId}-pipeline"
       VersioningConfiguration:
         Status: Enabled
       PublicAccessBlockConfiguration:

@@ -32,7 +32,7 @@ files = {
 
 dirs["cfnPipeline"] = "../cloudformation-pipeline-template/"
 
-files["cfnPipelineTemplate"]["name"] = "pipeline-template.yml"
+files["cfnPipelineTemplate"]["name"] = "template-pipeline.yml"
 files["cfnPipelineTemplate"]["path"] = dirs["cfnPipeline"]+files["cfnPipelineTemplate"]["name"]
 
 files["cfnPipelineTemplateInput"]["name"] = "sample-input-create-stack.json"
@@ -71,7 +71,7 @@ dirsAndFiles = [
     {
         "dir": dirs["cfnPipeline"],
         "files": [
-			files["cfnPipelineTemplate"]["name"]
+			files["cfnPipelineTemplateInput"]["name"]
         ]
     },
     {
@@ -92,7 +92,8 @@ for dirAndFile in dirsAndFiles:
     for file in dirAndFile["files"]:
         if not os.path.isfile(dirAndFile["dir"]+file):
             shutil.copyfile("./lib/templates/"+file, dirAndFile["dir"]+file)
-
+        else: # do it anyway to make sure the file is up to date - comment out if you don't want this
+            shutil.copyfile("./lib/templates/"+file, dirAndFile["dir"]+file)
 
 prompts = {
 	"Prefix": {
@@ -101,8 +102,8 @@ prompts = {
 		"regex": "^[a-z][a-z0-9-]{0,12}[a-z0-9]$",
 		"help": "2 to 8 characters. Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number.",
 		"description": "What is the prefix for this stack?",
-		"examples": "atlantis, atlantis-dev, atlantis-prod",
-		"default": "atlantis"
+		"examples": "acme, acme-dev, acme-prod",
+		"default": "acme"
 	},
 
 	"ProjectId": {
@@ -140,8 +141,8 @@ prompts = {
 		"required": True,
 		"regex": "^\/[a-zA-Z0-9\/_-]+\/$|^\/$",
 		"help": "Role Path must be a single slash OR start and end with a slash, contain alpha numeric characters, dashes, underscores, and slashes.",
-		"description": "Role Path is a string of characters that designates the path to the role. For example, the path to the role 'atlantis-admin' is '/atlantis-admin/'.",
-		"examples": "/, /atlantis-admin/, /atlantis-admin/dev/, /service-roles/, /application_roles/dev-ops/",
+		"description": "Role Path is a string of characters that designates the path to the role. For example, the path to the role 'acme-admin' is '/acme-admin/'.",
+		"examples": "/, /acme-admin/, /acme-admin/dev/, /service-roles/, /application_roles/dev-ops/",
 		"default": "/"
 	},
 
@@ -191,7 +192,7 @@ prompts = {
 		"regex": "^[a-zA-Z0-9][a-zA-Z0-9_\-]{0,62}[a-zA-Z0-9]$",
 		"help": "2 to 64 characters. Alphanumeric, dashes, underscores, and spaces. Must start and end with a letter or number.",
 		"description": "Identifies the CodeCommit repository which contains the source code to deploy.",
-		"examples": "atlantis-financial-application, atlantis-financial-api, atlantis_ui",
+		"examples": "acme-financial-application, acme-financial-api, acme",
 		"default": ""
 	},
 
@@ -201,7 +202,7 @@ prompts = {
 		"regex": "^[a-zA-Z0-9][a-zA-Z0-9_\-\/]{0,14}[a-zA-Z0-9]$",
 		"help": "2 to 16 characters. Alphanumeric, dashes and underscores. Must start and end with a letter or number.",
 		"description": "Identifies the CodeCommit branch which contains the source code to deploy.",
-		"examples": "main, dev, beta, feature/atlantis-ui",
+		"examples": "main, dev, beta, feature/acme-ui",
 		"default": "test"
 	},
 
@@ -213,7 +214,7 @@ prompts = {
 		"regex": "^[a-zA-Z0-9][a-zA-Z0-9_\-\/\s]{0,62}[a-zA-Z0-9]$",
 		"help": "2 to 64 characters. Alphanumeric, dashes, underscores, and spaces. Must start and end with a letter or number.",
 		"description": "A descriptive name to identify the main application irregardless of the stage or branch. This is only used in the Tag Name and not visible anywhere else.",
-		"examples": "Financial Transaction Processing, Financial Transaction Audit, atlantis-finance-app",
+		"examples": "Financial Transaction Processing, Financial Transaction Audit, acme-finance-app",
 		"default": ""
 	},
 
@@ -223,13 +224,13 @@ prompts = {
 		"regex": "^$|^arn:aws:iam::[0-9]{12}:role\/[a-zA-Z0-9\/_-]+$",
 		"help": "Service Role ARN must be in the format: arn:aws:iam::{account_id}:role/{policy_name}",
 		"description": "The Service Role gives CloudFormation permission to create, delete, and manage stacks on your behalf.",
-		"examples": "arn:aws:iam::123456789012:role/ATLANTIS-CloudFormation-Service-Role",
+		"examples": "arn:aws:iam::123456789012:role/ACME-CloudFormation-Service-Role",
 		"default": ""
 	},
 
-	# Toolchain specific - pipeline-stack.py
+	# Template specific - pipeline-stack.py
 
-	"toolchain_template_location-BucketName": {
+	"pipeline_template_location-BucketName": {
 		"name": "S3 Bucket Name for Pipeline Template",
 		"required": True,
 		"regex": "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^$",
@@ -239,7 +240,7 @@ prompts = {
 		"default": "63klabs"
 	},
 
-	"toolchain_template_location-BucketKey": {
+	"pipeline_template_location-BucketKey": {
 		"name": "S3 Bucket Key for Pipeline Template",
 		"required": True,
 		"regex": "^\/[a-zA-Z0-9\/_-]+\/$|^\/$",
@@ -249,14 +250,14 @@ prompts = {
 		"default": "/atlantis/v2/"
 	},
 
-	"toolchain_template_location-FileName": {
+	"pipeline_template_location-FileName": {
 		"name": "Pipeline Template File Name",
 		"required": True,
 		"regex": "^[a-zA-Z0-9][a-zA-Z0-9-_]*[a-zA-Z0-9]\.(yml|yaml|json)$",
 		"help": "File name must be lowercase, start with a letter, and contain only letters, numbers, and dashes",
 		"description": "What is the pipeline template file name?",
-		"examples": "pipeline-template.yml, pipeline-toolchain.yaml",
-		"default": "pipeline-template.yml"
+		"examples": "template-pipeline.yml, template-pipeline.yaml",
+		"default": "template-pipeline.yml"
 	},
 
 	"AwsAccountId": {

@@ -1,6 +1,6 @@
 version: 0.2
 
-# BUILD ENVIRONMENT VARIABLES are specified in the pipeline-toolchain.yml template.
+# BUILD ENVIRONMENT VARIABLES are specified in the template-pipeline.yml template.
 # Search for 'EnvironmentVariables' under AWS::CodeBuild::Project in the template.
 #
 # AWS_PARTITION
@@ -20,7 +20,7 @@ version: 0.2
 # CodePipeline > CodeBuild > Build details > Environment/Environment variables
 # to see a current list of build environment variables.
 #
-# The default pipeline-toolchain.yml template allows access to ssm parameter store 
+# The default template-pipeline.yml template allows access to ssm parameter store 
 # during the execution of this buildspec.yml.
 #
 # Note that secure parameters should not be used during the build where they might be stored in 

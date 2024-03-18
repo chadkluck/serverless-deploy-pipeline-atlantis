@@ -1,6 +1,6 @@
 # Tutorials
 
-In order to complete the tutorials you must have completed the steps outlined in [README 1: IAM CloudFormation Service Role](../iam-cloudformation-service-role/README-1-IAM-CF-Service-Role.md), [README 2: CodeCommit Repository](../codecommit-repository/README-2-CodeCommit-Repository.md), and [README 3: CloudFormation Deploy Stack](../deploy-pipeline/README-3-CloudFormation-Deploy-Stack.md).
+In order to complete the tutorials you must have completed the steps outlined in [README 1: IAM CloudFormation Service Role](../iam-cloudformation-service-role/README-1-IAM-CF-Service-Role.md), [README 2: CodeCommit Repository](../codecommit-repository/README-2-CodeCommit-Repository.md), and [README 3: CloudFormation Deploy Stack](../deploy-pipeline/README-3-CloudFormation-pipeline-Stack.md).
 
 If you have completed the steps in these 3 READMEs, then congratulations! Your tutorial journey has already begun!
 
@@ -16,7 +16,7 @@ The IAM policy and service role is scoped down to just the prefix and resource t
 
 Similarly, ENGR deploy stacks can only modify ENGR resources. For example, an ENGR stack cannot delete or modify resources assigned to an ACCT stack. Furthermore, each stack has its own policy that restricts its own access to resources under its name and stage.
 
-Stacks `ENGR-atomic-particle-manager-test-deploy` and `ENGR-atomic-particle-manager-infrastructure` can only modify resources with names (or specified tags) starting with `ENGR-atomic-particle-manager-test-*` and cannot modify resources under the name `ENGR-atomic-particle-manager-beta-*` and certainly not `ACCT-payroll-prod-*`.
+Stacks `ENGR-atomic-particle-manager-test-pipeline` and `ENGR-atomic-particle-manager-infrastructure` can only modify resources with names (or specified tags) starting with `ENGR-atomic-particle-manager-test-*` and cannot modify resources under the name `ENGR-atomic-particle-manager-beta-*` and certainly not `ACCT-payroll-prod-*`.
 
 The deployment stacks also create Worker Roles specific to the application infrastructure stack. The Worker CFRole takes the place of the Service Role for the infrastructure stack. Just like how the Service Role grants the deploy stack permissions, the Worker CFRole grants the infrastructure stack permission to create all the resources necessary for your application infrastructure.
 
@@ -27,7 +27,7 @@ However, depending on the needs of your application, you can add and remove perm
 For now remember the following:
 
 1. The Service Role grants the deploy stack permission to create the Code Pipeline and worker roles for the application infrastructure stack. If you want to add to your deploy stack such as pipeline execution notifications via SNS or other event triggers, add them to the service role.
-2. The worker roles created by the deploy stack grant permission for the infrastructure stack to create all resources and execution roles for your application. If you need your infrastructure stack to create EC2 instances, Databases, and Step Functions, you need to add these permissions to the Worker Role definition in the pipeline-toolchain.yml template.
+2. The worker roles created by the deploy stack grant permission for the infrastructure stack to create all resources and execution roles for your application. If you need your infrastructure stack to create EC2 instances, Databases, and Step Functions, you need to add these permissions to the Worker Role definition in the template-pipeline.yml template.
 3. Execution roles are created and defined in the infrastructure stack template. If your application needs additional access to S3 buckets or databases that are not created by the stack then you can add them to the execution role definitions in the template.yml file.
 
 ## Tutorial 1: Deploying Changes
@@ -96,7 +96,7 @@ Deploy stack permissions come from the Service Role.
 You can add stacks all day long, you can also delete them without affecting the branches. However, there is an order for deleting:
 
 1. Delete the infrastructure stack. You may need to disable termination protection.
-2. Empty the S3 bucket for the deploy. The bucket with the format: `${AWS::Region}-${AWS::AccountId}-${ProjectStageId}-deploy`
+2. Empty the S3 bucket for the deploy. The bucket with the format: `${AWS::Region}-${AWS::AccountId}-${ProjectStageId}-pipeline`
 3. Delete the deploy stack. Again, you may need to disable termination protection.
 
 ### Congratulations!
@@ -379,8 +379,8 @@ So, the sole file in `config-projects/` should now be `config-project.json` whic
 ```JSON
 {
     "source_files": {
-        "toolchain_bucketname": "63klabs",
-        "toolchain_bucketkey": "projectstack-templates/atlantis",
+        "pipeline_template_bucketname": "63klabs",
+        "pipeline_template_bucketkey": "projectstack-templates/atlantis",
         "src_bucketname": "63klabs",
         "src_bucketkey": "projectstack-templates/atlantis"
     },

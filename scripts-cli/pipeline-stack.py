@@ -9,7 +9,7 @@ import atlantis
 
 print("")
 tools.printCharStr("=", 80, bookend="|")
-tools.printCharStr(" ", 80, bookend="|", text="CloudFormation Template and AWS CLI Command Generator for Atlantis CI/CD")
+tools.printCharStr(" ", 80, bookend="|", text="Pipeline CloudFormation Template and AWS CLI Command Generator")
 tools.printCharStr(" ", 80, bookend="|", text="v2024.02.29")
 tools.printCharStr("-", 80, bookend="|")
 tools.printCharStr(" ", 80, bookend="|", text="Chad Leigh Kluck")
@@ -89,7 +89,7 @@ for item in defaultsFromIam:
 
 # Default values - Set any of these defaults to your own in the .defaults file
 defaults = {
-    "toolchain_template_location": {
+    "pipeline_template_location": {
         "BucketName": "63klabs",
         "BucketKey": "/atlantis/v2/",
         "FileName": atlantis.files["cfnPipelineTemplate"]["name"]
@@ -249,7 +249,7 @@ print("")
 
 promptSections = [
     {
-        "key": "toolchain_template_location",
+        "key": "pipeline_template_location",
         "name": "Pipeline Template Location"
     },
 
@@ -269,14 +269,14 @@ for item in promptSections:
     prompts[item["key"]] = {}
     parameters[item["key"]] = {}
 
-prompts["toolchain_template_location"]["BucketName"] = atlantis.prompts["toolchain_template_location-BucketName"]
-prompts["toolchain_template_location"]["BucketName"]["default"] = defaults["toolchain_template_location"]["BucketName"]
+prompts["pipeline_template_location"]["BucketName"] = atlantis.prompts["pipeline_template_location-BucketName"]
+prompts["pipeline_template_location"]["BucketName"]["default"] = defaults["pipeline_template_location"]["BucketName"]
 
-prompts["toolchain_template_location"]["BucketKey"] = atlantis.prompts["toolchain_template_location-BucketKey"]
-prompts["toolchain_template_location"]["BucketKey"]["default"] = defaults["toolchain_template_location"]["BucketKey"]
+prompts["pipeline_template_location"]["BucketKey"] = atlantis.prompts["pipeline_template_location-BucketKey"]
+prompts["pipeline_template_location"]["BucketKey"]["default"] = defaults["pipeline_template_location"]["BucketKey"]
 
-prompts["toolchain_template_location"]["FileName"] = atlantis.prompts["toolchain_template_location-FileName"]
-prompts["toolchain_template_location"]["FileName"]["default"] = defaults["toolchain_template_location"]["FileName"]
+prompts["pipeline_template_location"]["FileName"] = atlantis.prompts["pipeline_template_location-FileName"]
+prompts["pipeline_template_location"]["FileName"]["default"] = defaults["pipeline_template_location"]["FileName"]
 
 
 prompts["stack_parameters"]["Prefix"] = atlantis.prompts["Prefix"]
@@ -434,9 +434,9 @@ def deleteEmptyValues(data, listtype, valuekey):
     return data
 
 def subPlaceholders(string):
-    string = string.replace("$TOOLCHAIN_BUCKETNAME$", parameters["toolchain_template_location"]["BucketName"])
-    string = string.replace("$TOOLCHAIN_BUCKETKEY$", parameters["toolchain_template_location"]["BucketKey"])
-    string = string.replace("$TOOLCHAIN_FILENAME$", parameters["toolchain_template_location"]["FileName"])
+    string = string.replace("$PIPELINE_TEMPLATE_BUCKETNAME$", parameters["pipeline_template_location"]["BucketName"])
+    string = string.replace("$PIPELINE_TEMPLATE_BUCKETKEY$", parameters["pipeline_template_location"]["BucketKey"])
+    string = string.replace("$PIPELINE_TEMPLATE_FILENAME$", parameters["pipeline_template_location"]["FileName"])
 
     string = string.replace("$AWS_ACCOUNT$", defaults["application"]["AwsAccountId"]) # not used in sample-input-create-stack
     string = string.replace("$AWS_REGION$", defaults["application"]["AwsRegion"]) # not used in sample-input-create-stack
@@ -555,15 +555,15 @@ print("")
 stringS3Text = """
 
 # -----------------------------------------------------------------------------
-# If you need to upload $TOOLCHAIN_FILENAME$ to S3, 
+# If you need to upload $PIPELINE_TEMPLATE_FILENAME$ to S3, 
 # Run the following commands (adjust paths as needed):
 
-cd $CLI_DIR_CFN_TOOLCHAIN$
-aws s3 cp $TOOLCHAIN_FILENAME$ s3://$TOOLCHAIN_BUCKETNAME$$TOOLCHAIN_BUCKETKEY$$TOOLCHAIN_FILENAME$
+cd $CLI_DIR_CFN_PIPELINE_TEMPLATE$
+aws s3 cp $PIPELINE_TEMPLATE_FILENAME$ s3://$PIPELINE_TEMPLATE_BUCKETNAME$$PIPELINE_TEMPLATE_BUCKETKEY$$PIPELINE_TEMPLATE_FILENAME$
 
 """
 stringS3 = ""
-if parameters["toolchain_template_location"]["BucketName"] != "63klabs":
+if parameters["pipeline_template_location"]["BucketName"] != "63klabs":
     stringS3 = stringS3Text
 
 stringCFN = """
@@ -576,7 +576,7 @@ aws cloudformation create-stack --cli-input-json file://$INPUTCFNFILENAME$
 # -----------------------------------------------------------------------------
 # Check progress:
 
-aws cloudformation describe-stacks --stack-name $PREFIX$-$PROJECT_ID$-$STAGE_ID$-deploy
+aws cloudformation describe-stacks --stack-name $PREFIX$-$PROJECT_ID$-$STAGE_ID$-pipeline
 
 """
 
@@ -585,7 +585,7 @@ cliCommands = stringS3 + stringCFN
 cliCommands = subPlaceholders(cliCommands)
 
 cliCommands = cliCommands.replace("$INPUTCFNFILENAME$", inputCFNFilename.replace(atlantis.dirs["cli"]["Cfn"], ""))
-cliCommands = cliCommands.replace("$CLI_DIR_CFN_TOOLCHAIN$", atlantis.dirs["cfnPipeline"])
+cliCommands = cliCommands.replace("$CLI_DIR_CFN_PIPELINE_TEMPLATE$", atlantis.dirs["cfnPipeline"])
 cliCommands = cliCommands.replace("$ROOT_CLI_DIR_CFN$", atlantis.dirs["cli"]["Cfn"].replace("./", "../scripts-cli/"))
 
 # save cliCommands to cli-<Prefix>-<ProjectId>-<StageId>.txt
