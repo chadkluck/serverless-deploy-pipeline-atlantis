@@ -326,22 +326,18 @@ More Information on granting users permissions to pass roles:
 
 ### CodeCommit: Create Repository and Structure It
 
-Application Infrastructure Code in CodeCommit
+Once the service role is created it is time to set up your CodeCommit repository to store your application infrastructure.
 
-[Application Infrastructure](./application-infrastructure/) is available to seed your CodeCommit repository. Use the sample code for your initial experiments, tutorials, and as a template for structuring your own code to work with the pipeline. (Basically setting up the proper parameters and tags to allow the deploy pipeline to work its magic.)
+You will need to create the CodeCommit repository and seed it with your application infrastructure before you can create the deploy pipeline. To get started, place the `/application-infrastructure/` into the root of the repository. You can replace it later with more functional code such as [Serverless Web Service Template for Pipeline Atlantis](https://github.com/chadkluck/serverless-webservice-template-for-pipeline-atlantis).
 
-Make sure the `/application-infrastructure` directory stays in the root of your repository or CodePipeline will not know where to find your code!
-
-Once the service roles are created it is time to set up your CodeCommit repository to store your application infrastructure.
-
-You will need to create the CodeCommit repository and seed it with your application infrastructure before you can create the deploy pipeline. To get started, place the `/application-infrastructure` into the root of the repository. You can replace it later with more functional code such as [Serverless Web Service Template for Pipeline Atlantis](https://github.com/chadkluck/serverless-webservice-template-for-pipeline-atlantis).
-
-## Create the Repository
+#### CodeCommit Step 1: Create the Repository
 
 1. Create a code commit repository. (You can name it `hello-world`)
 2. Clone the repository to your local machine.
-3. Copy the `/application-infrastructure` directory into the root of the repository and commit.
+3. Copy the `/application-infrastructure/` directory into the root of the repository and commit.
 4. Create `dev` and `test` branches (you can create additional branches later)
+
+Make sure the `/application-infrastructure/` directory stays in the root of your repository or CodePipeline will not know where to find your code!
 
 You should now have a repository with 3 branches:
 
@@ -355,38 +351,12 @@ When we create the first Deploy Pipeline CloudFormation stack we will have it mo
 
 We will leave "dev" as a branch that doesn't have an automatic deploy. You can also create individual developer and feature branches in the future.
 
-## File Structure
-
-> **NOTE:** The deployment pipeline expects to find the application-infrastructure directory containing your application code and infrastructure template in your repository.
-
-```
-Repository
-| - application-infrastructure/   <-- contains template and application code
-|   | - app/
-|   | - template.yml
-|   | - ...
-| - deploy-pipeline/              <-- (optional) contains a copy of your deploy pipeline and CloudFormation input generators
-    | - template-pipeline.yml
-```
-
-The deploy-pipeline directory is optional and can be helpful if you modify the template-pipeline. You can also move it (and iam-cloudformation-service-role) to where your organization manages set-up templates centrally or convert to Terraform or AWS CDK script. 
-
-The codecommit-repository, iam-cloudformation-service-role, and doc directories do not have to be copied over to your application repository.
-
-When the deploy pipeline stack is set up, you will choose a branch to monitor and deploy from.
-
-Once you are comfortable setting up deploy pipelines and connecting branches, you can manage multiple deployments such as test, beta, prod (main), or for separate feature/developer branches.
-
-It is recommended you have a base or work-in-progress branch (such as `dev`) that you can commit code to without initiating a deploy.
-
-## Related
-
 - [AWS Documentation: CodeCommit ](https://docs.aws.amazon.com/codecommit/latest/userguide/welcome.html)
 - [AWS Documentation: AWS Serverless Application Model (SAM)](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html)
 
-### CloudFormation: Create Deploy Stack
+### CloudFormation: Create Deploy Pipeline Stack
 
-[deploy-pipeline/template-pipeline.yml](./deploy-pipeline/template-pipeline.yml)
+TODO: --------------
 
 This is the CloudFormation template you will be using to create the Deploy Stack which creates and manages the AWS Code Pipeline. It will utilize the CloudFormation Service Role you created. The Code Pipeline is what builds and deploys your infrastructure stack.
 
