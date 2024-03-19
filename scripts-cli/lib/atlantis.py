@@ -28,6 +28,7 @@ files = {
     "cfnPipelineTemplateInput": {},
     "iamTrustPolicy": {},
     "iamServicePolicy": {},
+	"docsPipelineParamReadme": {}
 }
 
 dirs["cfnPipeline"] = "../cloudformation-pipeline-template/"
@@ -35,8 +36,8 @@ dirs["cfnPipeline"] = "../cloudformation-pipeline-template/"
 files["cfnPipelineTemplate"]["name"] = "template-pipeline.yml"
 files["cfnPipelineTemplate"]["path"] = dirs["cfnPipeline"]+files["cfnPipelineTemplate"]["name"]
 
-files["cfnPipelineTemplateInput"]["name"] = "sample-input-create-stack.json"
-files["cfnPipelineTemplateInput"]["path"] = dirs["cfnPipeline"]+files["cfnPipelineTemplateInput"]["name"]
+files["cfnPipelineTemplateInput"]["name"] = "SAMPLE-input-create-stack.json"
+files["cfnPipelineTemplateInput"]["path"] = dirs["cli"]["Cfn"]+files["cfnPipelineTemplateInput"]["name"]
 
 dirs["iamServiceRole"] = "../iam-cloudformation-service-role/"
 
@@ -46,6 +47,11 @@ files["iamTrustPolicy"]["path"] = dirs["iamServiceRole"]+files["iamTrustPolicy"]
 files["iamServicePolicy"]["name"] = "SAMPLE-CloudFormationServicePolicy.json"
 files["iamServicePolicy"]["path"] = dirs["iamServiceRole"]+files["iamServicePolicy"]["name"]
 
+dirs["docs"] = "../docs/"
+
+files["docsPipelineParamReadme"]["name"] = "Pipeline-Parameters.md"
+files["docsPipelineParamReadme"]["path"] = dirs["docs"]+files["docsPipelineParamReadme"]["name"]
+
 dirsAndFiles = [
     {
         "dir": dirs["cli"]["Iam"],
@@ -53,7 +59,9 @@ dirsAndFiles = [
     },
     {
         "dir": dirs["cli"]["Cfn"],
-        "files": []
+        "files": [
+			files["cfnPipelineTemplateInput"]["name"]
+		]
     },
     {
         "dir": dirs["settings"]["Cfn"],
@@ -69,16 +77,16 @@ dirsAndFiles = [
         ]
     },
     {
-        "dir": dirs["cfnPipeline"],
-        "files": [
-			files["cfnPipelineTemplateInput"]["name"]
-        ]
-    },
-    {
         "dir": dirs["iamServiceRole"],
         "files": [
             files["iamTrustPolicy"]["name"],
             files["iamServicePolicy"]["name"]
+        ]
+    },
+    {
+        "dir": dirs["docs"],
+        "files": [
+            files["docsPipelineParamReadme"]["name"]
         ]
     }
 ]
@@ -101,7 +109,7 @@ prompts = {
 		"required": True,
 		"regex": "^[a-z][a-z0-9-]{0,12}[a-z0-9]$",
 		"help": "2 to 8 characters. Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number.",
-		"description": "What is the prefix for this stack?",
+		"description": "Pre-pended to all resources, helps distinguish between teams and organizational units, and establishes permissions.",
 		"examples": "acme, acme-dev, acme-prod",
 		"default": "acme"
 	},
@@ -111,7 +119,7 @@ prompts = {
 		"required": True,
 		"regex": "^[a-z][a-z0-9-]*[a-z0-9]$",
 		"help": "2 to 20 characters. Alphanumeric lowercase, dashes, and underscores. Must start and end with a letter or number. Do NOT include <Prefix> or <StageId>.",
-		"description": "What is the project id for this stack?",
+		"description": "Project or application identifier",
 		"examples": "hello-world, finance-app, finance-audit",
 		"default": "hello-world"
 	},
@@ -280,6 +288,17 @@ prompts = {
 		"default": "us-east-1"
 	}
 }
+
+# | Parameter | Required | Brief Description | Requirement | Examples | 
+# | --------- | -------- | ----------------- | ----------- | -------- |
+
+# Read in files["docsPipelineParamReadme"]["path"]
+# loop through prompts and place each prompt in a row in the markdown table
+# and write it to files["docsPipelineParamReadme"]["path"]
+with open(files["docsPipelineParamReadme"]["path"], "a") as f:
+	for key in prompts:
+		f.write("| "+prompts[key]["name"]+" | "+str(prompts[key]["required"])+" | "+prompts[key]["description"]+" | "+prompts[key]["help"]+" | "+prompts[key]["examples"]+" |\n")
+	f.close()
 
 def getUserInput(prompts, parameters, promptSections):
     #iterate through prompt sections

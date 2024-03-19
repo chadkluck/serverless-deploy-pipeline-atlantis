@@ -1,5 +1,7 @@
 # Advanced
 
+> NOTE: This tutorial has not yet been updated for Atlantis Pipeline V2
+
 ## Project IDs
 
 TODO

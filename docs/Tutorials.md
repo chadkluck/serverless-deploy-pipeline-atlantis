@@ -1,5 +1,7 @@
 # Tutorials
 
+> NOTE: This tutorial has not yet been updated for Atlantis Pipeline V2
+
 In order to complete the tutorials you must have completed the steps outlined in [README 1: IAM CloudFormation Service Role](../iam-cloudformation-service-role/README-1-IAM-CF-Service-Role.md), [README 2: CodeCommit Repository](../codecommit-repository/README-2-CodeCommit-Repository.md), and [README 3: CloudFormation Deploy Stack](../deploy-pipeline/README-3-CloudFormation-pipeline-Stack.md).
 
 If you have completed the steps in these 3 READMEs, then congratulations! Your tutorial journey has already begun!
