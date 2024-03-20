@@ -5,8 +5,13 @@ import sys
 
 
 import tools
+import yaml
 
 hello = "Hello, World"
+
+# =============================================================================
+# Make sure that the directory structure is correct and that the files are present
+# Copy over sample files
 
 dirs = {
     "settings": {},
@@ -103,43 +108,31 @@ for dirAndFile in dirsAndFiles:
         else: # do it anyway to make sure the file is up to date - comment out if you don't want this
             shutil.copyfile("./lib/templates/"+file, dirAndFile["dir"]+file)
 
+# =============================================================================
+# Define prompts and their defaults
+			
 prompts = {
 	"Prefix": {
 		"name": "Prefix",
 		"required": True,
-		"regex": "^[a-z][a-z0-9-]{0,12}[a-z0-9]$",
-		"help": "2 to 8 characters. Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number.",
-		"description": "Pre-pended to all resources, helps distinguish between teams and organizational units, and establishes permissions.",
-		"examples": "acme, acme-dev, acme-prod",
-		"default": "acme"
+		"examples": "acme, finc, ws",
 	},
 
 	"ProjectId": {
 		"name": "Project Id",
 		"required": True,
-		"regex": "^[a-z][a-z0-9-]*[a-z0-9]$",
-		"help": "2 to 20 characters. Alphanumeric lowercase, dashes, and underscores. Must start and end with a letter or number. Do NOT include <Prefix> or <StageId>.",
-		"description": "Project or application identifier",
-		"examples": "hello-world, finance-app, finance-audit",
-		"default": "hello-world"
+		"examples": "hello-world, finance-api, finance-audit, sales-api",
 	},
 
 	"StageId": {
 		"name": "Stage Id",
 		"required": True,
-		"regex": "^[a-z][a-z0-9-]{2,8}[a-z0-9]$",
-		"help": "2 to 8 characters. Alphanumeric lowercase, dashes, and underscores. Must start and end with a letter or number.",
-		"description": "May be the same, similar, or a short version of the branch name.",
-		"examples": "test, stage, beta, test-joe, prod, t95",
-		"default": "test"
+		"examples": "test, stage, beta, t-joe, prod, t95"
 	},
 
 	"S3BucketNameOrgPrefix": {
 		"name": "S3 Bucket Name Org Prefix",
 		"required": False,
-		"regex": "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^$",
-		"help": "S3 bucket prefix must be lowercase, start with a letter, and contain only letters, numbers, and dashes",
-		"description": "S3 bucket names must be unique across all AWS accounts. This prefix helps distinguish S3 buckets from each other and will be used in place of using account ID and region to establish uniqueness resulting in shorter bucket names.",
 		"examples": "xyzcompany, acme, b2b-solutions-inc",
 		"default": ""
 	},
@@ -147,9 +140,6 @@ prompts = {
 	"RolePath": {
 		"name": "Role Path",
 		"required": True,
-		"regex": "^\/[a-zA-Z0-9\/_-]+\/$|^\/$",
-		"help": "Role Path must be a single slash OR start and end with a slash, contain alpha numeric characters, dashes, underscores, and slashes.",
-		"description": "Role Path is a string of characters that designates the path to the role. For example, the path to the role 'acme-admin' is '/acme-admin/'.",
 		"examples": "/, /acme-admin/, /acme-admin/dev/, /service-roles/, /application_roles/dev-ops/",
 		"default": "/"
 	},
@@ -158,8 +148,6 @@ prompts = {
 		"name": "Deploy Environment",
 		"required": True,
 		"regex": "^(DEV|TEST|PROD)$",
-		"help": "Deploy Environment must be DEV, TEST, or PROD",
-		"description": "What deploy/testing environment will this run under? An environment can contain multiple stages and in coordination with run different tests. Utilize this environment variable to determine your tests, logging levels, and deployment strategies. Can be used for conditionals in the template.",
 		"examples": "DEV, TEST, PROD",
 		"default": "TEST"
 	},
@@ -167,19 +155,12 @@ prompts = {
 	"ParameterStoreHierarchy": {
 		"name": "Parameter Store Hierarchy",
 		"required": True,
-		"regex": "^\/([a-zA-Z0-9_.-]*[\/])+$|^\/$",
-		"help": "Must either be a single slash OR start and end with a slash, contain alpha numeric characters, dashes, underscores, and slashes.",
-		"description": "Parameters may be organized within a hierarchy based on your organizational or operations structure. The application will create its parameters within this hierarchy. For example, /Finance/ops/ for this value would then generate /Finance/ops/<env>/<prefix>-<project_id>-<stage>/<parameterName>.",
 		"examples": "/, /Finance/, /Finance/ops/, /Finance/ops/dev/",
-		"default": "/"
 	},
 
 	"AlarmNotificationEmail": {
 		"name": "Alarm Notification Email",
 		"required": True,
-		"regex": "^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+[a-zA-Z0-9]$",
-		"help": "Alarm Notification Email must be in the format: user@example.com",
-		"description": "Alarm Notification Email is the email address that will receive CloudWatch alarms.",
 		"examples": "user@example.com, finance@example.com, xyzcompany@example.com",
 		"default": ""
 	},
@@ -187,9 +168,6 @@ prompts = {
 	"PermissionsBoundaryARN": {
 		"name": "Permissions Boundary ARN",
 		"required": False,
-		"regex": "^$|^arn:aws:iam::[0-9]{12}:policy\/[a-zA-Z0-9\/_-]+$",
-		"help": "Permissions Boundary ARN must be in the format: arn:aws:iam::{account_id}:policy/{policy_name}",
-		"description": "Permissions Boundary is a policy that is attached to the role and can be used to further restrict the permissions of the role. Your organization may or may not require boundaries.",
 		"examples": "arn:aws:iam::123456789012:policy/xyz-org-boundary-policy",
 		"default": ""
 	},
@@ -197,9 +175,6 @@ prompts = {
 	"CodeCommitRepository": {
 		"name": "CodeCommit Repository",
 		"required": True,
-		"regex": "^[a-zA-Z0-9][a-zA-Z0-9_\-]{0,62}[a-zA-Z0-9]$",
-		"help": "2 to 64 characters. Alphanumeric, dashes, underscores, and spaces. Must start and end with a letter or number.",
-		"description": "Identifies the CodeCommit repository which contains the source code to deploy.",
 		"examples": "acme-financial-application, acme-financial-api, acme",
 		"default": ""
 	},
@@ -207,11 +182,8 @@ prompts = {
 	"CodeCommitBranch": {
 		"name": "CodeCommit Branch",
 		"required": True,
-		"regex": "^[a-zA-Z0-9][a-zA-Z0-9_\-\/]{0,14}[a-zA-Z0-9]$",
-		"help": "2 to 16 characters. Alphanumeric, dashes and underscores. Must start and end with a letter or number.",
-		"description": "Identifies the CodeCommit branch which contains the source code to deploy.",
 		"examples": "main, dev, beta, feature/acme-ui",
-		"default": "test"
+		"default": ""
 	},
 
 	# Application specific - pipeline-stack.py
@@ -289,6 +261,49 @@ prompts = {
 	}
 }
 
+# =============================================================================
+# Read in the CloudFormation template
+
+# Read in CloudFormation template which is a YAML file
+# parse the YAML file and update the prompts dictionary with the values from Parameters
+with open(files["cfnPipelineTemplate"]["path"], "r") as f:
+	dataTemplate = yaml.load(f, Loader=yaml.BaseLoader)
+	f.close()
+
+	for key in dataTemplate["Parameters"]:
+		param = dataTemplate["Parameters"][key]
+
+		if "AllowedPattern" in param:
+			prompts[key]["regex"] = param["AllowedPattern"].replace("\\\\", "\\")
+		elif "AllowedValues" in param:
+			prompts[key]["examples"] = ", ".join(i for i in param["AllowedValues"])
+
+		if "Default" in param:
+			prompts[key]["default"] = param["Default"]
+		
+		if "Description" in param:
+			prompts[key]["description"] = param["Description"]
+
+		if "ConstraintDescription" in param:
+			prompts[key]["help"] = param["ConstraintDescription"]
+
+		if "MinLength" in param:
+			prompts[key]["MinLength"] = int(param["MinLength"])
+
+		if "MaxLength" in param:
+			prompts[key]["MaxLength"] = int(param["MaxLength"])
+
+		if "MinValue" in param:
+			prompts[key]["MinValue"] = int(param["MinValue"])
+
+		if "MaxValue" in param:
+			prompts[key]["MaxValue"] = int(param["MaxValue"])
+
+
+# =============================================================================
+# Update the Pipeline Parameter README with the pipeline parameters
+
+
 # | Parameter | Required | Brief Description | Requirement | Examples | 
 # | --------- | -------- | ----------------- | ----------- | -------- |
 
@@ -299,6 +314,11 @@ with open(files["docsPipelineParamReadme"]["path"], "a") as f:
 	for key in prompts:
 		f.write("| "+prompts[key]["name"]+" | "+str(prompts[key]["required"])+" | "+prompts[key]["description"]+" | "+prompts[key]["help"]+" | "+prompts[key]["examples"]+" |\n")
 	f.close()
+
+
+# =============================================================================
+# Define Functions
+
 
 def getUserInput(prompts, parameters, promptSections):
     #iterate through prompt sections
@@ -337,6 +357,31 @@ def getUserInput(prompts, parameters, promptSections):
 					if not re.match(prompt["regex"], pInput):
 						tools.displayHelp(prompt, True)
 						continue
+
+				# if MinLength is set, check that the input is at least that long
+				if "MinLength" in prompt:
+					if len(pInput) < prompt["MinLength"]:
+						tools.displayHelp(prompt, True)
+						continue
+
+				# if MaxLength is set, check that the input is at most that long
+				if "MaxLength" in prompt:
+					if len(pInput) > prompt["MaxLength"]:
+						tools.displayHelp(prompt, True)
+						continue
+
+				# if MinValue is set, check that the input is at least that value
+				if "MinValue" in prompt:
+					if int(pInput) < prompt["MinValue"]:
+						tools.displayHelp(prompt, True)
+						continue
+
+				# if MaxValue is set, check that the input is at most that value
+				if "MaxValue" in prompt:
+					if int(pInput) > prompt["MaxValue"]:
+						tools.displayHelp(prompt, True)
+						continue
+
 				break
 
 			parameters[sectionKey][key] = pInput

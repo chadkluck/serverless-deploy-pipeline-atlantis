@@ -84,7 +84,7 @@ Parameters:
     ConstraintDescription: "2 to 10 characters. Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number."
   S3BucketNameOrgPrefix:
     Type: String
-    Description: "By default, to enforce uniqueness, buckets created for deploy and infrastructure include account and region in the bucket name. However, due to S3 bucket name character limits, you can turn this off by specifying your own prefix (like an org code) that will be included before the project <Prefix> above."
+    Description: "By default, to enforce uniqueness, buckets created for deploy and infrastructure include account and region in the bucket name. However, due to S3 bucket name character limits, you can turn this off by specifying your own S3 prefix (like an org code). This will be used in addition to the Prefix entered above."
     Default: ""
     AllowedPattern: "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^$"
     ConstraintDescription: "May be empty or at least 2 characters long. Must start with a alphanumeric character, may contain lowercase letters, numbers, and hyphens."
@@ -116,15 +116,15 @@ Parameters:
     ConstraintDescription: "Must only contain alpha-numeric, dashes, underscores, or slashes. Must be a single slash or begin and end with a slash. (/Finance/, /Finance/ops/, or /)"
   AlarmNotificationEmail:
     Type: String
-    Description: "Email address to send a notification to when Lambda function goes into alarm. Be sure to check the inbox for this email address as you will need to confirm the subscription."
-    AllowedPattern: "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$"
-    ConstraintDescription: "A valid email must be used to receive alarm notifications"
+    Description: "Email address to send notifications to when alarms are triggered. Be sure to check the inbox as you will need to confirm the subscription."
+    AllowedPattern: "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$"
+    ConstraintDescription: "A valid email address"
   PermissionsBoundaryARN:
     Type: String
-    Description: "ARN of the developer permissions boundary. This will be used to limit the permissions of the created IAM role. If left empty, no permissions boundary will be used."
+    Description: "Permissions Boundary is a policy attached to a role to further restrict the permissions of the role. Your organization may or may not require boundaries. If left empty, no permissions boundary will be used."
     Default: ""
     AllowedPattern: "^$|^arn:aws:iam::\\d{12}:policy\\/[\\w+=,.@\\-\\/]*[\\w+=,.@\\-]+$"
-    ConstraintDescription: "Must be empty or a valid IAM Policy ARN"
+    ConstraintDescription: "Must be empty or a valid IAM Policy ARN in the format: arn:aws:iam::{account_id}:policy/{policy_name}"
 
   # ---------------------------------------------------------------------------
   # Code Repository
@@ -134,10 +134,14 @@ Parameters:
     Type: String
     Description: "What repository will be used?"
     MinLength: 2
+    AllowedPattern: "^[a-zA-Z0-9][a-zA-Z0-9_\\-]{0,62}[a-zA-Z0-9]$"
+    ConstraintDescription: "Must be a valid CodeCommit repository name. Must be at least 2 characters long."
   CodeCommitBranch:
     Type: String
     Description: What branch of CodeCommit will be used? Typically this is the same name as the stage, but may be different if there are multiple deploys operating off the same branch.
     Default: "main"
+    AllowedPattern: "^[a-zA-Z0-9][a-zA-Z0-9_\\-\\/]{0,14}[a-zA-Z0-9]$"
+    ConstraintDescription: "Must be a valid CodeCommit branch name"
 
 # =============================================================================
 # CONDITIONS
