@@ -54,7 +54,7 @@ files["iamServicePolicy"]["path"] = dirs["iamServiceRole"]+files["iamServicePoli
 
 dirs["docs"] = "../docs/"
 
-files["docsPipelineParamReadme"]["name"] = "Pipeline-Parameters.md"
+files["docsPipelineParamReadme"]["name"] = "Pipeline-Parameters-Reference.md"
 files["docsPipelineParamReadme"]["path"] = dirs["docs"]+files["docsPipelineParamReadme"]["name"]
 
 dirsAndFiles = [
