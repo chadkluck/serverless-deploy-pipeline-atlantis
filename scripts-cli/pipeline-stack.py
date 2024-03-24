@@ -568,6 +568,7 @@ if parameters["pipeline_template_location"]["BucketName"] != "63klabs":
 
 stringCFN = """
 # -----------------------------------------------------------------------------
+# CREATE STACK
 # Run cloudformation create-stack command from the $ROOT_CLI_DIR_CFN$ directory (adjust path as needed)
 
 cd $ROOT_CLI_DIR_CFN$
@@ -578,6 +579,25 @@ aws cloudformation create-stack --cli-input-json file://$INPUTCFNFILENAME$
 
 aws cloudformation describe-stacks --stack-name $PREFIX$-$PROJECT_ID$-$STAGE_ID$-pipeline
 
+# -----------------------------------------------------------------------------
+# UPDATE STACK
+# Update stack using change-set: After updating tags, parameters, and re-running pipeline-stack.py, issue the following commands to update.
+# Be sure to modify values as needed (such as whether to 'use previous template' or 'include nested stacks'):
+
+aws cloudformation create-change-set \\
+    --stack-name $STACK_NAME$ \\
+    --change-set-name $CHANGE_SET_NAME$ \\
+    --client-token $CHANGE_SET_TOKEN$ \\
+    --change-set-type UPDATE \\
+    --use-previous-template true \\
+    --include-nested-stacks true \\
+    --on-stack-failure ROLLBACK \\
+    --cli-input-json file://$INPUTCFNFILENAME$
+
+aws cloudformation execute-change-set \\
+    --stack-name $STACK_NAME$ \\
+    --change-set-name $CHANGE_SET_NAME$ \\
+    --client-token $CHANGE_SET_TOKEN$
 """
 
 cliCommands = stringS3 + stringCFN
@@ -587,6 +607,18 @@ cliCommands = subPlaceholders(cliCommands)
 cliCommands = cliCommands.replace("$INPUTCFNFILENAME$", inputCFNFilename.replace(atlantis.dirs["cli"]["Cfn"], ""))
 cliCommands = cliCommands.replace("$CLI_DIR_CFN_PIPELINE_TEMPLATE$", atlantis.dirs["cfnPipeline"])
 cliCommands = cliCommands.replace("$ROOT_CLI_DIR_CFN$", atlantis.dirs["cli"]["Cfn"].replace("./", "../scripts-cli/"))
+
+# load in inputData
+with open(inputCFNFilename) as templateCFN_file:
+    inputData = json.load(templateCFN_file)
+
+    changeSetToken = tools.generateRandomString(10)
+
+    cliCommands = cliCommands.replace("$STACK_NAME$", inputData["StackName"])
+    cliCommands = cliCommands.replace("$CHANGE_SET_TOKEN$", changeSetToken)
+    #  take last 4 characters of changeSetToken and append date stamp in YYYYMMDDHHMM format
+    cliCommands = cliCommands.replace("$CHANGE_SET_NAME$", inputData["StackName"]+"-"+changeSetToken[-4:]+"-"+tools.getDateStamp("%Y%m%d%H%M%S"))
+
 
 # save cliCommands to cli-<Prefix>-<ProjectId>-<StageId>.txt
 cliCommandsFilename = atlantis.dirs["cli"]["Cfn"]+"cli-"+parameters["stack_parameters"]["Prefix"]+"-"+parameters["stack_parameters"]["ProjectId"]+"-"+parameters["stack_parameters"]["StageId"]+".txt"

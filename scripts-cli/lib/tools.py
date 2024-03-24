@@ -86,3 +86,14 @@ def displayHelp(prompt, error):
 	print(breakLines(prepend+"DESCRIPTION: "+prompt["description"], indentStr))
 	print(breakLines(prepend+"EXAMPLE(S): "+prompt["examples"], indentStr))
 	print("")
+
+# generateRandomString(4)
+def generateRandomString(length):
+    import random
+    import string
+    return ''.join(random.choice(string.ascii_letters) for i in range(length))
+
+# getDateStamp("%Y%m%d%H%M%S")
+def getDateStamp(format):
+    import datetime
+    return datetime.datetime.now().strftime(format)
