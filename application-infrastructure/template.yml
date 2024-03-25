@@ -242,11 +242,6 @@ Resources:
     Properties: 
       Name: !Sub '${Prefix}-${ProjectId}-${StageId}-WebApi'
       StageName: !Ref ApiPathBase
-      # DefinitionBody:
-      #   "Fn::Transform":
-      #     Name: "AWS::Include"
-      #     Parameters:
-      #       Location: ./template-swagger.yml
 
   # -- Lambda Function --
   AppFunction:
@@ -254,6 +249,8 @@ Resources:
     Properties:
       FunctionName: !Sub '${Prefix}-${ProjectId}-${StageId}-AppFunction'
       Description: "Magical Predictions"
+      Role: !GetAtt LambdaExecutionRole.Arn
+      PropagateTags: True
 
       VersionDescription: "Development Stages"
       AutoPublishCodeSha256: "202402260936" # Hash This To Overcome AliasLive Update Errors
@@ -268,9 +265,6 @@ Resources:
       Runtime: nodejs18.x
       Timeout: !Ref FunctionTimeOutInSeconds
       MemorySize: !Ref FunctionMaxMemoryInMB
-
-      Role: !GetAtt LambdaExecutionRole.Arn
-      PropagateTags: True
 
       Environment:
         Variables:
