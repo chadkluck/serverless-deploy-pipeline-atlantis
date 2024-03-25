@@ -263,7 +263,7 @@ Resources:
       Description: "Magic Ball"
       CodeUri: src/
       Handler: index.handler
-      Runtime: nodejs16.x
+      Runtime: nodejs18.x
       Role: !GetAtt LambdaExecutionRole.Arn
       Timeout: !Ref FunctionTimeOutInSeconds
       MemorySize: !Ref FunctionMaxMemoryInMB
@@ -286,7 +286,7 @@ Resources:
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "${Prefix}-${ProjectId}-${StageId}-ExecutionRole"
+      RoleName: !Sub "${Prefix}-${ProjectId}-${StageId}-LambdaExecRole"
       Description: "IAM Role that allows the Lambda permission to execute and access resources"
       Path: !Ref RolePath
       PermissionsBoundary: !If [HasPermissionsBoundaryARN, !Ref PermissionsBoundaryARN, !Ref 'AWS::NoValue' ]

@@ -232,7 +232,7 @@ Resources:
     Type: AWS::IAM::Role
     DependsOn:
     - S3DeployBucket
-    - CloudFormationServiceRole
+    - CloudFormationSvcRole
     Condition: IsNotDevelopment
     Properties:
       Path: !Ref RolePath
@@ -297,7 +297,7 @@ Resources:
             - iam:PassRole
             Effect: Allow
             Resource:
-            - !GetAtt 'CloudFormationServiceRole.Arn'
+            - !GetAtt 'CloudFormationSvcRole.Arn'
 
   # -- CodeBuild Service Role --
 
@@ -383,11 +383,11 @@ Resources:
   # This portion along with the parameters in the pipeline deploy process and environment variables in the build process will differ the most between your applications.
   # --
 
-  CloudFormationServiceRole:
+  CloudFormationSvcRole:
     Type: AWS::IAM::Role
     Properties:
       Path: !Ref RolePath
-      RoleName: !Sub "${Prefix}-Worker-${ProjectId}-${StageId}-CloudFormationServiceRole"
+      RoleName: !Sub "${Prefix}-Worker-${ProjectId}-${StageId}-CloudFormationSvcRole"
       Description: Creating service role in IAM for AWS CloudFormation
       PermissionsBoundary: !If [HasPermissionsBoundaryARN, !Ref PermissionsBoundaryARN, !Ref 'AWS::NoValue' ]
       AssumeRolePolicyDocument:
@@ -409,8 +409,15 @@ Resources:
             - iam:*
             Effect: Allow
             Resource: 
-            - !Sub "arn:aws:iam::${AWS::AccountId}:role/${Prefix}-Worker-${ProjectId}-${StageId}-*"
-            - !Sub "arn:aws:iam::${AWS::AccountId}:role/${Prefix}-${ProjectId}-${StageId}-*"
+            - !Sub "arn:aws:iam::${AWS::AccountId}:role${RolePath}${Prefix}-Worker-${ProjectId}-${StageId}-*"
+            - !Sub "arn:aws:iam::${AWS::AccountId}:role${RolePath}${Prefix}-${ProjectId}-${StageId}-*"
+
+          - Sid: "IAMGetAndListReadOnlyAll"
+            Action:
+            - iam:Get*
+            - iam:List*
+            Effect: Allow
+            Resource: !Sub "arn:aws:iam::${AWS::AccountId}:role/*"
 
           - Sid: "CloudFormationCRUD"
             Action:
@@ -433,6 +440,10 @@ Resources:
             #   StringEquals: 
             #     aws:ResourceTag/ProjectStackProjectStageID: !Sub "${AWS::Region}/${AWS::AccountId}/${Prefix}-${ProjectId}-${StageId}"
 
+          # ===================================================================
+          # CRUD permissions for additional resources
+          # Comment/Uncomment the following statements to disallow/allow your application infrastructure stack to create the following resource types
+          # ===================================================================
 
           # == API GateWay == If application infrastructure is using API GateWay to trigger Lambda Function
           - Sid: "APIGateWayCRUD"
@@ -458,6 +469,21 @@ Resources:
           #   Resource:
           #   - !Sub 'arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/${Prefix}-${ProjectId}-${StageId}-*'
 
+
+          # # == State Machines / Step Functions == If application infrastructure is managing a state machine with step functions
+          # - Sid: "CreateUpdateDeleteStateMachine" # Statement Written by Q
+          #   Action:  
+          #   - states:CreateStateMachine
+          #   - states:UpdateStateMachine
+          #   - states:DeleteStateMachine
+          #   - states:ListStateMachines
+          #   - states:DescribeStateMachine
+          #   - states:TagResource
+          #   - states:UntagResource
+          #   - states:ListTagsForResource
+          #   Effect: Allow
+          #   Resource:
+          #     - !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${Prefix}-${ProjectId}-${StageId}-*'
 
           # == S3 Buckets == If application infrastructure manages S3 buckets
           - Sid: "S3CRUDThisDeploymentOnly"
@@ -506,7 +532,7 @@ Resources:
             Resource:
               - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Prefix}-${ProjectId}-${StageId}-*'
 
-          # == SSM Parameter Store == If application infrastructure accesses SSM parameter store
+          # == SSM Parameter Store (Read-Only) == If application infrastructure accesses SSM parameter store
           - Sid: "SSMParameterStoreReadThisDeploymentOnly"
             Action:
             - ssm:GetParameters
@@ -739,8 +765,8 @@ Resources:
               - IsNotDevelopment
               - - !GetAtt 'CodePipelineServiceRole.Arn' # AWS CodeBuild retrieves the source code from the artifact bucket.
                 - !GetAtt 'CodeBuildServiceRole.Arn' # AWS CloudFormation retrieves a template file from this bucket to create the runtime resources.
-                - !GetAtt 'CloudFormationServiceRole.Arn'
-              - - !GetAtt 'CloudFormationServiceRole.Arn'
+                - !GetAtt 'CloudFormationSvcRole.Arn'
+              - - !GetAtt 'CloudFormationSvcRole.Arn'
                 - !GetAtt 'CodeBuildServiceRole.Arn'
           Resource:
             - !GetAtt S3DeployBucket.Arn
@@ -756,7 +782,7 @@ Resources:
               - IsNotDevelopment
               - - !GetAtt 'CodePipelineServiceRole.Arn'
                 - !GetAtt 'CodeBuildServiceRole.Arn'
-              - - !GetAtt 'CloudFormationServiceRole.Arn'
+              - - !GetAtt 'CloudFormationSvcRole.Arn'
                 - !GetAtt 'CodeBuildServiceRole.Arn'
           Resource:
             - !GetAtt S3DeployBucket.Arn
@@ -817,7 +843,7 @@ Resources:
     - CodePipelineServiceRole
     - S3DeployBucket
     - CodeBuildProject
-    - CloudFormationServiceRole
+    - CloudFormationSvcRole
     Condition: IsNotDevelopment
     Properties:
       Name: !Sub '${Prefix}-${ProjectId}-${StageId}-Pipeline'
@@ -876,7 +902,7 @@ Resources:
             ActionMode: CHANGE_SET_REPLACE
             Capabilities: CAPABILITY_NAMED_IAM
             ChangeSetName: pipeline-changeset
-            RoleArn: !GetAtt 'CloudFormationServiceRole.Arn'
+            RoleArn: !GetAtt 'CloudFormationSvcRole.Arn'
             # These are the parameters that will be set in your AWS CloudFormation stack.
             ParameterOverrides: !Sub '{
               "Prefix": "${Prefix}",

@@ -582,22 +582,22 @@ aws cloudformation describe-stacks --stack-name $PREFIX$-$PROJECT_ID$-$STAGE_ID$
 # -----------------------------------------------------------------------------
 # UPDATE STACK
 # Update stack using change-set: After updating tags, parameters, and re-running pipeline-stack.py, issue the following commands to update.
-# Be sure to modify values as needed (such as whether to 'use previous template' or 'include nested stacks'):
+# Be sure to modify values as needed (such as whether to 'no-use-previous-template' or 'include-nested-stacks')
+# https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudformation/create-change-set.html
 
 aws cloudformation create-change-set \\
     --stack-name $STACK_NAME$ \\
     --change-set-name $CHANGE_SET_NAME$ \\
     --client-token $CHANGE_SET_TOKEN$ \\
     --change-set-type UPDATE \\
-    --use-previous-template true \\
-    --include-nested-stacks true \\
-    --on-stack-failure ROLLBACK \\
-    --cli-input-json file://$INPUTCFNFILENAME$
+    --no-use-previous-template \\
+    --include-nested-stacks \\
+    --cli-input-json file://$INPUTUPDATECFNFILENAME$
 
 aws cloudformation execute-change-set \\
     --stack-name $STACK_NAME$ \\
     --change-set-name $CHANGE_SET_NAME$ \\
-    --client-token $CHANGE_SET_TOKEN$
+    --client-request-token $CHANGE_SET_TOKEN$
 """
 
 cliCommands = stringS3 + stringCFN
@@ -612,8 +612,28 @@ cliCommands = cliCommands.replace("$ROOT_CLI_DIR_CFN$", atlantis.dirs["cli"]["Cf
 with open(inputCFNFilename) as templateCFN_file:
     inputData = json.load(templateCFN_file)
 
+    # rename key 'OnFailure' to 'OnStackFailure'
+    if "OnFailure" in inputData:
+        inputData["OnStackFailure"] = inputData["OnFailure"]
+        del inputData["OnFailure"]
+
+    # remove key 'EnableTerminationProtection' if it exists
+    if "EnableTerminationProtection" in inputData:
+        del inputData["EnableTerminationProtection"]
+
+    # Change all 'UsePreviousValues' in 'Parameters' to false
+    for i in range(len(inputData["Parameters"])):
+        inputData["Parameters"][i]["UsePreviousValue"] = False
+
+    # write inputData to cli-input-update-stack.json
+    inputDataUpdateFilename = atlantis.dirs["cli"]["Cfn"]+"input-update-stack-"+parameters["stack_parameters"]["Prefix"]+"-"+parameters["stack_parameters"]["ProjectId"]+"-"+parameters["stack_parameters"]["StageId"]+".json"
+    myFile = open(inputDataUpdateFilename, "w")
+    n = myFile.write(json.dumps(inputData, indent=4))
+    myFile.close()
+
     changeSetToken = tools.generateRandomString(10)
 
+    cliCommands = cliCommands.replace("$INPUTUPDATECFNFILENAME$", inputDataUpdateFilename.replace(atlantis.dirs["cli"]["Cfn"], ""))
     cliCommands = cliCommands.replace("$STACK_NAME$", inputData["StackName"])
     cliCommands = cliCommands.replace("$CHANGE_SET_TOKEN$", changeSetToken)
     #  take last 4 characters of changeSetToken and append date stamp in YYYYMMDDHHMM format
