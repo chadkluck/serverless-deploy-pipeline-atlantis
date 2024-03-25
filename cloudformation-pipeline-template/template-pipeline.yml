@@ -276,7 +276,7 @@ Resources:
             - !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/*" # TODO: Scope Down
             - !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${Prefix}-${ProjectId}-${StageId}-Build"
 
-          - Sid: DepoyPhaseCloudFormation
+          - Sid: DeployPhaseCloudFormation
             Action:
             - cloudformation:*
             Effect: Allow

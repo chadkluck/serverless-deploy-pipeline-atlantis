@@ -399,9 +399,9 @@ You can always check the progress of the pipeline by going to the deploy stack i
 
 #### CloudFormation Option 2: Point to Template in S3 Bucket
 
-You can either upload the `template-pipeline.yml` file to your own S3 bucket, or use the one at `https://63klabs.s3.amazonaws.com/atlantis/v2/pipeline-template.yml`
+You can either upload the `template-pipeline.yml` file to your own S3 bucket, or use the one at `https://63klabs.s3.amazonaws.com/atlantis/v2/template-pipeline.yml`
 
-If you use your own, you will need to list the path as `https://yourbucketname.s3.amazonaws.com/pathtoyourfile/pipeline-template.yml` even if it is not publicly accesible (public access blocked). It cannot be listed with the `s3:` protocol.
+If you use your own, you will need to list the path as `https://yourbucketname.s3.amazonaws.com/pathtoyourfile/template-pipeline.yml` even if it is not publicly accesible (public access blocked). It cannot be listed with the `s3:` protocol.
 
 Use the same steps as in Option 1 but instead of choosing "Upload a template file" in step 3, choose S3 bucket and enter in the URL to the file.
 

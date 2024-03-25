@@ -23,7 +23,7 @@
             "UsePreviousValue": true
         },
         {
-            "ParameterKey": "RoleName",
+            "ParameterKey": "RolePath",
             "ParameterValue": "$ROLE_PATH$",
             "UsePreviousValue": true
         },

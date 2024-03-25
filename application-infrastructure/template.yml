@@ -34,6 +34,7 @@ Metadata:
           - ProjectId
           - StageId
           - S3BucketNameOrgPrefix
+          - RolePath
       -
         Label:
           default: "Deployment Environment Identification"
@@ -47,6 +48,7 @@ Metadata:
         Parameters:
           - ParameterStoreHierarchy
           - AlarmNotificationEmail
+          - PermissionsBoundaryARN
       -
         Label:
           default: "Lambda Function Settings"
@@ -74,47 +76,49 @@ Parameters:
 
   Prefix:
     Type: String
-    Description: "Prefix to assign to resources. This can be thought of as a Name Space and will be pre-pended to all resources. Use it to identify ownership/access for teams, departments, etc. Must have a corresponding CloudFormation Service Role. Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'."
+    Description: "Prefix pre-pended to all resources. This can be thought of as a Name Space used to identify ownership/access for teams, departments, etc. For example, resources named ws-* could belong to the web service team and could have IAM permissions to allow access to other ws-* resources. The Prefix must have a corresponding CloudFormation Service Role. Short, descriptive 2-6 character values work best. Due to resource naming length restrictions, length of Prefix + Project ID should not exceed 28 characters. Resources are named <Prefix>-<ProjectId>-<StageId>-<ResourceId>"
     Default: "atlantis" 
     AllowedPattern: "^[a-z][a-z0-9-]{0,6}[a-z0-9]$"
     MinLength: 2
     MaxLength: 8
-    ConstraintDescription: "2 to 8 characters. Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number."
+    ConstraintDescription: "2 to 8 characters. Lower case alphanumeric and dashes. Must start with a letter and end with a letter or number. Length of Prefix + Project ID should not exceed 28 characters."
   ProjectId:
     Type: String
-    Description: "Do NOT include <Prefix> or <StageId>. This is the Project ID for the application. (Minimum 2 characters, suggested maximum of 20) Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'. If you get 'S3 bucket name too long' errors then you must shorten the Project ID or use an S3 Org Prefix. Long Project IDs may also be truncated when naming resources."
-    AllowedPattern: "^[a-z][a-z0-9-]*[a-z0-9]$"
+    Description: "This is the Project or Application Identifier. If you receive 'S3 bucket name too long' errors during stack creation, then you must shorten the Project ID or use an S3 Org Prefix. Due to resource naming length restrictions, length of Prefix + Project ID should not exceed 28 characters. Resources are named <Prefix>-<ProjectId>-<StageId>-<ResourceId>"
+    AllowedPattern: "^[a-z][a-z0-9-]{0,24}[a-z0-9]$"
     MinLength: 2
-    ConstraintDescription: "Minimum of 2 characters (suggested maximum of 20). Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number."
+    MaxLength: 26
+    ConstraintDescription: "Minimum of 2 characters (suggested maximum of 20). Lower case alphanumeric and dashes. Must start with a letter and end with a letter or number. Length of Prefix + Project ID should not exceed 28 characters."
   StageId:
     Type: String
-    Description: "Do NOT include <Prefix> or <ProjectId>. <StageId> does not need to match <DeployEnvironment>. You can have multiple stages in the TEST environment (e.g. test, john-test), and multiple stages in PROD (e.g. stage, beta, prod). Ex: 'ws-hello-world-test' the Prefix would be 'ws', ProjectId would be 'hello-world', and the StageId would be 'test'."
-    AllowedPattern: "^[a-z][a-z0-9-]*[a-z0-9]$"
+    Description: "This is an alias for the branch. It does not need to match CodeCommitBranch or DeployEnvironment. Due to resource naming restrictions you can use this to provide shorter names without special characters that are allowed in branch names. For example if you have a 'test/feature-98' branch, you could use 'tf98' as the StageId. Resources are named <Prefix>-<ProjectId>-<StageId>-<ResourceId>"
+    AllowedPattern: "^[a-z][a-z0-9-]{0,6}[a-z0-9]$"
     MinLength: 2
-    MaxLength: 10
-    ConstraintDescription: "2 to 10 characters. Alphanumeric (lower case) and dashes. Must start with a letter and end with a letter or number."
+    MaxLength: 8
+    ConstraintDescription: "2 to 8 characters. Lower case alphanumeric and dashes. Must start with a letter and end with a letter or number."
   S3BucketNameOrgPrefix:
     Type: String
-    Description: "By default, to enforce uniqueness, buckets created for deploy and infrastructure include account and region in the bucket name. However, due to S3 bucket name character limits, you can turn this off by specifying your own prefix (like an org code) that will be included before the project <Prefix> above."
+    Description: "By default, to enforce uniqueness, buckets include account and region in the bucket name. However, due to character limits, you can specify your own S3 prefix (like an org code). This will be used in addition to the Prefix entered above. Note that this length is shared with the recommended length of 20 characters for Resource Identifiers. So if you have a 10 character S3BucketNameOrgPrefix, you are limited to 10 characters for your bucket name identifier in your templates. Buckets are named <Prefix>-<Region>-<AccountId>-<ProjectId>-<StageId>-<ResourceId> or <S3OrgPrefix>-<Prefix>-<ProjectId>-<StageId>-<ResourceId>"
     Default: ""
-    AllowedPattern: "^[a-z0-9][a-z0-9-]*[a-z0-9]$|^$"
-    ConstraintDescription: "May be empty or at least 2 characters long. Must start with a alphanumeric character, may contain lowercase letters, numbers, and hyphens."
+    AllowedPattern: "^[a-z0-9][a-z0-9-]{0,18}[a-z0-9]$|^$"
+    ConstraintDescription: "May be empty or 2 to 20 characters (8 or less recommended). Lower case alphanumeric and dashes. Must start and end with a letter or number."
   RolePath:
     Type: String
-    Description: "Path to use for IAM Roles and Policies. If you are deploying multiple applications, you may want to create a separate path for each application. Paths may also be used by permission boundaries. Ex: /ws-hello-world-test/"
+    Description: "Path to use for IAM Roles and Policies. You may wish to separate out your applications from users, or create seperate paths per prefix or application. Specific paths may required by permission boundaries. Ex: /ws-hello-world-test/ or /app_role/"
     Default: "/"
     AllowedPattern: "^\\/([a-zA-Z0-9-_]+[\\/])+$|^\\/$"
     ConstraintDescription: "May only contain alphanumeric characters, forward slashes, underscores, and dashes. Must begin and end with a slash."
 
   # ---------------------------------------------------------------------------
-  # Deployment Environment
+  # Deployment Environment Identification
 
   DeployEnvironment:
     Type: String
-    Description: "What deploy/testing environment will this run under? An environment can contain multiple stages and in coordination with run different tests. Utilize this environment variable to determine your tests and app logging levels during deploy. This can be used for conditionals in the template. For example, PROD will use gradual deployment while DEV and TEST is AllAtOnce. Other resources, such as dashboards are created in PROD and not DEV or TEST. Suggested use: DEV for local SAM deployment, TEST for cloud deployment, PROD for stage, beta, and main/prod deployment."
+    Description: "What deploy/testing environment will this run under? An environment can contain multiple stages (for example 'test' and 't98' would be in 'TEST' environment, and 'beta' and 'prod' stages would deploy to 'PROD'). Utilize this environment variable to determine your tests, app logging levels, and conditionals in the template. For example, PROD will use gradual deployment while DEV and TEST is AllAtOnce. Other resources, such as dashboards and alarms  (which cost money) could be created in PROD and not DEV or TEST. Suggested use: DEV for local SAM deployment, TEST for test/QA deployments, PROD for stage, beta, and main/prod deployments."
     Default: "PROD"
     AllowedValues: ["DEV", "TEST", "PROD"]
     ConstraintDescription: "Must specify DEV, TEST, or PROD."
+
   FunctionGradualDeploymentType:
     Type: String
     Description: "For production environments, what method do you want to use to gradually deploy before rolling back in case of errors. Note that when 'DeployEnvironment' is TEST or DEV, gradual deploy will not be enabled and will be same as All At Once"
@@ -138,21 +142,21 @@ Parameters:
 
   ParameterStoreHierarchy:
     Type: String
-    Description: "Parameters may be organized within a hierarcy based on your organizational or operations structure. The application will create its parameters within this hierarchy. For example, /Finance/ops/<env>/<prefix>-<project_id>-<stage>/. Must either be a single '/' or begin and end with a '/'."
+    Description: "Parameters specific to the application may be organized within a hierarchy based on your organizational or operations structure. For example, /Finance/ops/ for this value would then generate /Finance/ops/<DeployEnvironment>/<Prefix>-<ProjectId>-<StageId>/<parameterName>. Must either be a single '/' or begin and end with a '/'."
     Default: "/"
-    AllowedPattern: "^\\/([a-zA-Z0-9_.-]*[\\/])+$|^\\/$"
-    ConstraintDescription: "Must only contain alpha-numeric, dashes, underscores, or slashes. Must be a single slash or begin and end with a slash."
+    AllowedPattern: "^\\/([a-zA-Z0-9_.\\-]*[\\/])+$|^\\/$"
+    ConstraintDescription: "Must only contain alpha-numeric, dashes, underscores, or slashes. Must be a single slash or begin and end with a slash. (/Finance/, /Finance/ops/, or /)"
   AlarmNotificationEmail:
     Type: String
-    Description: "Email address to send a notification to when Lambda function goes into alarm. Be sure to check the inbox for this email address as you will need to confirm the subscription."
-    AllowedPattern: '^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$'
-    ConstraintDescription: "A valid email must be used to receive alarm notifications"
+    Description: "Email address to send notifications to when alarms are triggered. Be sure to check the inbox as you will need to confirm the subscription."
+    AllowedPattern: "^[\\w\\-\\.]+@([\\w\\-]+\\.)+[\\w\\-]{2,4}$"
+    ConstraintDescription: "A valid email address"
   PermissionsBoundaryARN:
     Type: String
-    Description: "ARN of the developer permissions boundary. This will be used to limit the permissions of the created IAM role. If left empty, no permissions boundary will be used."
+    Description: "Permissions Boundary is a policy attached to a role to further restrict the permissions of the role. Your organization may or may not require boundaries. If left empty, no permissions boundary will be used."
     Default: ""
     AllowedPattern: "^$|^arn:aws:iam::\\d{12}:policy\\/[\\w+=,.@\\-\\/]*[\\w+=,.@\\-]+$"
-    ConstraintDescription: "Must be empty or a valid IAM Policy ARN"
+    ConstraintDescription: "Must be empty or a valid IAM Policy ARN in the format: arn:aws:iam::{account_id}:policy/{policy_name}"
 
   # ---------------------------------------------------------------------------
   # Lambda Function Settings
@@ -208,6 +212,7 @@ Conditions:
   CreateTestResources: !Equals [!Ref DeployEnvironment, "TEST"]
   CreateDevResources: !Equals [!Ref DeployEnvironment, "DEV"]
   UseS3BucketNameOrgPrefix: !Not [!Equals [!Ref S3BucketNameOrgPrefix, ""]]
+  HasPermissionsBoundaryARN: !Not [!Equals [!Ref PermissionsBoundaryARN, ""]]
   CreateAlarms: !Equals [!Ref DeployEnvironment, "PROD"] # Not yet implemented. Still in development / !Equals ["ALWAYS", "ALWAYS"] # Option if you want to ALWAYS create an alarm or only in PROD. Alarms cost money so you may only want them in Prod (or temporarily in test)
 
 # =============================================================================
@@ -256,7 +261,7 @@ Resources:
     Properties:
       FunctionName: !Sub '${Prefix}-${ProjectId}-${StageId}-AppFunction'
       Description: "Magic Ball"
-      CodeUri: app/
+      CodeUri: src/
       Handler: index.handler
       Runtime: nodejs16.x
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -283,7 +288,8 @@ Resources:
     Properties:
       RoleName: !Sub "${Prefix}-${ProjectId}-${StageId}-ExecutionRole"
       Description: "IAM Role that allows the Lambda permission to execute and access resources"
-      Path: /
+      Path: !Ref RolePath
+      PermissionsBoundary: !If [HasPermissionsBoundaryARN, !Ref PermissionsBoundaryARN, !Ref 'AWS::NoValue' ]
       AssumeRolePolicyDocument:
         Statement:
         - Effect: Allow
