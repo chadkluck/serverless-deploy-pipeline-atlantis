@@ -222,13 +222,6 @@ Conditions:
 #
 
 Globals:
-  Function:
-    AutoPublishAlias: live
-    DeploymentPreference:
-      Enabled: !If [ IsProduction, True,  False] #Gradual deployment only if in production so DEV and TEST aren't hindered
-      Type: !If [ IsProduction, !Ref FunctionGradualDeploymentType, "AllAtOnce"]
-      Role: !Ref DeployRole
-
   Api:
     OpenApiVersion: 3.0.0 # Prevents extra stage called Stage in API Gateway https://www.internetkatta.com/how-to-prevent-aws-sam-from-creating-the-default-stage-in-api-gateway-stage
 
@@ -260,13 +253,25 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub '${Prefix}-${ProjectId}-${StageId}-AppFunction'
-      Description: "Magic Ball"
+      Description: "Magical Predictions"
+
+      VersionDescription: "Development Stages"
+      AutoPublishCodeSha256: "202402260936" # Hash This To Overcome AliasLive Update Errors
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Enabled: !If [ IsProduction, True,  False] #Gradual deployment only if in production so DEV and TEST aren't hindered
+        Type: !If [ IsProduction, !Ref FunctionGradualDeploymentType, "AllAtOnce"]
+        Role: !Ref DeployRole
+
       CodeUri: src/
       Handler: index.handler
       Runtime: nodejs18.x
-      Role: !GetAtt LambdaExecutionRole.Arn
       Timeout: !Ref FunctionTimeOutInSeconds
       MemorySize: !Ref FunctionMaxMemoryInMB
+
+      Role: !GetAtt LambdaExecutionRole.Arn
+      PropagateTags: True
+
       Environment:
         Variables:
           detailedLogs: !If [ IsProduction, "0",  "2"]

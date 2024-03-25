@@ -1,7 +1,6 @@
 import os
 import json
 import sys
-import re
 
 sys.path.append('./lib')
 import tools
@@ -299,17 +298,14 @@ with open(
 		if os.name == "nt":
 			print(stringWinCmd)
 
-		ROOT_CLI_DIR_IAM = atlantis.dirs["cli"]["Iam"].replace("./", "../scripts-cli/")
-		IAM_TRUST_POLICY = "../../"+atlantis.files["iamTrustPolicy"]["path"]
-		IAM_SERVICE_POLICY = new_file_name
+		IAM_TRUST_POLICY = atlantis.files["iamTrustPolicy"]["path"]
+		IAM_SERVICE_POLICY = str(atlantis.dirs["cli"]["Iam"]+new_file_name).replace("./", "../scripts-cli/")
         
 		# Print a message indicating the aws iam cli commands to create the role and policy and attach it to the role
 
 		create_role_comment = []
 		create_role_comment.append("# -----------------------------------------------------------------------------")
-		create_role_comment.append("# Run iam create-role command from the $ROOT_CLI_DIR_IAM$ directory (adjust path as needed)")
-		create_role_comment.append("")
-		create_role_comment.append("cd $ROOT_CLI_DIR_IAM$")
+		create_role_comment.append("# Run iam create-role command from the /script-cli/ directory (or adjust path as needed)")
 
 		stringCliRoleComment = "\n".join(create_role_comment)
             
@@ -324,12 +320,6 @@ with open(
 		create_role.append(tags_cli)
 
 		stringCliRole = " \\\n\t".join(create_role)
-
-		put_policy_comment = []
-		put_policy_comment.append("# -----------------------------------------------------------------------------")
-		put_policy_comment.append("# Run iam put-policy command from the $ROOT_CLI_DIR_IAM$ directory (adjust path as needed)")
-            
-		stringCliPolicyComment = "\n".join(put_policy_comment)
             
 		put_policy = []
 		put_policy.append("aws iam put-role-policy --role-name "+parameters["general"]["Prefix"].upper()+"-CloudFormation-Service-Role")
@@ -338,8 +328,7 @@ with open(
 		
 		stringCliPolicy = " \\\n\t".join(put_policy)
         
-		cliCommands = stringCliRoleComment + "\n\n" + stringCliRole + "\n\n" + stringCliPolicyComment + "\n\n" + stringCliPolicy + "\n"
-		cliCommands = cliCommands.replace("$ROOT_CLI_DIR_IAM$", ROOT_CLI_DIR_IAM)
+		cliCommands = stringCliRoleComment + "\n\n" + stringCliRole + "\n\n" + stringCliPolicy + "\n"
 		cliCommands = cliCommands.replace("$IAM_TRUST_POLICY$", IAM_TRUST_POLICY)
 		cliCommands = cliCommands.replace("$IAM_SERVICE_POLICY$", IAM_SERVICE_POLICY)
             

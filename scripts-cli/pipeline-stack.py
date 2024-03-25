@@ -558,8 +558,7 @@ stringS3Text = """
 # If you need to upload $PIPELINE_TEMPLATE_FILENAME$ to S3, 
 # Run the following commands (adjust paths as needed):
 
-cd $CLI_DIR_CFN_PIPELINE_TEMPLATE$
-aws s3 cp $PIPELINE_TEMPLATE_FILENAME$ s3://$PIPELINE_TEMPLATE_BUCKETNAME$$PIPELINE_TEMPLATE_BUCKETKEY$$PIPELINE_TEMPLATE_FILENAME$
+aws s3 cp ../cloudformation-pipeline-template/$PIPELINE_TEMPLATE_FILENAME$ s3://$PIPELINE_TEMPLATE_BUCKETNAME$$PIPELINE_TEMPLATE_BUCKETKEY$$PIPELINE_TEMPLATE_FILENAME$
 
 """
 stringS3 = ""
@@ -569,13 +568,12 @@ if parameters["pipeline_template_location"]["BucketName"] != "63klabs":
 stringCFN = """
 # -----------------------------------------------------------------------------
 # CREATE STACK
-# Run cloudformation create-stack command from the $ROOT_CLI_DIR_CFN$ directory (adjust path as needed)
+# Run cloudformation create-stack command (adjust path as needed)
 
-cd $ROOT_CLI_DIR_CFN$
-aws cloudformation create-stack --cli-input-json file://$INPUTCFNFILENAME$
+aws cloudformation create-stack --cli-input-json file://../scripts-cli/cli/cfn/$INPUTCFNFILENAME$
 
 # -----------------------------------------------------------------------------
-# Check progress:
+# CHECK PROGRESS:
 
 aws cloudformation describe-stacks --stack-name $PREFIX$-$PROJECT_ID$-$STAGE_ID$-pipeline
 
@@ -592,7 +590,7 @@ aws cloudformation create-change-set \\
     --change-set-type UPDATE \\
     --no-use-previous-template \\
     --include-nested-stacks \\
-    --cli-input-json file://$INPUTUPDATECFNFILENAME$
+    --cli-input-json file://../scripts-cli/cli/cfn/$INPUTUPDATECFNFILENAME$
 
 aws cloudformation execute-change-set \\
     --stack-name $STACK_NAME$ \\
@@ -605,8 +603,6 @@ cliCommands = stringS3 + stringCFN
 cliCommands = subPlaceholders(cliCommands)
 
 cliCommands = cliCommands.replace("$INPUTCFNFILENAME$", inputCFNFilename.replace(atlantis.dirs["cli"]["Cfn"], ""))
-cliCommands = cliCommands.replace("$CLI_DIR_CFN_PIPELINE_TEMPLATE$", atlantis.dirs["cfnPipeline"])
-cliCommands = cliCommands.replace("$ROOT_CLI_DIR_CFN$", atlantis.dirs["cli"]["Cfn"].replace("./", "../scripts-cli/"))
 
 # load in inputData
 with open(inputCFNFilename) as templateCFN_file:
