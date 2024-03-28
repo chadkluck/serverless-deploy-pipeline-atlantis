@@ -82,15 +82,15 @@ for i in range(len(tagFileLoc)):
             # Loop through the elements in tagData
             #   1. Search customSvcRoleTags array for an element with Key == tagData[i].Key
             #   2. If it exists, replace it. Else, append
-            for i in range(len(tagData)):
+            for j in range(len(tagData)):
                 found = False
-                for j in range(len(customSvcRoleTags)):
-                    if customSvcRoleTags[j]["Key"] == tagData[i]["Key"]:
-                        customSvcRoleTags[j]["Value"] = tagData[i]["Value"]
+                for k in range(len(customSvcRoleTags)):
+                    if customSvcRoleTags[k]["Key"] == tagData[j]["Key"]:
+                        customSvcRoleTags[k]["Value"] = tagData[j]["Value"]
                         found = True
                         break
                 if not found:
-                    customSvcRoleTags.append(tagData[i])
+                    customSvcRoleTags.append(tagData[j])
             
 
             print(" + Found "+tagFileLoc[i])
@@ -226,7 +226,10 @@ for i in range(numFiles):
 tools.printCharStr("-", 80)
 
 # Get the path to the generated directory
-cli_output_dir = os.path.join(cwd, atlantis.dirs["cli"]["Iam"])
+cli_output_dir = atlantis.dirs["cli"]["Iam"]+parameters["general"]["Prefix"]+"/"
+if not os.path.isdir(cli_output_dir):
+	os.makedirs(cli_output_dir)
+        
 # Open the sample-ATLANTIS-CloudFormationServicePolicy.json file
 with open(
 	os.path.join(cwd, atlantis.files["iamServicePolicy"]["path"]), "r"
@@ -298,8 +301,9 @@ with open(
 		if os.name == "nt":
 			print(stringWinCmd)
 
-		IAM_TRUST_POLICY = atlantis.files["iamTrustPolicy"]["path"]
-		IAM_SERVICE_POLICY = str(atlantis.dirs["cli"]["Iam"]+new_file_name).replace("./", "../scripts-cli/")
+		ROOT_CLI_DIR_IAM = cli_output_dir
+		IAM_TRUST_POLICY = "../../"+atlantis.files["iamTrustPolicy"]["name"]
+		IAM_SERVICE_POLICY = new_file_name
         
 		# Print a message indicating the aws iam cli commands to create the role and policy and attach it to the role
 
@@ -313,7 +317,7 @@ with open(
 		create_role = []
 		create_role.append("aws iam create-role --path "+parameters["general"]["RolePath"])
 		create_role.append("--role-name "+parameters["general"]["Prefix"].upper()+"-CloudFormation-Service-Role")
-		create_role.append("--description 'Service Role for CloudFormation Service to create and manage pipelines under the '"+parameters["general"]["Prefix"]+"' prefix'")
+		create_role.append("--description 'Service Role for CloudFormation Service to create and manage pipelines under the "+parameters["general"]["Prefix"]+" prefix'")
 		create_role.append("--assume-role-policy-document file://$IAM_TRUST_POLICY$")
 		if parameters["general"]["PermissionsBoundaryARN"]:
 			create_role.append("--permissions-boundary "+parameters["general"]["PermissionsBoundaryARN"])
@@ -333,7 +337,7 @@ with open(
 		cliCommands = cliCommands.replace("$IAM_SERVICE_POLICY$", IAM_SERVICE_POLICY)
             
 		# save cliCommands to cli-<Prefix>.txt
-		cliCommandsFilename = atlantis.dirs["cli"]["Iam"]+"cli-"+parameters["general"]["Prefix"]+".txt"
+		cliCommandsFilename = cli_output_dir+"cli-"+parameters["general"]["Prefix"]+".txt"
 		myFile = open(cliCommandsFilename, "w")
 		n = myFile.write(stringWinCmd+"\n\n"+cliCommands)
 

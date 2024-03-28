@@ -1,8 +1,4 @@
 # Comment these lines out if you want to save your generated files in a repository
 
-settings/cfn/*
-settings/iam/*
-
-!sample-*
-!sample.*
-!README.md
+*/**
+!.gitignore

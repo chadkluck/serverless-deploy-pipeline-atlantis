@@ -6,15 +6,13 @@ These scripts will allow you to save tags, parameters, and the CLI commands for 
 
 Before you begin make sure you have Python installed, know the answers to the questions you will be prompted for (Prefix, permission boundaries, account ID, etc), and have access to execute the AWS CLI commands `iam create-role`, `iam put-role-policy`, `cloudformation create-stack`, and `cloudformation describe-stacks`. If you do not have access to execute these commands you can provide an administrator the generated CLI commands and input files.
 
-When you execute the scripts instructions for filling out the prompts will be provided including "help" options. After executing the scripts  CLI input and command files will be generated and stored in the `/scripts-cli/cli/iam/` and `/scripts-cli/cli/cfn/` directories.
+When you execute the scripts, instructions for filling out the prompts will be provided including "help" options. After executing the scripts, CLI input and command files will be generated and stored in the `/cloudformation-pipeline-template/pipelines/` and `/iam-cloudformation-service-role/roles/` directories.
 
-The scripts themselves do nothing other than provide copy-paste CLI commands and CLI input files that would normally be created by hand. The scripts just assist in automating the input file generation process and tagging.
+The scripts only provide copy-paste CLI commands and CLI input files and DO NOT execute the commands. They simply assist in automating the input file generation process and provide consistent creation, management, and tagging of your service role and deployment pipeline stacks.
 
 ## Create Service Role using AWS CLI
 
 You will need to create a service role to use for creating the CloudFormation stack that manages your pipeline.
-
-While you can manually update and apply the policy templates found in the `/iam-cloudformation-service-role/` directory, the scripts in this `/scripts-cli/` directory can assist in consistent creation, management, and tagging of your service role and deployment pipeline stacks.
 
 (Note: Depending on your Python installation, you may need to use `python` or `python3` to invoke the script.)
 
@@ -22,7 +20,7 @@ Execute the script and provide the Prefix for the service role you wish to creat
 
 `python service-role.py <prefix>`
 
-Note that values which may overlap with values entered for previous runs of this script will be listed in square brackets so they can be accepted as a default value by pressing `Enter`. They can always be over-written with new values.
+Note that values entered for previous runs of this script will be listed in square brackets so they can be accepted as a default value by pressing `Enter`. They can always be over-written with new values.
 
 Prompts:
 
@@ -35,7 +33,7 @@ Prompts:
 
 For additional information on what to enter for these prompts, refer to the root [READ ME](../README.md) or follow on-screen instructions during the execution of the script.
 
-After values are given for each of the prompts, CLI commands and a policy file (.txt and .json respectively) will be saved to the /scripts-cli/cli/iam/ directory. The trust policy is stored in the /iam-cloudformation-service-role/ directory and is the same for every service role.
+After values are given for each of the prompts, CLI commands and a policy file (.txt and .json respectively) will be saved to the /iam-cloudformation-service-role/roles/ directory. The trust policy is stored in the /iam-cloudformation-service-role/ directory and is the same for every service role.
 
 ## Create Pipeline Stack using AWS CLI
 
@@ -73,13 +71,13 @@ Prompts:
 
 For additional information on what to enter for these prompts, refer to the root [READ ME](../README.md) or follow on-screen instructions during the execution of the script.
 
-After values are given for each of the prompts, CLI commands and an input file (.txt and .json respectively) will be saved to the /scripts-cli/cli/cfn/ directory. You must also upload, or have access to an existing, CloudFormation template yaml file in S3.
+After values are given for each of the prompts, CLI commands and an input file (.txt and .json respectively) will be saved to the /cloudformation-pipeline-template/pipelines/ directory. You must also upload, or have access to an existing, CloudFormation template yaml file in S3.
 
 ## .gitignore
 
-To prevent uploading settings to your repository, all generated files (CLI prompts, input files, tags, defaults, etc) are automatically excluded from commits by the `.gitignore` file found in the /scripts-cli/ directory.
+To prevent uploading settings to your repository, all generated files (CLI prompts, input files, tags, defaults, etc) are automatically excluded from commits by the `.gitignore` file found in the /scripts-cli/, /cloudformation-pipeline-template/pipelines/, and /iam-cloudformation-service-role/roles/ directories.
 
-However, there is no reason you can't store these files in a repository. Simply delete the /scripts-cli/.gitignore file.
+However, there is no reason you can't store these files in a repository. Simply delete or comment the lines in those (and only those) 3 .gitignore files.
 
 ## Saved Defaults
 
@@ -182,13 +180,14 @@ Pipeline Infrastructure Repository:
 
 - pipeline-infrastructure-repo
     - cloudformation-pipeline-template/
+        - pipelines/
         - template-pipeline.yml
         - ...
     - iam-cloudformation-service-role/
+        - roles/
         - Trust-Policy-for-Service-Role.json
         - ...
     - scripts-cli/
-       - cli/
        - settings/
        - pipeline-stack.py
        - service-role.py

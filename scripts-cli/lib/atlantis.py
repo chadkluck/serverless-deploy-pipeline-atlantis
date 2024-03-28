@@ -22,11 +22,13 @@ dirSettings = "./settings/"
 
 dirs["settings"]["Iam"] = dirSettings+"iam/"
 dirs["settings"]["Cfn"] = dirSettings+"cfn/"
+dirs["cfnPipeline"] = "../cloudformation-pipeline-template/"
+dirs["iamServiceRole"] = "../iam-cloudformation-service-role/"
 
 dirCli = "./cli/"
 
-dirs["cli"]["Iam"] = dirCli+"iam/"
-dirs["cli"]["Cfn"] = dirCli+"cfn/"
+dirs["cli"]["Iam"] = dirs["iamServiceRole"]+"roles/"
+dirs["cli"]["Cfn"] = dirs["cfnPipeline"]+"pipelines/"
 
 files = {
     "cfnPipelineTemplate": {},
@@ -36,18 +38,16 @@ files = {
 	"docsPipelineParamReadme": {}
 }
 
-dirs["cfnPipeline"] = "../cloudformation-pipeline-template/"
-
 files["cfnPipelineTemplate"]["name"] = "template-pipeline.yml"
 files["cfnPipelineTemplate"]["path"] = dirs["cfnPipeline"]+files["cfnPipelineTemplate"]["name"]
 
 files["cfnPipelineTemplateInput"]["name"] = "SAMPLE-input-create-stack.json"
-files["cfnPipelineTemplateInput"]["path"] = dirs["cli"]["Cfn"]+files["cfnPipelineTemplateInput"]["name"]
-
-dirs["iamServiceRole"] = "../iam-cloudformation-service-role/"
+files["cfnPipelineTemplateInput"]["path"] = dirs["cfnPipeline"]+files["cfnPipelineTemplateInput"]["name"]
 
 files["iamTrustPolicy"]["name"] = "Trust-Policy-for-Service-Role.json"
-files["iamTrustPolicy"]["path"] = dirs["iamServiceRole"]+files["iamTrustPolicy"]["name"]
+files["iamTrustPolicy"]["path"] = dirs["cli"]["Iam"]+files["iamTrustPolicy"]["name"]
+
+
 
 files["iamServicePolicy"]["name"] = "SAMPLE-CloudFormationServicePolicy.json"
 files["iamServicePolicy"]["path"] = dirs["iamServiceRole"]+files["iamServicePolicy"]["name"]
@@ -59,11 +59,7 @@ files["docsPipelineParamReadme"]["path"] = dirs["docs"]+files["docsPipelineParam
 
 dirsAndFiles = [
     {
-        "dir": dirs["cli"]["Iam"],
-        "files": []
-    },
-    {
-        "dir": dirs["cli"]["Cfn"],
+        "dir": dirs["cfnPipeline"],
         "files": [
 			files["cfnPipelineTemplateInput"]["name"]
 		]
