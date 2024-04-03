@@ -3,7 +3,7 @@
 Once you have read the [root READ ME](../README.md) and [Tutorials](./Tutorials.md), you'll notice it all comes down to:
 
 1. Create an IAM Role for your CloudFormation Service using the scripts and CLI commands
-2. Create a CodeCommit repository you will store your code in and place `/application-infratructure/` at the root.
+2. Create a CodeCommit repository for your code and place `/application-infratructure/` at the root.
 3. Create a CloudFormation Pipeline stack using the scripts and CLI commands
 
 ## Service Role

@@ -2,6 +2,261 @@
 
 > NOTE: This tutorial has not yet been updated for Atlantis Pipeline V2
 
+
+
+### IAM: Create CloudFormation Service Role and Update User Roles to Use It
+
+In order for the Deploy Pipeline stack to execute, it will need to assume an IAM role with proper permissions. A CloudFormation service role will need to be created before you can create any Pipeline stacks.
+
+We will create a policy (`ACME-CloudFormationServicePolicy`) and attach to a new role (`ACME-CloudFormation-Service-Role`).
+
+You will only need to do this once per prefix.
+
+If you have chosen a prefix other than `acme` use that instead when naming your policy and role. A prefix can be your company or organization's stock ticker, abbreviation, or the abbreviation of an internal organization unit, department, or team. This helps identify ownership and delegate permissions. (Accounting (`acct`) developers may not update stacks assigned to Operations (`ops`)). You will use this prefix again when you create your deploy stack.
+
+
+#### IAM Step 1: Get the CloudFormationServicePolicy.json file ready
+
+You can generate the CloudFormation Service Policy one of two ways:
+
+1. Manually copy the file and do a manual search/replace for each of the parameters (denoted with '$' bookends such as $PARAM$).
+2. Use the /scripts-cli/service-role.py script to easily generate ready-to-use files and AWS CLI commands.
+
+##### Use the Script to Perform Copy and Replace
+
+From within the `/scripts-cli/` directory, run the `service-role.py` script with your chosen prefix as an argument and follow the prompts. A default value will be listed within the square brackets, hit enter to accept the default value or enter your own.
+
+(Note invoking Python via `python`, `py` or `python3` may differ depending on your set-up.)
+
+`python service-role.py acme`
+
+Additional information about [using the scripts and CLI](./scripts-cli/README.md) may be found in the READ ME located in the scripts-cli directory.
+
+Once the script runs it will provide you with the two AWS CLI commands to create the role. You can choose to use the CLI commands or create the role through the Web Console and copy/paste the generated file manually. For either, follow the instructions below.
+
+#### IAM Step 2: Create Service Role
+
+The following instructions walk you though creating the role manually through the AWS Web Console. Instructions for creating the role using the AWS CLI are under IAM AWS CLI Step 2B: Create Service Role via AWS CLI. (You can also use it as a basis for Terraform or AWS CDK.)
+
+You should still review Web Console instructions before proceeding to CLI instructions.
+
+
+
+##### IAM AWS CLI Step 2B: Create Service Role via AWS CLI
+
+Two Policy Documents are necessary:
+
+- `/iam-cloudformation-service-role/Trust-Policy-for-Service-Role.json` (Same for all CloudFormation Service Roles)
+- `/scripts-cli/cli/iam/ACME-CloudFormationServicePolicy.json` (Generated per prefix.)
+
+You will find the CLI commands for `iam create-role` and `iam put-policy` in the cli-acme.txt document.
+
+The Trust Policy specifies the trusted service (CloudFormation) which is allowed to assume the role we will be creating. This policy is the same for all service roles we will create for CloudFormation and must be attached to the role using the `--assume-role-policy-document` parameter during the create role process.
+
+The Service Policy specifies the permissions the CloudFormation service will have when it assumes the CloudFormation Service Role and creates, updates, or deletes the CodePipeline and associated resources. The sample service policy must be updated to reflect your AWS Account ID, Region, Bucket Prefix, and your Prefix.
+
+##### IAM AWS CLI Step 2B.1: Create Role and attach Assume Role and Service Policies
+
+We will need to use two commands, `aws iam create-role` to create the role, attach the assume role policy, and tag it. Then, we will use `aws iam put-role-policy` to put the necessary permissions on the policy.
+
+Follow instructions in the cli-*.txt document making sure you are executing the commands from the /scripts-cli/cli/iam directory. Adjust the `file://` location to the trust policy and policy document if necessary.
+
+```bash
+aws iam create-role --path /dev-ops/ \
+	--role-name ACME-CloudFormation-Service-Role \
+	--description 'Service Role for CloudFormation Service to create and manage pipelines under the 'acme' prefix' \
+	--assume-role-policy-document file://../../../iam-cloudformation-service-role/Trust-Policy-for-Service-Role.json \
+	--tags '{"Key": "Atlantis", "Value": "iam"}' '{"Key": "atlantis:Prefix", "Value": "acme"}' '{"Key": "Department", "Value": "Acme Web Services"}' '{"Key": "Creator", "Value": "Jane Doe"}'
+
+```
+
+You'll then see output upon successful completion of the role's creation. Now you need to attach the policy:
+
+```bash
+aws iam put-role-policy --role-name ACME-CloudFormation-Service-Role \
+	--policy-name ACME-CloudFormationServicePolicy \
+	--policy-document file://ACME-CloudFormationServicePolicy.json
+```
+
+More information on creating and updating an IAM Role Using CLI:
+
+- [AWS Documentation: Creating IAM Role using AWS CLI](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/iam/create-role.html)
+- [AWS Documentation: Updating IAM Role using AWS CLI](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/iam/update-role.html)
+
+### CodeCommit: Create Repository and Structure It
+
+Once the service role is created it is time to set up your CodeCommit repository to store your application infrastructure.
+
+You will need to create the CodeCommit repository and seed it with your application infrastructure before you can create the deploy pipeline. To get started, place the `/application-infrastructure/` into the root of the repository. You can replace it later with more functional code such as [Serverless Web Service Template for Pipeline Atlantis](https://github.com/chadkluck/serverless-webservice-template-for-pipeline-atlantis).
+
+#### CodeCommit Step 1: Create the Repository
+
+1. Create a code commit repository. (You can name it `hello-world`)
+2. Clone the repository to your local machine.
+3. Copy the `/application-infrastructure/` directory into the root of the repository and commit.
+4. Create `dev` and `test` branches (you can create additional branches later)
+
+Make sure the `/application-infrastructure/` directory stays in the root of your repository or CodePipeline will not know where to find your code!
+
+You should now have a repository with 3 branches:
+
+- main (sometimes master)
+- test
+- dev
+
+Each branch should contain the same code.
+
+When we create the first Deploy Pipeline CloudFormation stack we will have it monitor the "test" branch. Upon successful completion of the test deployment, we will create a production deployment from the "main" branch.
+
+We will leave "dev" as a branch that doesn't have an automatic deploy. You can also create individual developer and feature branches in the future.
+
+- [AWS Documentation: CodeCommit ](https://docs.aws.amazon.com/codecommit/latest/userguide/welcome.html)
+- [AWS Documentation: AWS Serverless Application Model (SAM)](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html)
+
+### CloudFormation: Create Deploy Pipeline Stack
+
+The template-pipeline.yml file is a CloudFormation template that creates the deployment pipeline for your application. The generated CloudFormation stack will have `*-pipeline` appended to the stack name as well as the "stage" assigned to a specific branch in your CodeCommit repository (test, beta, prod, main, etc). There will be a pipeline stack for each of the stages/branches you wish to deploy from.
+
+Though you will most likely always have a prod stage tied to your main/master branch, you can always create and destroy stacks related to your test and dev branches (and feature test branches) as needed. Creating new pipeline stacks is as easy as 1. having a branch to deploy from, and 2. following the steps below to create a deploy pipeline stack.
+
+Each deploy pipeline monitors a specific branch in the CodeCommit repository and automatically kicks off a deployment when changes are committed to it. The application has its own CloudFormation infrastructure stack with `*-infrastructure` appended to the stack name. The infrastructure stack manages all the resources (S3, API Gateway, Lambda, DynamoDb, etc) needed to run your application. The deploy stack only manages the pipeline and only needs to be updated if you are modifying the way the pipeline operates.
+
+**REMEMBER:** For each "-pipeline" stack, there will be a corresponding "-infrastructure" stack. The pipeline stack created the CodePipeline and EventBridge rules that monitors the CodeCommit repository branch. Committing code to a branch monitored by the pipeline will cause it to execute updates to the infrastructure stack. The pipeline stack ONLY creates the pipeline resources for monitoring and executing changes. If you need to modify the pipeline, you can update the pipeline stack template. Your application resides in the application infrastructure stack.
+
+There are 3 ways to create the deployment pipeline.
+
+1. Upload `template-pipeline.yml` through the CloudFormation web console (Recommended for starters)
+2. Point to the 63K Labs S3 bucket (or your own) through the CloudFormation web console
+3. Use the AWS CLI (Command Line Interface) (Advanced)
+
+#### CloudFormation Option 1: Upload template-pipeline.yml from Local Machine
+
+1. Go to the CloudFormation AWS Web Console and choose "Create stack" with new resources.
+2. Leave "Template is ready" checked. 
+3. Under "Specify template" choose "Upload a template file".
+4. Choose the template-pipeline.yml file and upload.
+5. "Stack name": `PREFIX-hello-world-test-pipeline` (where `PREFIX` is the prefix you chose in your IAM policy)
+6. Update the parameters according to the prompts and requirements.
+   - For Prefix use the prefix you chose.
+   - For ProjectId use `hello-world`
+   - You will be using `test` for StageId and `TEST` for DeployEnvironment.
+   - Leave S3BucketNameOrgPrefix empty (unless you entered one in the CloudFormation-Service-Role IAM).
+   - Enter your email address for the AlarmNotificationEmail.
+   - Enter the exact name of the CodeRepository you created and use the `test` branch.
+7. Go to next and enter the following tags (we'll only create 2 for now):
+   - For key enter `Atlantis` with value `application-pipeline`
+   - For key enter `atlantis:Prefix` with your prefix value lower case
+8. Under Permissions choose the IAM role `PREFIX-CloudFormation-Service-Role`.
+9. For Stack failure options choose Roll back all stack resources.
+10. Click Next.
+11. Check the box for acknowledging AWS may create resources. (So you don't incur charges after this tutorial is created you may delete the infrastructure stack and then the deploy stack.)
+12. Watch the stack update progress. Hopefully it is successful!
+
+Once the deploy stack is finished creating the pipeline, it will check the CodeCommit repository and begin creation of the infrastructure stack.
+
+You can always check the progress of the pipeline by going to the deploy stack in CloudFormation > Outputs > Pipeline.
+
+#### CloudFormation Option 2: Point to Template in S3 Bucket
+
+You can either upload the `template-pipeline.yml` file to your own S3 bucket, or use the one at `https://63klabs.s3.amazonaws.com/atlantis/v2/template-pipeline.yml`
+
+If you use your own, you will need to list the path as `https://yourbucketname.s3.amazonaws.com/pathtoyourfile/template-pipeline.yml` even if it is not publicly accesible (public access blocked). It cannot be listed with the `s3:` protocol.
+
+Use the same steps as in Option 1 but instead of choosing "Upload a template file" in step 3, choose S3 bucket and enter in the URL to the file.
+
+#### CloudFormation Option 3: Use AWS CLI cloudformation create-stack
+
+While you may think using the CLI requires a lot of typing, I have included scripts in /scripts-cli/ that make it super-easy and saves the CLI commands and input files you can use and re-use as you build, tweak, destroy, and re-build your stacks.
+
+Instead of spending your time hand entering all the parameters and tags via the Web Console, you can just answer some prompts and have the scripts generate CLI commands to cut and paste! Plus, all the info is saved so you can just re-create stacks all over the place!
+
+#### Run the Script and Execute CLI commands
+
+From within the `/scripts-cli/` directory, run the `pipeline-stack.py` script with your chosen prefix, project ID, and stage ID as arguments and follow the prompts. A default value will be listed within the square brackets, hit enter to accept the default value or enter your own.
+
+(Note invoking Python via `python`, `py` or `python3` may differ depending on your set-up.)
+
+`python service-role.py acme sales-api test`
+
+Additional information about [using the scripts and CLI](./scripts-cli/README.md) may be found in the READ ME located in the scripts-cli directory.
+
+Once the script runs it will provide you with the AWS CLI commands to create the stack.
+
+## Customizing your Pipeline Template
+
+Right now the `template-pipeline.yml` template creates a Code Pipeline with the proper permissions to create an infrastructure stack with a Lambda function, API Gateway, DynamoDb, S3 buckets, alarms, CloudWatch logs, and CloudWatch Events.
+
+You may want to add additional resources such as databases, EC2 instances, VPC connections, and more. Following the principle of least privilege, the current pipeline template does not have permission to add these to the infrastructure stack.
+
+You can add additional permissions to the ${Prefix}-Worker-${ProjectId}-${StageId}-CodePipelineRolePolicy IAM policy in template-pipeline.yml and update the CloudFormation stack.
+
+You may also make other modifications as necessary. However, outside of adding additional IAM policies, reducing policy scope, or adding suggested tweaks, the pipeline stack will rarely be updated.
+
+If you make customizations to the template-pipeline template, you may wish to store a copy in the repository with your infrastructure template. Though updating the deploy stack is not automatic, it will help you keep tabs on your deploy template.
+
+Once you have made modifications to your deploy pipeline template follow the instructions below to update.
+
+## Create, Edit, or Replace Existing CloudFormation -pipeline Stacks
+
+NOTE: This **template-pipeline.yml** template is for a **Deploy Pipeline (-pipeline)** stack! **NOT** your application **Infrastructure (-infrastructure)** stack!
+
+If you are replacing the entire contents of the template file then you can do this one of four ways:
+
+1. Upload `template-pipeline.yml` from your local machine
+2. Point to the 63klabs S3 Bucket (or your own bucket)
+3. Edit Template "In Place" in the Template Designer
+4. Create or Update the stack using AWS CLI (Command Line Interface)
+
+Note! If you have made your own modifications by adding additional permissions or resources, replacing the entire template will remove your changes. In that case, it is recommended you either manually update the pieces of code that need updating following the instructions in each update, or make note of your changes and re-implement them.
+
+If you are updating pieces of the template manually "In Place" by following the update instructions then you can edit the appropriate areas in the template editor.
+
+### Option 1: Upload from Local Machine
+
+1. Go to your `-pipeline` stack in the CloudFormation AWS Web Console and choose Update
+2. Choose "Replace current template"
+3. Choose "Upload a template file"
+4. Upload your file
+5. Update any Parameters and Tags on the next page
+6. Choose the deployment role (Typically something like `ACME-CloudFormationServiceRole`) If unsure look at the Stack Info/Overview/IAM Role assigned to similar Deploy stacks.
+7. Check the box for acknowledging AWS may create resources.
+8. Watch the stack update progress. Hopefully it is successful!
+
+### Option 2: Point to the S3 Bucket
+
+1. Go to your `-pipeline` stack and choose Update
+2. Choose "Replace current template"
+3. Choose "Amazon S3 URL" and enter in `https://63klabs.s3.amazonaws.com/atlantis/v2/template-pipeline.yml` (Or from your own bucket--must be publicly available)
+4. Update any Parameters and Tags on the next page
+5. Choose the deployment role (Typically something like `ACME-CloudFormationServiceRole`) If unsure look at the Stack Info/Overview/IAM Role assigned to similar Deploy stacks.
+6. Check the box for acknowledging AWS may create resources.
+7. Watch the stack update progress. Hopefully it is successful!
+
+### Option 3: Edit Template "In Place" in the Template Designer
+
+1. Go to your `-pipeline` stack and choose Update
+2. Choose "Edit template in designer" and then the button "View in Designer"
+3. You will see a code section at the bottom of the diagram.
+4. You can do one of two things:
+    1. Copy the entire contents of the new template file and paste it into the designer
+    2. Perform edits within the designer
+5. When finished, choose "Validate"
+6. Once validated, choose "Upload" (Cloud icon with up arrow)
+7. Update any Parameters and Tags on the next page
+5. Choose the deployment role (Typically something like `ACME-CloudFormationServiceRole`) If unsure look at the Stack Info/Overview/IAM Role assigned to similar Deploy stacks.
+6. Check the box for acknowledging AWS may create resources.
+7. Watch the stack update progress. Hopefully it is successful!
+
+### Option 4: Create or Update using the AWS CLI
+
+This option is outlined in [README: Use AWS CLI](./scripts-cli/README-CLI.md).
+
+It may be beneficial to use this option as you can maintain input files that define your stack using parameters and tags. This is helpful as it avoids manual entry, is re-producible, self-documents, and maintains the concept of infrastructure as code.
+
+Other similar options that avoid the Web Console and follow Infrastructure as Code are using Terraform and AWS CDK for the process of creating and updating the deploy pipeline stack. (Exploring and implementing those options are far beyond the scope of this template and tutorial.)
+
+
+
 In order to complete the tutorials you must have completed the steps outlined in [README 1: IAM CloudFormation Service Role](../iam-cloudformation-service-role/README-1-IAM-CF-Service-Role.md), [README 2: CodeCommit Repository](../codecommit-repository/README-2-CodeCommit-Repository.md), and [README 3: CloudFormation Deploy Stack](../deploy-pipeline/README-3-CloudFormation-pipeline-Stack.md).
 
 If you have completed the steps in these 3 READMEs, then congratulations! Your tutorial journey has already begun!
