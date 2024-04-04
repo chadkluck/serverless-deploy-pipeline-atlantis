@@ -215,15 +215,15 @@ for i in range(len(tagFileLoc)):
             # Loop through the elements in tagData
             #   1. Search customStackTags array for an element with Key == tagData[i].Key
             #   2. If it exists, replace it. Else, append
-            for i in range(len(tagData)):
+            for x in range(len(tagData)):
                 found = False
                 for j in range(len(customStackTags)):
-                    if customStackTags[j]["Key"] == tagData[i]["Key"]:
-                        customStackTags[j]["Value"] = tagData[i]["Value"]
+                    if customStackTags[j]["Key"] == tagData[x]["Key"]:
+                        customStackTags[j]["Value"] = tagData[x]["Value"]
                         found = True
                         break
                 if not found:
-                    customStackTags.append(tagData[i])
+                    customStackTags.append(tagData[x])
             
 
             print(" + Found "+tagFileLoc[i])
