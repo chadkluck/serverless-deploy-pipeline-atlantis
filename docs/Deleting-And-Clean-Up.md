@@ -1,6 +1,6 @@
 # Deleting and Clean-Up
 
-You may want to delete stacks you created, however there is a proper order to follow:
+To delete stacks you created follow the order of these steps:
 
 1. Empty any S3 buckets created by your Infrastructure stack (In the S3 Web Console, select the S3 bucket and choose Empty)
 2. Empty the S3 deploy bucket created to store artifacts by your Pipeline stack.
@@ -20,4 +20,4 @@ Once an infrastructure stack is deleted it may be rebuilt by either:
 
 Releasing a change will rerun the last code committed to the repository branch.
 
-> **NOTE:** Some resources may not have the same name and arn as before which is usually not an issue in Development or Test environments. However, API GateWay will regenerate a random ID for the endpoint so you will need to update anywhere you use the  endpoint for testing.
+> **NOTE:** Some resources may not have the same name and arn as before which is usually not an issue in Development or Test environments. However, API GateWay will regenerate a random ID for the endpoint so you will need to update anywhere you use the endpoint.
