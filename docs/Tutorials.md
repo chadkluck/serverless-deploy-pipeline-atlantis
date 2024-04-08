@@ -2,7 +2,17 @@
 
 > NOTE: This tutorial has not yet been updated for Atlantis Pipeline V2
 
+## AWS Costs
 
+This deploy template will create resources necessary to provide an AWS CodePipeline. After performing any tutorials you will want to delete unused stacks so that you do not incur any unexpected costs. However, most experimentation, and even low production loads, rarely rise above [AWS Free Tier](https://aws.amazon.com/free).
+
+> You get 1 free active pipeline per month. New pipelines are free for the first 30 days. "An active pipeline is a pipeline that has existed for more than 30 days and has at least one code change that runs through it during the month. There is no charge for pipelines that have no new code changes running through them during the month." [CodePipeline Pricing](https://aws.amazon.com/codepipeline/pricing)
+
+In short: Pipelines can sit idle without incurring any cost.
+
+You are also charged for AWS CodeBuild if you go over 100 build minutes per month. If you are committing and deploying only a few changes a month you should not see any charges for CodeBuild. If you are frequently committing changes for deployment several times a day, several days a week during the month, you may see charges. [CodeBuild Pricing](https://aws.amazon.com/codebuild/pricing)
+
+To delete the stacks and resources refer to the Clean Up section.
 
 ### IAM: Create CloudFormation Service Role and Update User Roles to Use It
 
