@@ -1,6 +1,6 @@
 # Scripts and CLI Commands
 
-> To keep this document brief, it is assumed you have AWS CLI installed, have reviewed the [READ ME](../README.md) document in the root of this repository which explains how to use IAM and CloudFormation to maintain a pipeline stack, and have basic knowledge of how the Atlantis project can be utilized. You don't have to be an expert AWS user, as Atlantis is set up to get even novices started in AWS deployments, but you should at least be comfortable answering prompts provided by the script and copy-pasting the generated commands.
+> To keep this document brief, it is assumed you have Python and AWS CLI installed, have reviewed the [READ ME](../README.md) document in the root of this repository which explains how to use IAM and CloudFormation to maintain a pipeline stack, and have basic knowledge of how the Atlantis project can be utilized. You don't have to be an expert AWS user, as Atlantis is set up to get even novices started in AWS deployments, but you should at least be comfortable answering prompts provided by the script and copy-pasting the generated commands.
 
 These scripts will allow you to save tags, parameters, and the CLI commands for each project allowing you to quickly create, update, duplicate, delete, and recreate projects in seconds. The scripts will prompt for parameters and then generate and save CLI commands and input files. You can then save these files in a repository for re-use.
 
