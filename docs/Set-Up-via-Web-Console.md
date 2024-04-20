@@ -3,10 +3,14 @@
 The service role and pipeline can be created using the Web Console which may be preferable if you are just starting out and want to visually see the components and their settings.
 
 1. Create an IAM Role for your CloudFormation Service
-2. Create a CodeCommit repository for your code and place `/application-infratructure/` at the root.
+2. Create a CodeCommit repository for your code and place `/application-infrastructure/` at the root
 3. Create a CloudFormation Pipeline stack
 
-##### Manually Copy and Perform Search/Replace
+> As an alternative to setting up manually via the Web Console, [AWS CLI commands](./Set-Up-via-AWS-CLI.md) can be used to create the service role and stack.
+
+## 1. Create Service Role in IAM Console
+
+### 1a: Manually Copy and Perform Search/Replace
 
 1. In the `/iam-cloudformation-service-role/` folder, make a copy of `SAMPLE-CloudFormationServicePolicy.json` and name the copy with your prefix instead of SAMPLE. The following command will do this assuming you are in the iam directory: `cp SAMPLE-CloudFormationServicePolicy.json ACME-CloudFormationServicePolicy.json`
 2. Open the copy and do a Find and Replace for each of the following:
@@ -18,9 +22,7 @@ The service role and pipeline can be created using the Web Console which may be 
 
 > Note: This is the only time we will include an Upper-case Prefix. Instead, we use lower-case because S3 buckets must be in all lower-case and it would complicate automated provisioning if UPPERCASE, CamelCase, _and_ lowercase had to be accounted for. Also, mixing cases and using them inconsistently can be confusing.
 
-##### IAM Web Console Step 2A: Create Service Role via Web Console
-
-###### IAM Web Console Step 2A.1: Create the CloudFormation Service Policy
+### 1b: Create the CloudFormation Service Policy
 
 Before we can attach a policy to the role we need to create the policy!
 
@@ -33,7 +35,7 @@ Before we can attach a policy to the role we need to create the policy!
    -  `atlantis:Prefix` with the value of your prefix (lower case), and any additional tags you may want (like creator and purpose). 
 6. Click on Create Policy.
 
-###### IAM Web Console Step 2A.2: Add the Policy to the CloudFormation Service Role
+### 1c: Add the Policy to the CloudFormation Service Role
 
 1. Under IAM in the Web Console, choose "Roles" from the left-hand side.
 2. Click on "Create role"
@@ -45,3 +47,15 @@ Before we can attach a policy to the role we need to create the policy!
 6. Create the Role
 
 > Note: Again, you can create roles and stacks to segment permissions among your functional teams (e.g. `websvc` or `accounting`). Cool, huh?! Just make another copy of `ACME-CloudFormationServicePolicy.json` and do a new search/replace.
+
+## 2: Create the CodeCommit repository
+
+Place the `application-infrastructure/` directory at the root of your repository.
+
+Commit your code and then create and push a `dev` and `test` branch in addition to your `main` branch.
+
+Your repository is now primed for the next step.
+
+## 3: Create a CloudFormation Pipeline stack
+
+TODO

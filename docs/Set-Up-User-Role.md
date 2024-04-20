@@ -1,6 +1,6 @@
 # User Roles
 
-## Create Roles
+## Add Permission to Create Roles
 
 Make sure you have permissions to create roles
 
@@ -34,7 +34,7 @@ This is an overly permissive statement as it allows you access to update any rol
 
 Also note that if you are passing this information to an administrator, they should also update any user roles that only need access to `iam:PassRole` as outlined in IAM Step 3. (Though you'll need the role ARN, this can be done before creating the role.)
 
-## Assume Role
+## Add Assume Role Permission
 
 Note that if you are the only user in your account and/or you will be using the same user role that you gave the CreateRole permissions to in IAM Step 0, this has already been done if you kept `iam:PassRole` in the `Action` field from before. You may then skip this step.
 
