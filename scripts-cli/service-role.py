@@ -1,3 +1,11 @@
+# This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, 
+# either express or implied. See the License for the specific language governing permissions 
+# and limitations under the License.
+# 
+# README documentation goes through installation steps. 
+# https://github.com/chadkluck/serverless-deploy-pipeline-atlantis/README.md
+#
+
 import os
 import json
 import sys
@@ -11,8 +19,8 @@ cwd = os.getcwd()
 
 print("")
 tools.printCharStr("=", 80, bookend="|")
-tools.printCharStr(" ", 80, bookend="|", text="CloudFormation Service Role and AWS CLI Command Generator for Atlantis CI/CD")
-tools.printCharStr(" ", 80, bookend="|", text="v2024.02.29")
+tools.printCharStr(" ", 80, bookend="|", text="Service Role AWS CLI Generator for Atlantis CI/CD")
+tools.printCharStr(" ", 80, bookend="|", text="v2024.02.29 : service-role.py")
 tools.printCharStr("-", 80, bookend="|")
 tools.printCharStr(" ", 80, bookend="|", text="Chad Leigh Kluck")
 tools.printCharStr(" ", 80, bookend="|", text="https://github.com/chadkluck/serverless-deploy-pipeline-atlantis")
@@ -30,7 +38,7 @@ else:
     print("\n\nUsage: python "+scriptName+" <Prefix>\n\n")
     sys.exit()
 
-# Default values - Set any of these defaults to your own in the .defaults file
+# Default values - Set any of these defaults to your own in the defaults file
 defaults = {
 	"general": {
 		"Prefix": argPrefix,
@@ -49,8 +57,8 @@ print("[ Loading .default files... ]")
 
 # Create a file location array - this is the hierarchy of files we will gather defaults from. The most recent file appended (lower on list) will overwrite previous values
 fileLoc = []
-fileLoc.append(atlantis.dirs["settings"]["Iam"]+".defaults.json")
-fileLoc.append(atlantis.dirs["settings"]["Iam"]+".defaults-"+argPrefix+".json")
+fileLoc.append(atlantis.dirs["settings"]["Iam"]+"defaults.json")
+fileLoc.append(atlantis.dirs["settings"]["Iam"]+"defaults-"+argPrefix+".json")
 
 # iam defaults don't have keysections
 for i in range(len(fileLoc)):
@@ -65,13 +73,13 @@ for i in range(len(fileLoc)):
 
 # Read in Custom Stack Tags
         
-print("\n[ Loading .tags files... ]")
+print("\n[ Loading tags files... ]")
 
 tagFileLoc = []
-tagFileLoc.append(atlantis.dirs["settings"]["Iam"]+".tags.json")
-tagFileLoc.append(atlantis.dirs["settings"]["Iam"]+".tags-"+argPrefix+".json")
+tagFileLoc.append(atlantis.dirs["settings"]["Iam"]+"tags.json")
+tagFileLoc.append(atlantis.dirs["settings"]["Iam"]+"tags-"+argPrefix+".json")
 
-# If .tags.json exists, read it in
+# If tags.json exists, read it in
 customSvcRoleTags = []
 
 for i in range(len(tagFileLoc)):
@@ -180,8 +188,8 @@ tf = {
 
 # we list the files in reverse as we work up the normal read-in chain
 iamInputsFiles = [
-    atlantis.dirs["settings"]["Iam"]+".defaults-"+tf["Prefix"]+".json",
-    atlantis.dirs["settings"]["Iam"]+".defaults.json"
+    atlantis.dirs["settings"]["Iam"]+"defaults-"+tf["Prefix"]+".json",
+    atlantis.dirs["settings"]["Iam"]+"defaults.json"
 ]
 
 # we will progressively remove data as we save up the chain of files

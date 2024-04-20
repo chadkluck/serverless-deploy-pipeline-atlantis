@@ -1,12 +1,16 @@
-#ignore the git and zip files we use
+# Ignore the git and zip files we use
 .*
-
 *.zip
 
+# Ignore program and OS files
+.vscode
 *.DS_Store
 *desktop.ini
 
+# Ignore 
 node_modules/
+
+# Don't ignore .gitignore (excludes from capture by .* above)
 !.gitignore
 
 # If you need to remove .DS_Store

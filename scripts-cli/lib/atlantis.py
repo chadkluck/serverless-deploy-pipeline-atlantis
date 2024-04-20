@@ -1,3 +1,11 @@
+# This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, 
+# either express or implied. See the License for the specific language governing permissions 
+# and limitations under the License.
+#
+# CLI Generator Variable and Function Library for Atlantis CI/CD CodePipeline CloudFormation Template
+# Chad Leigh Kluck
+# v2024.02.29 : lib/atlantis.py
+
 import os
 import shutil
 import re

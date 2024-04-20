@@ -1,3 +1,11 @@
+# This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, 
+# either express or implied. See the License for the specific language governing permissions 
+# and limitations under the License.
+# 
+# README documentation goes through installation steps. 
+# https://github.com/chadkluck/serverless-deploy-pipeline-atlantis/README.md
+#
+
 import os
 import json
 import sys
@@ -12,8 +20,8 @@ cwd = os.getcwd()
 
 print("")
 tools.printCharStr("=", 80, bookend="|")
-tools.printCharStr(" ", 80, bookend="|", text="Pipeline CloudFormation Template and AWS CLI Command Generator")
-tools.printCharStr(" ", 80, bookend="|", text="v2024.02.29")
+tools.printCharStr(" ", 80, bookend="|", text="Pipeline CF Stack AWS CLI Generator for Atlantis CI/CD")
+tools.printCharStr(" ", 80, bookend="|", text="v2024.02.29 : pipeline-stack.py")
 tools.printCharStr("-", 80, bookend="|")
 tools.printCharStr(" ", 80, bookend="|", text="Chad Leigh Kluck")
 tools.printCharStr(" ", 80, bookend="|", text="https://github.com/chadkluck/serverless-deploy-pipeline-atlantis")
@@ -90,7 +98,7 @@ for item in defaultsFromIam:
     defaultsFromIamArray.append(item["key"])
     defaultsFromIamIndex[item["key"]] = item["mapToSection"]
 
-# Default values - Set any of these defaults to your own in the .defaults file
+# Default values - Set any of these defaults to your own in the defaults file
 defaults = {
     "pipeline_template_location": {
         "BucketName": "63klabs",
@@ -140,12 +148,12 @@ print("[ Loading .default files... ]")
 
 # Create a file location array - this is the hierarchy of files we will gather defaults from. The most recent file appended (lower on list) will overwrite previous values
 fileLoc = []
-fileLoc.append(atlantis.dirs["settings"]["Iam"]+".defaults.json")
-fileLoc.append(atlantis.dirs["settings"]["Iam"]+".defaults-"+argPrefix+".json")
-fileLoc.append(atlantis.dirs["settings"]["Cfn"]+".defaults.json")
-fileLoc.append(atlantis.dirs["settings"]["Cfn"]+".defaults-"+argPrefix+".json")
-fileLoc.append(atlantis.dirs["settings"]["Cfn"]+".defaults-"+argPrefix+"-"+argProjectId+".json")
-fileLoc.append(atlantis.dirs["settings"]["Cfn"]+".defaults-"+argPrefix+"-"+argProjectId+"-"+argStageId+".json")
+fileLoc.append(atlantis.dirs["settings"]["Iam"]+"defaults.json")
+fileLoc.append(atlantis.dirs["settings"]["Iam"]+"defaults-"+argPrefix+".json")
+fileLoc.append(atlantis.dirs["settings"]["Cfn"]+"defaults.json")
+fileLoc.append(atlantis.dirs["settings"]["Cfn"]+"defaults-"+argPrefix+".json")
+fileLoc.append(atlantis.dirs["settings"]["Cfn"]+"defaults-"+argPrefix+"-"+argProjectId+".json")
+fileLoc.append(atlantis.dirs["settings"]["Cfn"]+"defaults-"+argPrefix+"-"+argProjectId+"-"+argStageId+".json")
 
 # iam defaults don't have keysections
 
@@ -170,15 +178,15 @@ for i in range(len(fileLoc)):
 
 # Read in Custom Parameters
         
-print("\n[ Loading .params files... ]")
+print("\n[ Loading params files... ]")
 
 customStackParamsFileLoc = []
-customStackParamsFileLoc.append(atlantis.dirs["settings"]["Cfn"]+".params.json")
-customStackParamsFileLoc.append(atlantis.dirs["settings"]["Cfn"]+".params-"+argPrefix+".json")
-customStackParamsFileLoc.append(atlantis.dirs["settings"]["Cfn"]+".params-"+argPrefix+"-"+argProjectId+".json")
-customStackParamsFileLoc.append(atlantis.dirs["settings"]["Cfn"]+".params-"+argPrefix+"-"+argProjectId+"-"+argStageId+".json")
+customStackParamsFileLoc.append(atlantis.dirs["settings"]["Cfn"]+"params.json")
+customStackParamsFileLoc.append(atlantis.dirs["settings"]["Cfn"]+"params-"+argPrefix+".json")
+customStackParamsFileLoc.append(atlantis.dirs["settings"]["Cfn"]+"params-"+argPrefix+"-"+argProjectId+".json")
+customStackParamsFileLoc.append(atlantis.dirs["settings"]["Cfn"]+"params-"+argPrefix+"-"+argProjectId+"-"+argStageId+".json")
 
-# If .params.json exists, read it in
+# If params.json exists, read it in
 customStackParams = {}
 
 for i in range(len(customStackParamsFileLoc)):
@@ -196,15 +204,15 @@ for i in range(len(customStackParamsFileLoc)):
         
 # Read in Custom Stack Tags
         
-print("\n[ Loading .tags files... ]")
+print("\n[ Loading tags files... ]")
 
 tagFileLoc = []
-tagFileLoc.append(atlantis.dirs["settings"]["Cfn"]+".tags.json")
-tagFileLoc.append(atlantis.dirs["settings"]["Cfn"]+".tags-"+argPrefix+".json")
-tagFileLoc.append(atlantis.dirs["settings"]["Cfn"]+".tags-"+argPrefix+"-"+argProjectId+".json")
-tagFileLoc.append(atlantis.dirs["settings"]["Cfn"]+".tags-"+argPrefix+"-"+argProjectId+"-"+argStageId+".json")
+tagFileLoc.append(atlantis.dirs["settings"]["Cfn"]+"tags.json")
+tagFileLoc.append(atlantis.dirs["settings"]["Cfn"]+"tags-"+argPrefix+".json")
+tagFileLoc.append(atlantis.dirs["settings"]["Cfn"]+"tags-"+argPrefix+"-"+argProjectId+".json")
+tagFileLoc.append(atlantis.dirs["settings"]["Cfn"]+"tags-"+argPrefix+"-"+argProjectId+"-"+argStageId+".json")
 
-# If .tags.json exists, read it in
+# If tags.json exists, read it in
 customStackTags = []
 
 for i in range(len(tagFileLoc)):
@@ -338,10 +346,10 @@ tf = {
 
 # we list the files in reverse as we work up the normal read-in chain
 cliInputsFiles = [
-    atlantis.dirs["settings"]["Cfn"]+".defaults-"+tf["Prefix"]+"-"+tf["ProjectId"]+"-"+tf["StageId"]+".json",
-    atlantis.dirs["settings"]["Cfn"]+".defaults-"+tf["Prefix"]+"-"+tf["ProjectId"]+".json",
-    atlantis.dirs["settings"]["Cfn"]+".defaults-"+tf["Prefix"]+".json",
-    atlantis.dirs["settings"]["Cfn"]+".defaults.json"
+    atlantis.dirs["settings"]["Cfn"]+"defaults-"+tf["Prefix"]+"-"+tf["ProjectId"]+"-"+tf["StageId"]+".json",
+    atlantis.dirs["settings"]["Cfn"]+"defaults-"+tf["Prefix"]+"-"+tf["ProjectId"]+".json",
+    atlantis.dirs["settings"]["Cfn"]+"defaults-"+tf["Prefix"]+".json",
+    atlantis.dirs["settings"]["Cfn"]+"defaults.json"
 ]
 
 # we will progressively remove data as we save up the chain of files
@@ -508,10 +516,10 @@ with open(atlantis.files["cfnPipelineTemplateInput"]["path"]) as templateCFN_fil
 
 # check to see if customStackParams is empty
 if len(customStackParams) == 0:
-    print(" - No Custom Stack Parameters to add from .params files")
+    print(" - No Custom Stack Parameters to add from params files")
 else:
     # Add Custom Stack Parameters to input template. Not only are new parameters added, existing ones in the template can be overridden
-    print(" + Adding Custom Stack Parameters from .params files...")
+    print(" + Adding Custom Stack Parameters from params files...")
     for key in customStackParams.keys():
         customStackParam = { "ParameterKey": key, "ParameterValue": customStackParams[key], "UsePreviousValue": True }
         found = False
@@ -525,9 +533,9 @@ else:
 
 # check to see if customStackTags is empty
 if len(customStackTags) == 0:
-    print(" - No Custom Stack Tags to add from .tags files")
+    print(" - No Custom Stack Tags to add from tags files")
 else:
-    print(" + Adding Custom Stack Tags from .tags files...")
+    print(" + Adding Custom Stack Tags from tags files...")
     # Add Custom Tags to the input template. Not only are new tags added, existing ones in the template can be overridden
     for i in range(len(customStackTags)):
         found = False

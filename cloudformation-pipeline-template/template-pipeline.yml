@@ -2,15 +2,15 @@
 # either express or implied. See the License for the specific language governing permissions 
 # and limitations under the License.
 #
-# Atlantis CI/CD CodePipeline CloudFormation Template
+# Atlantis CI/CD CodePipeline CloudFormation Template Version 2
 # Chad Leigh Kluck
-# v2.2024-01-28
+# v2024.02.29 : template-pipeline.yml
 # 
 # README documentation goes through installation steps. 
 # https://github.com/chadkluck/serverless-deploy-pipeline-atlantis/README.md
 #
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "Deploy Pipeline CloudFormation Template v2. Creates a CodePipeline that executes after changes are committed to a specific CodeCommit branch."
+Description: "Deploy Pipeline Template V2. Creates a CodePipeline that executes after changes are committed to a specific CodeCommit branch."
 
 # =============================================================================
 # META DATA
