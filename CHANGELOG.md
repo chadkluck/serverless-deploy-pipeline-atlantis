@@ -8,7 +8,7 @@ You can add updates to your own copy of the pipeline stack template by manually 
 
 Updates are listed in **chronological** order to aid in applying any manual updates. It is recommended you only do one version update at a time and await a successful deployment.
 
-## v2024.02.29 Release
+## v2024.04.21 Release
 
 Reworked the template and removed the ability to deploy using CodeStar (which is being retired by AWS summer of 2024 anyway). The new template and CLI commands simplified maintaining and using the template for both the pipeline and infrastructure stack. The [old template is still available on S3](https://63klabs.s3.us-east-2.amazonaws.com/atlantis/v0/atlantis-pipeline-files-v0-deprecated.zip).
 
