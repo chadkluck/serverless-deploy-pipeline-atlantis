@@ -57,9 +57,9 @@ DevOps Repository:
 
 ### Application Infrastructure directory
 
-This is where your application's CloudFormation template and code reside. This entire directory needs to be placed at the root of your application's repository. CodePipeline will look for `application-infrastructure/` in your repository during build and deploy.
+This repository contains a sample SAM project in the `application-infrastructure` directory. Place the entire directory in the root of its own repository. CodePipeline will look for `application-infrastructure/` in your repository during build and deploy.
 
-Utilize `application-infrastructure/template-configuration.yml` to add custom parameter values and tags to your application resources.
+The sample application will deploy as-is. For customization options and a tutorial, refer to the [Tutorials in docs](./docs/Tutorials.md).
 
 ### IAM CloudFormation Service Role directory
 

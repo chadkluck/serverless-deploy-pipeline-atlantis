@@ -58,4 +58,42 @@ Your repository is now primed for the next step.
 
 ## 3: Create a CloudFormation Pipeline stack
 
-TODO
+There are 2 ways to create the deployment pipeline.
+
+1. Upload `template-pipeline.yml` through the CloudFormation web console (Recommended for starters)
+2. Point to the 63K Labs S3 bucket (or your own) through the CloudFormation web console
+
+### CloudFormation Option 1: Upload template-pipeline.yml from Local Machine
+
+1. Go to the CloudFormation AWS Web Console and choose "Create stack" with new resources.
+2. Leave "Template is ready" checked. 
+3. Under "Specify template" choose "Upload a template file".
+4. Choose the template-pipeline.yml file and upload.
+5. "Stack name": `ACME-hello-world-test-pipeline` (`ACME` (uppercase) can be replaced with your own prefix used in the IAM policy)
+6. Update the parameters according to the prompts and requirements.
+   - For Prefix use `acme` (or the prefix you chose in lower case).
+   - For ProjectId use `hello-world`
+   - You will be using `test` for StageId and `TEST` for DeployEnvironment.
+   - Leave S3BucketNameOrgPrefix empty (unless you entered one in the CloudFormation-Service-Role IAM).
+   - Enter your email address for the AlarmNotificationEmail.
+   - Enter the exact name of the CodeRepository you created and use the `test` branch.
+7. Go to next and enter the following tags (we'll only create 2 for now):
+   - For key enter `Atlantis` with value `application-pipeline`
+   - For key enter `atlantis:Prefix` with the value of `acme` (or your prefix value lower case).
+8. Under Permissions choose the IAM role `ACME-CloudFormation-Service-Role` (or your Service Role).
+9. For Stack failure options choose Roll back all stack resources.
+10. Click Next.
+11. Check the box for acknowledging AWS may create resources. (So you don't incur charges after this tutorial is created you may delete the infrastructure stack and then the deploy stack.)
+12. Watch the stack update progress. Hopefully it is successful!
+
+Once the deploy stack is finished creating the pipeline, it will check the CodeCommit repository and begin creation of the infrastructure stack.
+
+You can always check the progress of the pipeline by going to the deploy stack in CloudFormation > Outputs > Pipeline.
+
+### CloudFormation Option 2: Point to Template in S3 Bucket
+
+You can either upload the `template-pipeline.yml` file to your own S3 bucket, or use the one at `https://63klabs.s3.amazonaws.com/atlantis/v2/template-pipeline.yml`
+
+If you use your own, you will need to list the path as `https://yourbucketname.s3.amazonaws.com/pathtoyourfile/template-pipeline.yml` even if it is not publicly accessible (public access blocked). It cannot be listed with the `s3:` protocol.
+
+Use the same steps as in CloudFormation Option 1 but instead of choosing "Upload a template file" in step 3, choose S3 bucket and enter in the URL to the file.
