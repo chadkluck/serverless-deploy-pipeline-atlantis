@@ -1,6 +1,6 @@
 # Tutorials
 
-> NOTE: This tutorial has been updated for Atlantis Pipeline V2 but it's accuracy has not yet been verified.
+> NOTE: This tutorial has been updated for Atlantis Pipeline V2 but its accuracy has not yet been verified.
 
 ## AWS Costs
 
@@ -35,7 +35,6 @@ For Stage Id and Deploy Environment, we will use the following values for each b
 
 | Branch  | Stage Id | Deploy Environment |
 |---------|----------|--------------------|
-| dev     | -        | -                  |
 | test    | test     | TEST               |
 | beta    | beta     | PROD               |
 | main    | prod     | PROD               |
@@ -47,6 +46,12 @@ As depicted in the table, each branch is mapped to a Stage Id. The Stage Id can 
 | feature-bri-98 | fbri98   | TEST               |
 | test-joseph    | tjsph    | TEST               |
 | hotfix-4278    | hf4278   | TEST               |
+
+### Create Additional Pipelines
+
+Once the branches have been created, make sure the test, beta, and main branches each have a pipeline. We will not need a pipeline for dev as we will leave that for local and incomplete work that we don't want to automatically deploy. Branches that are not mapped to a deploy are a safe spot to continually check-in code that is a work-in-progress.
+
+### Review
 
 Let us review what has been completed:
 
