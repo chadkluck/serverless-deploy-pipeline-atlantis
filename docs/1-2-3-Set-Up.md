@@ -52,6 +52,6 @@ Additional documentation is found in the /docs/ directory as well as /scripts-cl
 - [Set-Up via Terraform or CDK](./Set-Up-via-Terraform-or-CDK.md)
 - [Pipeline Parameters Reference](./Pipeline-Parameters-Reference.md)
 - [Tutorials](./Tutorials.md)
-- [Advanced](./Advanced.md)
 - [Scripts and CLI](../scripts-cli/README-CLI.md)
+- [Updating the Pipeline Stack](./Updating-Pipeline-Stack.md)
 - [Deleting and Clean-Up](./Deleting-and-Clean-Up.md)

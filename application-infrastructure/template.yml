@@ -213,7 +213,7 @@ Conditions:
   CreateDevResources: !Equals [!Ref DeployEnvironment, "DEV"]
   UseS3BucketNameOrgPrefix: !Not [!Equals [!Ref S3BucketNameOrgPrefix, ""]]
   HasPermissionsBoundaryARN: !Not [!Equals [!Ref PermissionsBoundaryARN, ""]]
-  CreateAlarms: !Equals [!Ref DeployEnvironment, "PROD"] # Not yet implemented. Still in development / !Equals ["ALWAYS", "ALWAYS"] # Option if you want to ALWAYS create an alarm or only in PROD. Alarms cost money so you may only want them in Prod (or temporarily in test)
+  CreateAlarms: !Equals [!Ref DeployEnvironment, "PROD"] 
 
 # =============================================================================
 # GLOBALS
@@ -256,9 +256,14 @@ Resources:
       AutoPublishCodeSha256: "202402260936" # Hash This To Overcome AliasLive Update Errors
       AutoPublishAlias: live
       DeploymentPreference:
-        Enabled: !If [ IsProduction, True,  False] #Gradual deployment only if in production so DEV and TEST aren't hindered
+        Enabled: !If [ IsProduction, True,  False] # Gradual deployment only if in production so DEV and TEST aren't hindered
         Type: !If [ IsProduction, !Ref FunctionGradualDeploymentType, "AllAtOnce"]
         Role: !Ref DeployRole
+        Alarms:
+          Fn::If:
+            - CreateAlarms
+            - - !Ref AppFunctionErrorsAlarm
+            - - !Ref 'AWS::NoValue'
 
       CodeUri: src/
       Handler: index.handler
@@ -320,6 +325,40 @@ Resources:
       FunctionName: !Ref AppFunction #!Sub "${AppFunction}:live"
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebApi}/*"
+
+  # -- Lambda Function Error Alarm --
+
+  AppFunctionErrorsAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Condition: CreateAlarms # Either PROD or ALWAYS - Check Conditions
+    Properties:
+      AlarmDescription: Lambda Function Error > 1
+      MetricName: Errors
+      Statistic: Sum
+      ComparisonOperator: GreaterThanThreshold
+      Threshold: 1
+      Period: 900
+      EvaluationPeriods: 1
+      TreatMissingData: notBreaching
+      Namespace: AWS/Lambda
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref AppFunction
+      AlarmActions:
+        - Ref: AppFunctionErrorAlarmNotification
+
+  # -- Lambda Function Notification for Error Alarm --
+
+  AppFunctionErrorAlarmNotification:
+      Type: AWS::SNS::Topic
+      Condition: CreateAlarms
+      Properties: 
+        DisplayName: !Sub 'AWS-Alarm-${Prefix}-${ProjectId}-${StageId}'
+        FifoTopic: false
+        Subscription:
+          - Endpoint: !Ref AlarmNotificationEmail
+            Protocol: 'email'
+
 
   # ---------------------------------------------------------------------------
   # Resources for Lambda Function

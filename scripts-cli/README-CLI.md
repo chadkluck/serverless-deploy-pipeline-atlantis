@@ -193,4 +193,37 @@ Pipeline Infrastructure Repository:
        - service-role.py
        - ...
     - README.md
-    
+
+## Updating Pipeline Stacks
+
+When the `pipeline-stack` script is run, the CLI file generated includes commands to create the stack as well as update the stack.
+
+The commands used to update the stack are similar to the following:
+
+```
+# -----------------------------------------------------------------------------
+# UPDATE STACK
+# Update stack using change-set: After updating tags, parameters, and re-running pipeline-stack.py, issue the following commands to update.
+# Be sure to modify values as needed (such as whether to 'no-use-previous-template' or 'include-nested-stacks')
+# https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudformation/create-change-set.html
+
+cd ../cloudformation-pipeline-template/pipelines/acme/hello-world/
+
+aws cloudformation create-change-set \
+    --stack-name acme-hello-world-test-pipeline \
+    --change-set-name acme-hello-world-test-pipeline-DVGj-20240328161937 \
+    --client-token TUyigVDVGj \
+    --change-set-type UPDATE \
+    --no-use-previous-template \
+    --include-nested-stacks \
+    --cli-input-json file://../scripts-cli/cli/cfn/input-update-stack-acme-hello-world-test.json
+
+aws cloudformation execute-change-set \
+    --stack-name acme-hello-world-test \
+    --change-set-name acme-hello-world-test-pipeline-DVGj-20240328161937 \
+    --client-request-token TUyigVDVGj
+```
+
+Reasons you will want to update the pipeline stack include, but are not limited to, changing parameter values, updating CloudFormation Service Role for the infrastructure stack and changing the way the pipeline executes.
+
+If you are updating the pipeline template be sure to update the location of the template when you fill in the script's prompts, and upload a new copy to S3.
