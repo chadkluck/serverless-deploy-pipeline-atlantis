@@ -4,7 +4,7 @@
 #
 # CLI Generator Variable and Function Library for Atlantis CI/CD CodePipeline CloudFormation Template
 # Chad Leigh Kluck
-# v2024.02.29 : lib/atlantis.py
+# v2024.05.20 : lib/atlantis.py
 
 import os
 import shutil
@@ -49,7 +49,7 @@ files = {
 files["cfnPipelineTemplate"]["name"] = "template-pipeline.yml"
 files["cfnPipelineTemplate"]["path"] = dirs["cfnPipeline"]+files["cfnPipelineTemplate"]["name"]
 
-files["cfnPipelineTemplateInput"]["name"] = "SAMPLE-input-create-stack.json"
+files["cfnPipelineTemplateInput"]["name"] = "sample-input-create-stack.json"
 files["cfnPipelineTemplateInput"]["path"] = dirs["cfnPipeline"]+files["cfnPipelineTemplateInput"]["name"]
 
 files["iamTrustPolicy"]["name"] = "Trust-Policy-for-Service-Role.json"
@@ -195,7 +195,7 @@ prompts = {
 	"application-Name": {
 		"name": "Application Name",
 		"required": True,
-		"regex": "^[a-zA-Z0-9][a-zA-Z0-9_\-\/\s]{0,62}[a-zA-Z0-9]$",
+		"regex": "^[a-zA-Z0-9][a-zA-Z0-9_\\-\\/\\s]{0,62}[a-zA-Z0-9]$",
 		"help": "2 to 64 characters. Alphanumeric, dashes, underscores, and spaces. Must start and end with a letter or number.",
 		"description": "A descriptive name to identify the main application irregardless of the stage or branch. This is only used in the Tag Name and not visible anywhere else.",
 		"examples": "Financial Transaction Processing, Financial Transaction Audit, acme-finance-app",
@@ -205,7 +205,7 @@ prompts = {
 	"ServiceRoleARN": {
 		"name": "Service Role ARN",
 		"required": True,
-		"regex": "^$|^arn:aws:iam::[0-9]{12}:role\/[a-zA-Z0-9\/_-]+$",
+		"regex": "^$|^arn:aws:iam::[0-9]{12}:role\\/[a-zA-Z0-9\\/_-]+$",
 		"help": "Service Role ARN must be in the format: arn:aws:iam::{account_id}:role/{policy_name}",
 		"description": "The Service Role gives CloudFormation permission to create, delete, and manage stacks on your behalf.",
 		"examples": "arn:aws:iam::123456789012:role/ACME-CloudFormation-Service-Role",
@@ -227,7 +227,7 @@ prompts = {
 	"pipeline_template_location-BucketKey": {
 		"name": "S3 Bucket Key for Pipeline Template",
 		"required": True,
-		"regex": "^\/[a-zA-Z0-9\/_-]+\/$|^\/$",
+		"regex": "^\\/[a-zA-Z0-9\\/_-]+\\/$|^\\/$",
 		"help": "S3 bucket key must be lowercase, start and end with a slash and contain only letters, numbers, dashes and underscores",
 		"description": "Where is the pipeline template stored?",
 		"examples": "/atlantis/v2/, /atlantis/v3/",
@@ -237,7 +237,7 @@ prompts = {
 	"pipeline_template_location-FileName": {
 		"name": "Pipeline Template File Name",
 		"required": True,
-		"regex": "^[a-zA-Z0-9][a-zA-Z0-9-_]*[a-zA-Z0-9]\.(yml|yaml|json)$",
+		"regex": "^[a-zA-Z0-9][a-zA-Z0-9-_]*[a-zA-Z0-9]\\.(yml|yaml|json)$",
 		"help": "File name must be lowercase, start with a letter, and contain only letters, numbers, and dashes",
 		"description": "What is the pipeline template file name?",
 		"examples": "template-pipeline.yml, template-pipeline.yaml",
