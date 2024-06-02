@@ -2,20 +2,17 @@
 # either express or implied. See the License for the specific language governing permissions 
 # and limitations under the License.
 #
-# Web Service CloudFormation Application Infrastructure Template
-# https://github.com/chadkluck/serverless-webservice-template-for-pipeline-atlantis
+# Web Service CloudFormation Application Infrastructure Template - SAMPLE
 # Chad Leigh Kluck
-# v2.2023-07-22 HPAD (Happy Pi Approximation Day!)
+# v2.2024-06-02 SAMPLE
 # 
-# NOTE: As of v2 this template no longer supports CodeStar. I just wasn't using it and including
-# it complicated the set-up and learning process. Parameters have also been refactored and the
-# resources and parameters used by the npm package Cache-Data have been called out.
+# NOTE: As of v2 this template no longer supports CodeStar and Parameters have been refactored.
 #
 # USAGE/MORE INFO: https://github.com/chadkluck/serverless-webservice-template-for-pipeline-atlantis/blob/main/README.md
 
 AWSTemplateFormatVersion: "2010-09-09"
 Transform:  AWS::Serverless-2016-10-31
-Description: "CloudFormation Application Infrastructure Template - Demo"
+Description: "CloudFormation Application Infrastructure Template - SAMPLE"
 
 # =============================================================================
 # META DATA
@@ -77,7 +74,7 @@ Parameters:
   Prefix:
     Type: String
     Description: "Prefix pre-pended to all resources. This can be thought of as a Name Space used to identify ownership/access for teams, departments, etc. For example, resources named ws-* could belong to the web service team and could have IAM permissions to allow access to other ws-* resources. The Prefix must have a corresponding CloudFormation Service Role. Short, descriptive 2-6 character values work best. Due to resource naming length restrictions, length of Prefix + Project ID should not exceed 28 characters. Resources are named <Prefix>-<ProjectId>-<StageId>-<ResourceId>"
-    Default: "atlantis" 
+    Default: "acme" 
     AllowedPattern: "^[a-z][a-z0-9-]{0,6}[a-z0-9]$"
     MinLength: 2
     MaxLength: 8
