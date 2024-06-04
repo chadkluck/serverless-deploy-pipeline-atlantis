@@ -1,4 +1,5 @@
-# This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, 
+
+## This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, 
 # either express or implied. See the License for the specific language governing permissions 
 # and limitations under the License.
 #
@@ -175,7 +176,7 @@ Parameters:
 
 Conditions:
   IsNotDevelopment: !Not [!Equals [!Ref DeployEnvironment, "DEV"]]
-  IsDevelopment: !Equals [!Ref DeployEnvironment, "DEV"]
+  # IsDevelopment: !Equals [!Ref DeployEnvironment, "DEV"] # currently unused - uncomment if you have a use for it
   UseS3BucketNameOrgPrefix: !Not [!Equals [!Ref S3BucketNameOrgPrefix, ""]]
   HasPermissionsBoundaryARN: !Not [!Equals [!Ref PermissionsBoundaryARN, ""]]
 
@@ -193,7 +194,7 @@ Resources:
   # AWS CodePipeline and its resources require permissions perform operations
   # --
   # Practice The Principle of Least Privilege 
-  # IAM policies should be scoped down to give only neceesary actions on 
+  # IAM policies should be scoped down to give only necessary actions on 
   # resources specific to this deployment.
   # --
   
@@ -230,14 +231,14 @@ Resources:
 
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
-    DependsOn:
-    - S3DeployBucket
-    - CloudFormationSvcRole
+    # DependsOn:
+    # - S3DeployBucket
+    # - CloudFormationSvcRole
     Condition: IsNotDevelopment
     Properties:
       Path: !Ref RolePath
       RoleName: !Sub "${Prefix}-Worker-${ProjectId}-${StageId}-CodePipelineServiceRole"
-      Description: "Service Role to access resources during execution of AWS CodePipeine to get, build, and deploy application infrastructure"
+      Description: "Service Role to access resources during execution of AWS CodePipeline to get, build, and deploy application infrastructure"
       PermissionsBoundary: !If [HasPermissionsBoundaryARN, !Ref PermissionsBoundaryARN, !Ref 'AWS::NoValue' ]
       AssumeRolePolicyDocument:
         Statement:
@@ -458,32 +459,32 @@ Resources:
 
 
           # # == Event Bridge == If application infrastructure is using Event Bridge to trigger Lambda function
-          # - Sid: "EventRuleManageThisDeploymentOnly"
-          #   Action:
-          #   - events:PutRule
-          #   - events:DeleteRule
-          #   - events:DescribeRule
-          #   - events:PutTargets
-          #   - events:RemoveTargets
-          #   Effect: Allow
-          #   Resource:
-          #   - !Sub 'arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/${Prefix}-${ProjectId}-${StageId}-*'
+          - Sid: "EventRuleManageThisDeploymentOnly"
+            Action:
+            - events:PutRule
+            - events:DeleteRule
+            - events:DescribeRule
+            - events:PutTargets
+            - events:RemoveTargets
+            Effect: Allow
+            Resource:
+            - !Sub 'arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/${Prefix}-${ProjectId}-${StageId}-*'
 
 
           # # == State Machines / Step Functions == If application infrastructure is managing a state machine with step functions
-          # - Sid: "CreateUpdateDeleteStateMachine" # Statement Written by Q
-          #   Action:  
-          #   - states:CreateStateMachine
-          #   - states:UpdateStateMachine
-          #   - states:DeleteStateMachine
-          #   - states:ListStateMachines
-          #   - states:DescribeStateMachine
-          #   - states:TagResource
-          #   - states:UntagResource
-          #   - states:ListTagsForResource
-          #   Effect: Allow
-          #   Resource:
-          #     - !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${Prefix}-${ProjectId}-${StageId}-*'
+          - Sid: "CreateUpdateDeleteStateMachine" # Statement Written by Q
+            Action:  
+            - states:CreateStateMachine
+            - states:UpdateStateMachine
+            - states:DeleteStateMachine
+            - states:ListStateMachines
+            - states:DescribeStateMachine
+            - states:TagResource
+            - states:UntagResource
+            - states:ListTagsForResource
+            Effect: Allow
+            Resource:
+              - !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${Prefix}-${ProjectId}-${StageId}-*'
 
           # == S3 Buckets == If application infrastructure manages S3 buckets
           - Sid: "S3CRUDThisDeploymentOnly"
@@ -521,8 +522,17 @@ Resources:
             - lambda:GetLayerVersion
             Effect: Allow
             Resource:
-            - 'arn:aws:lambda:us-east-1:580247275435:layer:LambdaInsightsExtension:*' # update account and region
+            - !Sub 'arn:aws:lambda:${AWS::Region}:*:layer:LambdaInsightsExtension:*' # update account
             # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Lambda-Insights-extension-versions.html
+
+          # == AWS Parameters and Secrets Lambda Extension == 
+          - Sid: "LambdaLayersGetLayerForParametersAndSecretsFromAWS"
+            Action:
+            - lambda:GetLayerVersion
+            Effect: Allow
+            Resource:
+            - !Sub 'arn:aws:lambda:${AWS::Region}:*:layer:AWS-Parameters-and-Secrets-Lambda-Extension:*' # update account
+            # https://docs.aws.amazon.com/systems-manager/latest/userguide/ps-integration-lambda-extensions.html#ps-integration-lambda-extensions-add
 
           # == DynamoDb == If application infrastructure manages a DynamoDb resource
           - Sid: "DynamoDbCRUDThisDeploymentOnly"
@@ -649,22 +659,22 @@ Resources:
 
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
-    DependsOn:
-    - CodeBuildServiceRole
+    # DependsOn:
+    # - CodeBuildServiceRole
     Condition: IsNotDevelopment
     Properties:
       Name: !Sub '${Prefix}-${ProjectId}-${StageId}-Build'
       Description: !Sub "CodeBuild Project for ${Prefix}-${ProjectId}-${StageId}"
       ServiceRole: !GetAtt 'CodeBuildServiceRole.Arn'
       Artifacts:
-        Packaging: zip
-        Type: codepipeline
+        Packaging: ZIP
+        Type: CODEPIPELINE
       Environment:
         # ComputeType, Type, Image and the Build Runtime versions all rely on each other
         # ComputeType and Environment Type: https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-compute-types.html
         # Build runtime versions: https://docs.aws.amazon.com/codebuild/latest/userguide/runtime-versions.html
         #                         https://docs.aws.amazon.com/codebuild/latest/userguide/available-runtimes.html
-        ComputeType: small
+        ComputeType: BUILD_GENERAL1_SMALL
         Type: LINUX_CONTAINER
 
         # Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0 # Node 16 / Python 3.9
@@ -698,7 +708,7 @@ Resources:
         - Name: ALARM_NOTIFICATION_EMAIL
           Value: !Ref 'AlarmNotificationEmail'
       Source:
-        Type: codepipeline
+        Type: CODEPIPELINE
         BuildSpec: application-infrastructure/buildspec.yml # Explicitly set just to note that there should only be one buildspec (not buildspec-dev.yml or buildspec-prod.yml) which if needed to process differently for an environment, that logic should be in the buildspec and SAM template. Otherwise management of 2 or more would be difficult. We have Deploy Stage and Deploy Environment variables so use them.
 
 
@@ -719,7 +729,6 @@ Resources:
 
   S3ArtifactBucketPolicy:
     Type: AWS::S3::BucketPolicy
-    Description: Setting Amazon S3 bucket policy for AWS CodePipeline access
     Properties:
       Bucket: !Ref 'S3DeployBucket'
       PolicyDocument:
@@ -767,7 +776,7 @@ Resources:
                 - !GetAtt 'CodeBuildServiceRole.Arn' # AWS CloudFormation retrieves a template file from this bucket to create the runtime resources.
                 - !GetAtt 'CloudFormationSvcRole.Arn'
               - - !GetAtt 'CloudFormationSvcRole.Arn'
-                - !GetAtt 'CodeBuildServiceRole.Arn'
+                # - !GetAtt 'CodeBuildServiceRole.Arn'
           Resource:
             - !GetAtt S3DeployBucket.Arn
             - !Join [ '', [ !GetAtt S3DeployBucket.Arn, '/*' ] ]
@@ -783,7 +792,7 @@ Resources:
               - - !GetAtt 'CodePipelineServiceRole.Arn'
                 - !GetAtt 'CodeBuildServiceRole.Arn'
               - - !GetAtt 'CloudFormationSvcRole.Arn'
-                - !GetAtt 'CodeBuildServiceRole.Arn'
+                # - !GetAtt 'CodeBuildServiceRole.Arn'
           Resource:
             - !GetAtt S3DeployBucket.Arn
             - !Join [ '', [ !GetAtt S3DeployBucket.Arn, '/*' ] ]
@@ -795,7 +804,6 @@ Resources:
   S3DeployBucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: Delete # Set to Delete because if we delete the pipeline, we don't need the bucket
-    Description: Creating Amazon S3 bucket for AWS CodePipeline artifacts
     Properties:
       BucketName: !Join
         - "-"
@@ -838,12 +846,11 @@ Resources:
     # This includes the AWS CodePipeline service role, the artifact bucket, the AWS CodeBuild build projectTemplateId,
     # and the role it will pass to AWS CloudFormation to create stacks.
     Type: AWS::CodePipeline::Pipeline
-    Description: Creating a deployment pipeline for your project in AWS CodePipeline
-    DependsOn:
-    - CodePipelineServiceRole
-    - S3DeployBucket
-    - CodeBuildProject
-    - CloudFormationSvcRole
+    # DependsOn:
+    # - CodePipelineServiceRole
+    # - S3DeployBucket
+    # - CodeBuildProject
+    # - CloudFormationSvcRole
     Condition: IsNotDevelopment
     Properties:
       Name: !Sub '${Prefix}-${ProjectId}-${StageId}-Pipeline'
