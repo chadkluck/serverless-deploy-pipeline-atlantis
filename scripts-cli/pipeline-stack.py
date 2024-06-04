@@ -609,7 +609,7 @@ aws cloudformation create-change-set \\
     --change-set-type UPDATE \\
     --no-use-previous-template \\
     --include-nested-stacks \\
-    --cli-input-json file://../scripts-cli/cli/cfn/$INPUTUPDATECFNFILENAME$
+    --cli-input-json file://$INPUTUPDATECFNFILENAME$
 
 aws cloudformation execute-change-set \\
     --stack-name $STACK_NAME$ \\
