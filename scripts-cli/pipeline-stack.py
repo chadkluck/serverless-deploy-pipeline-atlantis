@@ -21,7 +21,7 @@ cwd = os.getcwd()
 print("")
 tools.printCharStr("=", 80, bookend="|")
 tools.printCharStr(" ", 80, bookend="|", text="Pipeline CF Stack AWS CLI Generator for Atlantis CI/CD")
-tools.printCharStr(" ", 80, bookend="|", text="v2024.02.29 : pipeline-stack.py")
+tools.printCharStr(" ", 80, bookend="|", text="v2024.06.17 : pipeline-stack.py")
 tools.printCharStr("-", 80, bookend="|")
 tools.printCharStr(" ", 80, bookend="|", text="Chad Leigh Kluck")
 tools.printCharStr(" ", 80, bookend="|", text="https://github.com/chadkluck/serverless-deploy-pipeline-atlantis")
@@ -118,6 +118,7 @@ defaults = {
         "S3BucketNameOrgPrefix": atlantis.prompts["S3BucketNameOrgPrefix"]["default"],
         "RolePath": atlantis.prompts["RolePath"]["default"],
         "DeployEnvironment": atlantis.prompts["DeployEnvironment"]["default"],
+        "DeployBucket": atlantis.prompts["DeployBucket"]["default"],
         "ParameterStoreHierarchy": atlantis.prompts["ParameterStoreHierarchy"]["default"],
         "AlarmNotificationEmail": "",
         "PermissionsBoundaryARN": "",
@@ -308,6 +309,9 @@ prompts["stack_parameters"]["RolePath"]["default"] = defaults["stack_parameters"
 prompts["stack_parameters"]["DeployEnvironment"] = atlantis.prompts["DeployEnvironment"]
 prompts["stack_parameters"]["DeployEnvironment"]["default"] = defaults["stack_parameters"]["DeployEnvironment"]
 
+prompts["stack_parameters"]["DeployBucket"] = atlantis.prompts["DeployBucket"]
+prompts["stack_parameters"]["DeployBucket"]["default"] = defaults["stack_parameters"]["DeployBucket"]
+
 prompts["stack_parameters"]["ParameterStoreHierarchy"] = atlantis.prompts["ParameterStoreHierarchy"]
 prompts["stack_parameters"]["ParameterStoreHierarchy"]["default"] = defaults["stack_parameters"]["ParameterStoreHierarchy"]
 
@@ -465,6 +469,7 @@ def subPlaceholders(string):
     string = string.replace("$S3_ORG_PREFIX$", parameters["stack_parameters"]["S3BucketNameOrgPrefix"])
     string = string.replace("$ROLE_PATH$", parameters["stack_parameters"]["RolePath"])
     string = string.replace("$DEPLOY_ENVIRONMENT$", parameters["stack_parameters"]["DeployEnvironment"])
+    string = string.replace("$DEPLOY_BUCKET$", parameters["stack_parameters"]["DeployBucket"])
     string = string.replace("$PARAM_STORE_HIERARCHY$", parameters["stack_parameters"]["ParameterStoreHierarchy"])
     string = string.replace("$ALARM_NOTIFICATION_EMAIL$", parameters["stack_parameters"]["AlarmNotificationEmail"])
     string = string.replace("$PERMISSIONS_BOUNDARY_ARN$", parameters["stack_parameters"]["PermissionsBoundaryARN"])

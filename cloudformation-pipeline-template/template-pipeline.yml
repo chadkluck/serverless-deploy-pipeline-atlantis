@@ -5,7 +5,7 @@
 #
 # Atlantis CI/CD CodePipeline CloudFormation Template Version 2
 # Chad Leigh Kluck
-# v2024.02.29 : template-pipeline.yml
+# v2024.06.17 : template-pipeline.yml
 # 
 # README documentation goes through installation steps. 
 # https://github.com/chadkluck/serverless-deploy-pipeline-atlantis/README.md
@@ -33,9 +33,10 @@ Metadata:
           - RolePath
       -
         Label:
-          default: "Deployment Environment Identification"
+          default: "Deployment Environment Information"
         Parameters:
           - DeployEnvironment
+          - DeployBucket
       -
         Label:
           default: "External Resources and Alarm Notifications"
@@ -129,6 +130,13 @@ Parameters:
     Default: "PROD"
     AllowedValues: ["DEV", "TEST", "PROD"]
     ConstraintDescription: "Must specify DEV, TEST, or PROD."
+  DeployBucket:
+    Type: String
+    Description: "An already existing S3 bucket name to deploy artifacts to. If this is left blank one will be created specific to the pipeline. Must be in the same AWS account and region as the stack."
+    Default: ""
+    AllowedPattern: "^[a-z0-9][a-z0-9-]{0,62}[a-z0-9]$|^$"
+    ConstraintDescription: "May only contain alphanumeric characters, dashes, and must begin and end with a letter or number."
+
 
   # ---------------------------------------------------------------------------
   # External Resources and Alarm Notifications
@@ -179,6 +187,7 @@ Conditions:
   # IsDevelopment: !Equals [!Ref DeployEnvironment, "DEV"] # currently unused - uncomment if you have a use for it
   UseS3BucketNameOrgPrefix: !Not [!Equals [!Ref S3BucketNameOrgPrefix, ""]]
   HasPermissionsBoundaryARN: !Not [!Equals [!Ref PermissionsBoundaryARN, ""]]
+  UseOwnS3DeployBucket: !Equals [!Ref DeployBucket, ""]
 
 # =============================================================================
 # RESOURCES
@@ -225,15 +234,12 @@ Resources:
             - codepipeline:StartPipelineExecution
             Effect: Allow
             Resource:
-            - !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${Prefix}-${ProjectId}-${StageId}-Pipeline"
+            - !Sub "arn:${AWS::Partition}:codepipeline:${AWS::Region}:${AWS::AccountId}:${Prefix}-${ProjectId}-${StageId}-Pipeline"
 
   # -- CodePipeline Service Role --
 
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
-    # DependsOn:
-    # - S3DeployBucket
-    # - CloudFormationSvcRole
     Condition: IsNotDevelopment
     Properties:
       Path: !Ref RolePath
@@ -267,31 +273,33 @@ Resources:
             - codecommit:GetCommit
             - codecommit:UploadArchive
             - codecommit:GetUploadArchiveStatus
-            Resource: !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:${CodeCommitRepository}'
+            Resource: !Sub 'arn:${AWS::Partition}:codecommit:${AWS::Region}:${AWS::AccountId}:${CodeCommitRepository}'
 
           - Sid: BuildPhase
             Action:
             - codebuild:*
             Effect: Allow
             Resource: 
-            - !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/*" # TODO: Scope Down
-            - !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${Prefix}-${ProjectId}-${StageId}-Build"
+            - !Sub "arn:${AWS::Partition}:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/*" # TODO: Scope Down
+            - !Sub "arn:${AWS::Partition}:codebuild:${AWS::Region}:${AWS::AccountId}:project/${Prefix}-${ProjectId}-${StageId}-Build"
 
           - Sid: DeployPhaseCloudFormation
             Action:
             - cloudformation:*
             Effect: Allow
             Resource: 
-            - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${Prefix}-${ProjectId}-${StageId}-infrastructure/*"
-            - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stackset/${Prefix}-${ProjectId}-${StageId}-infrastructure:*"
+            - !Sub "arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${Prefix}-${ProjectId}-${StageId}-infrastructure/*"
+            - !Sub "arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stackset/${Prefix}-${ProjectId}-${StageId}-infrastructure:*"
 
           - Sid: ManageArtifactsInS3
             Action:
-            - s3:*
+            - s3:Get*
+            - s3:List*
+            - s3:PutObject
             Effect: Allow
             Resource:
-            - !GetAtt S3DeployBucket.Arn
-            - !Join [ '', [ !GetAtt S3DeployBucket.Arn, '/*' ] ]
+            - !If [UseOwnS3DeployBucket, !GetAtt S3DeployBucket.Arn, !Sub "arn:${AWS::Partition}:s3:::${DeployBucket}"]
+            - !If [UseOwnS3DeployBucket, !Join [ '/', [ !GetAtt S3DeployBucket.Arn, '*' ] ], !Sub "arn:${AWS::Partition}:s3:::${DeployBucket}/*"]
 
           - Sid: PassRole
             Action:
@@ -332,10 +340,12 @@ Resources:
           - Sid: "AllowCodeBuildToManageItsArtifacts" # TODO: Scope Down Actions
             Effect: Allow
             Action:
-            - s3:*
+            - s3:Get*
+            - s3:List*
+            - s3:PutObject
             Resource:
-            - !GetAtt S3DeployBucket.Arn
-            - !Join [ '', [ !GetAtt S3DeployBucket.Arn, '/*' ] ]
+            - !If [UseOwnS3DeployBucket, !GetAtt S3DeployBucket.Arn, !Sub "arn:${AWS::Partition}:s3:::${DeployBucket}"]
+            - !If [UseOwnS3DeployBucket, !Join [ '/', [ !GetAtt S3DeployBucket.Arn, '*' ] ], !Sub "arn:${AWS::Partition}:s3:::${DeployBucket}/*"]
 
           - Sid: "AllowCodeBuildToManageItsKeys" # TODO: Scope Down
             Effect: Allow
@@ -355,7 +365,7 @@ Resources:
             - ssm:ListTagsForResource
             Effect: Allow
             Resource: 
-              !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStoreHierarchy}${DeployEnvironment}/${Prefix}-${ProjectId}-${StageId}/*"
+              !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStoreHierarchy}${DeployEnvironment}/${Prefix}-${ProjectId}-${StageId}/*"
 
   # -- CodeDeploy Service Role --
 
@@ -410,15 +420,15 @@ Resources:
             - iam:*
             Effect: Allow
             Resource: 
-            - !Sub "arn:aws:iam::${AWS::AccountId}:role${RolePath}${Prefix}-Worker-${ProjectId}-${StageId}-*"
-            - !Sub "arn:aws:iam::${AWS::AccountId}:role${RolePath}${Prefix}-${ProjectId}-${StageId}-*"
+            - !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role${RolePath}${Prefix}-Worker-${ProjectId}-${StageId}-*"
+            - !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role${RolePath}${Prefix}-${ProjectId}-${StageId}-*"
 
           - Sid: "IAMGetAndListReadOnlyAll"
             Action:
             - iam:Get*
             - iam:List*
             Effect: Allow
-            Resource: !Sub "arn:aws:iam::${AWS::AccountId}:role/*"
+            Resource: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/*"
 
           - Sid: "CloudFormationCRUD"
             Action:
@@ -434,9 +444,9 @@ Resources:
             - codedeploy:*
             Effect: Allow
             Resource:
-              - !Sub 'arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:application:${Prefix}-${ProjectId}-${StageId}-infrastructure-*'
-              - !Sub 'arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentgroup:${Prefix}-${ProjectId}-${StageId}-*'
-              - !Sub 'arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentconfig:*' # TODO needs to be scoped down - tags?
+              - !Sub 'arn:${AWS::Partition}:codedeploy:${AWS::Region}:${AWS::AccountId}:application:${Prefix}-${ProjectId}-${StageId}-infrastructure-*'
+              - !Sub 'arn:${AWS::Partition}:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentgroup:${Prefix}-${ProjectId}-${StageId}-*'
+              - !Sub 'arn:${AWS::Partition}:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentconfig:*' # TODO needs to be scoped down - tags?
             # Condition:
             #   StringEquals: 
             #     aws:ResourceTag/ProjectStackProjectStageID: !Sub "${AWS::Region}/${AWS::AccountId}/${Prefix}-${ProjectId}-${StageId}"
@@ -468,7 +478,7 @@ Resources:
             - events:RemoveTargets
             Effect: Allow
             Resource:
-            - !Sub 'arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/${Prefix}-${ProjectId}-${StageId}-*'
+            - !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/${Prefix}-${ProjectId}-${StageId}-*'
 
 
           # # == State Machines / Step Functions == If application infrastructure is managing a state machine with step functions
@@ -484,7 +494,18 @@ Resources:
             - states:ListTagsForResource
             Effect: Allow
             Resource:
-              - !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${Prefix}-${ProjectId}-${StageId}-*'
+              - !Sub 'arn:${AWS::Partition}:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${Prefix}-${ProjectId}-${StageId}-*'
+
+          # == S3 Deploy Bucket
+          - Sid: ManageArtifactsInS3
+            Action:
+            - s3:Get*
+            - s3:List*
+            - s3:PutObject
+            Effect: Allow
+            Resource:
+            - !If [UseOwnS3DeployBucket, !GetAtt S3DeployBucket.Arn, !Sub "arn:${AWS::Partition}:s3:::${DeployBucket}"]
+            - !If [UseOwnS3DeployBucket, !Join [ '/', [ !GetAtt S3DeployBucket.Arn, '*' ] ], !Sub "arn:${AWS::Partition}:s3:::${DeployBucket}/*"]
 
           # == S3 Buckets == If application infrastructure manages S3 buckets
           - Sid: "S3CRUDThisDeploymentOnly"
@@ -494,17 +515,17 @@ Resources:
             Resource:
             - !Join
               - ""
-              - - "arn:aws:s3:::"
+              - - !Sub "arn:${AWS::Partition}:s3:::"
                 - !If [UseS3BucketNameOrgPrefix, !Sub "${S3BucketNameOrgPrefix}-${Prefix}", !Sub "${Prefix}-${AWS::Region}-${AWS::AccountId}" ]
                 - !Sub "-${ProjectId}-${StageId}/*"
             - !Join
               - ""
-              - - "arn:aws:s3:::"
+              - - !Sub "arn:${AWS::Partition}:s3:::"
                 - !If [UseS3BucketNameOrgPrefix, !Sub "${S3BucketNameOrgPrefix}-${Prefix}", !Sub "${Prefix}-${AWS::Region}-${AWS::AccountId}" ]
                 - !Sub "-${ProjectId}-${StageId}-*/*"
             - !Join
               - ""
-              - - "arn:aws:s3:::"
+              - - !Sub "arn:${AWS::Partition}:s3:::"
                 - !If [UseS3BucketNameOrgPrefix, !Sub "${S3BucketNameOrgPrefix}-${Prefix}", !Sub "${Prefix}-${AWS::Region}-${AWS::AccountId}" ]
                 - !Sub "-${ProjectId}-${StageId}-*"
 
@@ -514,7 +535,7 @@ Resources:
             - lambda:*
             Effect: Allow
             Resource:
-            - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Prefix}-${ProjectId}-${StageId}-*'
+            - !Sub 'arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${Prefix}-${ProjectId}-${StageId}-*'
 
           # == Lambda Insights == If application infrastructure utilizes Lambda Insights for tracing and troubleshooting
           - Sid: "LambdaLayersGetLayerForLambdaInsightsFromAWS"
@@ -522,7 +543,7 @@ Resources:
             - lambda:GetLayerVersion
             Effect: Allow
             Resource:
-            - !Sub 'arn:aws:lambda:${AWS::Region}:*:layer:LambdaInsightsExtension:*' # update account
+            - !Sub 'arn:${AWS::Partition}:lambda:${AWS::Region}:*:layer:LambdaInsightsExtension:*' # update account
             # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Lambda-Insights-extension-versions.html
 
           # == AWS Parameters and Secrets Lambda Extension == 
@@ -531,7 +552,7 @@ Resources:
             - lambda:GetLayerVersion
             Effect: Allow
             Resource:
-            - !Sub 'arn:aws:lambda:${AWS::Region}:*:layer:AWS-Parameters-and-Secrets-Lambda-Extension:*' # update account
+            - !Sub 'arn:${AWS::Partition}:lambda:${AWS::Region}:*:layer:AWS-Parameters-and-Secrets-Lambda-Extension:*' # update account
             # https://docs.aws.amazon.com/systems-manager/latest/userguide/ps-integration-lambda-extensions.html#ps-integration-lambda-extensions-add
 
           # == DynamoDb == If application infrastructure manages a DynamoDb resource
@@ -540,7 +561,7 @@ Resources:
             - dynamodb:*
             Effect: Allow
             Resource:
-              - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Prefix}-${ProjectId}-${StageId}-*'
+              - !Sub 'arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${Prefix}-${ProjectId}-${StageId}-*'
 
           # == SSM Parameter Store (Read-Only) == If application infrastructure accesses SSM parameter store
           - Sid: "SSMParameterStoreReadThisDeploymentOnly"
@@ -551,7 +572,7 @@ Resources:
             - ssm:ListTagsForResource
             Effect: Allow
             Resource: 
-              !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStoreHierarchy}${DeployEnvironment}/${Prefix}-${ProjectId}-${StageId}/*"
+              !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${ParameterStoreHierarchy}${DeployEnvironment}/${Prefix}-${ProjectId}-${StageId}/*"
 
           - Sid: "CloudWatchDashboardLimitedCRUDThisDeploymentOnly"
             Action:
@@ -562,7 +583,7 @@ Resources:
             - cloudwatch:UntagResource
             Effect: Allow
             Resource:
-            - !Sub 'arn:aws:cloudwatch::${AWS::AccountId}:dashboard/${Prefix}-${ProjectId}-${StageId}-*'
+            - !Sub 'arn:${AWS::Partition}:cloudwatch::${AWS::AccountId}:dashboard/${Prefix}-${ProjectId}-${StageId}-*'
 
           - Sid: "CloudWatchAlarmsLimitedCRUDThisDeploymentOnly"
             Action:
@@ -572,7 +593,7 @@ Resources:
             - cloudwatch:UntagResource
             Effect: Allow
             Resource:
-              - !Sub 'arn:aws:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:${Prefix}-${ProjectId}-${StageId}-*'
+              - !Sub 'arn:${AWS::Partition}:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:${Prefix}-${ProjectId}-${StageId}-*'
 
           - Sid: "SNSForAlarmNotificationsLimitedCRUDThisDeploymentOnly"
             Action:
@@ -586,7 +607,7 @@ Resources:
             - sns:TagResource            
             Effect: Allow
             Resource:
-              - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${Prefix}-${ProjectId}-${StageId}-infrastructure-*'
+              - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${Prefix}-${ProjectId}-${StageId}-infrastructure-*'
 
           - Sid: "LogGroupsLimitedCRUDThisDeploymentOnly"
             Action:
@@ -602,7 +623,7 @@ Resources:
             - logs:DescribeLogGroups
             Effect: Allow
             Resource:
-            - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${Prefix}-${ProjectId}-${StageId}-*'
+            - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${Prefix}-${ProjectId}-${StageId}-*'
             
           - Sid: "LogGroupsListAll"
             Action:
@@ -611,7 +632,7 @@ Resources:
             - logs:ListTagsForResource
             Effect: Allow
             Resource: 
-            - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group::*' # cannot scope down to resource as this is a List, but actions are limited
+            - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group::*' # cannot scope down to resource as this is a List, but actions are limited
 
 
   # ---------------------------------------------------------------------------
@@ -646,12 +667,12 @@ Resources:
         detail-type:
         - CodeCommit Repository State Change
         resources:
-        - !Sub 'arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:${CodeCommitRepository}'
+        - !Sub 'arn:${AWS::Partition}:codecommit:${AWS::Region}:${AWS::AccountId}:${CodeCommitRepository}'
         source:
         - aws.codecommit
       State: ENABLED
       Targets:
-      - Arn: !Sub 'arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${Prefix}-${ProjectId}-${StageId}-Pipeline'
+      - Arn: !Sub 'arn:${AWS::Partition}:codepipeline:${AWS::Region}:${AWS::AccountId}:${Prefix}-${ProjectId}-${StageId}-Pipeline'
         Id: ProjectPipelineTarget
         RoleArn: !GetAtt 'SourceEventServiceRole.Arn'
 
@@ -669,6 +690,10 @@ Resources:
       Artifacts:
         Packaging: ZIP
         Type: CODEPIPELINE
+      Cache:
+        Type: LOCAL
+        Modes:
+          - LOCAL_CUSTOM_CACHE
       Environment:
         # ComputeType, Type, Image and the Build Runtime versions all rely on each other
         # ComputeType and Environment Type: https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-compute-types.html
@@ -690,7 +715,7 @@ Resources:
         - Name: AWS_ACCOUNT
           Value: !Ref 'AWS::AccountId'
         - Name: S3_DEPLOY_BUCKET # informs AWS CodeBuild where it can retrieve your code artifact.
-          Value: !Ref 'S3DeployBucket'
+          Value: !If [UseOwnS3DeployBucket, !Ref S3DeployBucket, !Ref DeployBucket ]
         - Name: PREFIX
           Value: !Ref 'Prefix'
         - Name: PROJECT_ID
@@ -729,6 +754,7 @@ Resources:
 
   S3ArtifactBucketPolicy:
     Type: AWS::S3::BucketPolicy
+    Condition: UseOwnS3DeployBucket
     Properties:
       Bucket: !Ref 'S3DeployBucket'
       PolicyDocument:
@@ -754,7 +780,7 @@ Resources:
           Action: "s3:*"
           Resource:
             - !GetAtt S3DeployBucket.Arn
-            - !Join [ '', [ !GetAtt S3DeployBucket.Arn, '/*' ] ]
+            - !Join [ '/', [ !GetAtt S3DeployBucket.Arn, '*' ] ]
           Condition:
             Bool:
                 "aws:SecureTransport": false
@@ -779,7 +805,7 @@ Resources:
                 # - !GetAtt 'CodeBuildServiceRole.Arn'
           Resource:
             - !GetAtt S3DeployBucket.Arn
-            - !Join [ '', [ !GetAtt S3DeployBucket.Arn, '/*' ] ]
+            - !Join [ '/', [ !GetAtt S3DeployBucket.Arn, '*' ] ]
           
         - Sid: WhitelistedPut
           Action:
@@ -795,7 +821,7 @@ Resources:
                 # - !GetAtt 'CodeBuildServiceRole.Arn'
           Resource:
             - !GetAtt S3DeployBucket.Arn
-            - !Join [ '', [ !GetAtt S3DeployBucket.Arn, '/*' ] ]
+            - !Join [ '/', [ !GetAtt S3DeployBucket.Arn, '*' ] ]
           
 
   # ---------------------------------------------------------------------------
@@ -803,6 +829,7 @@ Resources:
 
   S3DeployBucket:
     Type: AWS::S3::Bucket
+    Condition: UseOwnS3DeployBucket
     DeletionPolicy: Delete # Set to Delete because if we delete the pipeline, we don't need the bucket
     Properties:
       BucketName: !Join
@@ -846,16 +873,13 @@ Resources:
     # This includes the AWS CodePipeline service role, the artifact bucket, the AWS CodeBuild build projectTemplateId,
     # and the role it will pass to AWS CloudFormation to create stacks.
     Type: AWS::CodePipeline::Pipeline
-    # DependsOn:
-    # - CodePipelineServiceRole
-    # - S3DeployBucket
-    # - CodeBuildProject
-    # - CloudFormationSvcRole
+    DependsOn:
+    - CodeBuildProject
     Condition: IsNotDevelopment
     Properties:
       Name: !Sub '${Prefix}-${ProjectId}-${StageId}-Pipeline'
       ArtifactStore:
-        Location: !Ref 'S3DeployBucket'
+        Location: !If [UseOwnS3DeployBucket, !Ref S3DeployBucket, !Ref DeployBucket ]
         Type: S3
       RoleArn: !GetAtt 'CodePipelineServiceRole.Arn'
       Stages:

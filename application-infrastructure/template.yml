@@ -34,7 +34,7 @@ Metadata:
           - RolePath
       -
         Label:
-          default: "Deployment Environment Identification"
+          default: "Deployment Environment Information"
         Parameters:
           - DeployEnvironment
           - FunctionGradualDeploymentType

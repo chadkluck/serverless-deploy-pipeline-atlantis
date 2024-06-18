@@ -33,6 +33,11 @@
             "UsePreviousValue": true
         },
         {
+            "ParameterKey": "DeployBucket",
+            "ParameterValue": "$DEPLOY_BUCKET$",
+            "UsePreviousValue": true
+        },
+        {
             "ParameterKey": "ParameterStoreHierarchy",
             "ParameterValue": "$PARAM_STORE_HIERARCHY$",
             "UsePreviousValue": true

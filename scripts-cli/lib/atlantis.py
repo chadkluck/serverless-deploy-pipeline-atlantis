@@ -4,7 +4,7 @@
 #
 # CLI Generator Variable and Function Library for Atlantis CI/CD CodePipeline CloudFormation Template
 # Chad Leigh Kluck
-# v2024.05.20 : lib/atlantis.py
+# v2024.06.17 : lib/atlantis.py
 
 import os
 import shutil
@@ -154,6 +154,13 @@ prompts = {
 		"regex": "^(DEV|TEST|PROD)$",
 		"examples": "DEV, TEST, PROD",
 		"default": "TEST"
+	},
+
+	"DeployBucket": {
+		"name": "Deploy Bucket",
+		"required": False,
+		"examples": "cf-templates-hw8lsa-us-east-1",
+		"default": ""
 	},
 
 	"ParameterStoreHierarchy": {

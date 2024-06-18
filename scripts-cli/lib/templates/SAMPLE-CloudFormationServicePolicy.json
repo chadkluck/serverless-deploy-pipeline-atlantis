@@ -94,7 +94,8 @@
 				"iam:DetachRolePolicy",
 				"iam:PutRolePolicy",
 				"iam:UntagRole",
-				"iam:TagRole"
+				"iam:TagRole",
+                "iam:UpdateRoleDescription"
 			],
 			"Effect": "Allow",
 			"Resource": "arn:aws:iam::$AWS_ACCOUNT$:role$ROLE_PATH$$PREFIX$-Worker-*","Condition": "$PERMISSIONS_BOUNDARY_CONDITIONAL$"

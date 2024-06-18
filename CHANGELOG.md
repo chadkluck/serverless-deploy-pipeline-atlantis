@@ -23,3 +23,18 @@ File versions included:
 - v2024.02.29 : lib/tools.py
 
 The main instructions have been updated, however the tutorial has not. A new tutorial should be released in Summer of 2024.
+
+## v2024.06.17 Release
+
+For the pipeline template, added caching to the CodeBuild Project, and a CloudFormation stack parameter "DeployBucket" to use an existing S3 bucket for artifact storage rather than creating one for each pipeline.
+
+Includes a fix to CloudFormationServicePolicy (IAM) by adding "iam:UpdateRoleDescription" Action to ManageWorkerRolesByResourcePrefix.
+
+Templates and Scripts Updated:
+
+- v2024.06.17 : template-pipeline.yml
+- v2024.06.17 : pipeline-stack.py
+- v2024.06.17 : lib/atlantis.py
+- v2024.06.17 : lib/templates/sample-input-create-stack.json
+
+To update CloudFormation-Service-Role, re-run the service-role.py script for the Prefix you wish to update. Then update the role's policy with the generated JSON policy found in the roles directory.
