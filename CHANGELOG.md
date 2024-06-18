@@ -37,4 +37,4 @@ Templates and Scripts Updated:
 - v2024.06.17 : lib/atlantis.py
 - v2024.06.17 : lib/templates/sample-input-create-stack.json
 
-To update CloudFormation-Service-Role, re-run the service-role.py script for the Prefix you wish to update. Then update the role's policy with the generated JSON policy found in the roles directory.
+To update CloudFormation-Service-Role, re-run the `service-role.py` script for the Prefix you wish to update. Then update the role's policy with the generated JSON policy found in the roles directory by running just the `aws iam put-role-policy` cli command found in the generated cli text document.

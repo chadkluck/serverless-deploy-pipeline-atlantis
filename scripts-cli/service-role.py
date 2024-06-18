@@ -317,10 +317,12 @@ with open(
 
 		create_role_comment = []
 		create_role_comment.append("# -----------------------------------------------------------------------------")
-		create_role_comment.append("# Run iam create-role command from the /script-cli/ directory (or adjust path as needed)")
+		create_role_comment.append("# Run iam create-role command from the /iam-cloudformation-service-role/roles/"+parameters["general"]["Prefix"]+" directory (or adjust path as needed)")
+		create_role_comment.append("")
+		create_role_comment.append("cd "+ROOT_CLI_DIR_IAM)
 
 		stringCliRoleComment = "\n".join(create_role_comment)
-            
+        
 		# Generate the CLI command for create-role
 		create_role = []
 		create_role.append("aws iam create-role --path "+parameters["general"]["RolePath"])
