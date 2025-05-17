@@ -1,5 +1,7 @@
 # CloudFormation Template for CI/CD using AWS CodePipeline
 
+> This project has been replaced by the [Atlantis CloudFormation Template Repository](https://github.com/63Klabs/atlantis-cfn-template-repo-for-serverless-deployments), [Atlantis SAM Configuration Repository](https://github.com/63Klabs/atlantis-cfn-configuration-repo-for-serverless-deployments), and [starter applications and tutorials](https://github.com/63Klabs/atlantis-tutorials) available from my [63Klabs](https://github.com/63klabs) projects.
+
 Monitor and deploy changes to a CodeCommit branch using AWS CodePipeline.
 
 It is recommended that you familiarize yourself with AWS CloudFormation, CodePipeline, and the Serverless Application Framework.
